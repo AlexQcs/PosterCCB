@@ -5,17 +5,20 @@ import com.hc.posterccb.mvp.IPresenter;
 import com.hc.posterccb.mvp.IView;
 
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
 
 /**
- * Created by alex on 2017/7/7.
+ * Created by alex on 2017/7/8.
  */
 
-public abstract class BasePresenter<V extends IView> implements IPresenter {
-    private WeakReference actReference;//弱引用，防止内存泄漏
+public abstract class OtherPresenter<M extends IModel,V extends IView> implements IPresenter {
+    private WeakReference actReference;
     protected V iView;
+    protected M iModel;
 
-    public abstract HashMap<String,IModel> getiModelMap();
+    public M getiModel(){
+        iModel=loadModel();//使用前先进行初始化
+        return iModel;
+    }
 
     @Override
     public void attachView(IView iView) {
@@ -32,14 +35,8 @@ public abstract class BasePresenter<V extends IView> implements IPresenter {
 
     @Override
     public V getIView() {
-        return (V)actReference.get();
+        return (V) actReference.get();
     }
 
-    /**
-     * 此方法用于:添加多个model,如有需要
-     *
-     * @param models
-     * @author.Alex.on.2017年7月8日08:58:12
-     */
-    public abstract HashMap<String,IModel> loadModelMap(IModel... models);
+    public abstract M loadModel();
 }

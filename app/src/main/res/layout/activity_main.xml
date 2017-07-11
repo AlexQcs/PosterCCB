@@ -4,12 +4,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="1920dp"
     android:layout_height="1080dp"
-    tools:context="com.hc.posterccb.MainActivity"
+    tools:context="com.hc.posterccb.ui.acitivity.MainActivity"
     android:gravity="center"
     android:orientation="vertical">
 
     <com.pili.pldroid.player.widget.PLVideoView
-        android:id="@+id/videoview"
+        android:id="@+id/videoview_one"
+        android:layout_width="1920dp"
+        android:layout_height="1080dp"
+        >
+
+    </com.pili.pldroid.player.widget.PLVideoView>
+    <com.pili.pldroid.player.widget.PLVideoView
+        android:id="@+id/videoview_two"
         android:layout_width="1920dp"
         android:layout_height="1080dp"
         >

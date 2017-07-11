@@ -1,5 +1,7 @@
 package com.hc.posterccb.util;
 
+import android.support.annotation.Nullable;
+
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -14,5 +16,12 @@ public class StringUtils {
             e.printStackTrace();
         }
         return res;
+    }
+
+    public static boolean isEmpty(@Nullable String str){
+        if (str==null||str.length()==0)
+            return true;
+        else
+            return  false;
     }
 }

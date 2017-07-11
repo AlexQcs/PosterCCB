@@ -15,5 +15,11 @@ public class Api {
     public static final String SFTP_PSD="sheng123";
     public static final String SFTP_PATH="192.168.0.30";
 
+    //server-url
+    public static String BASE_URL ="http://192.168.0.30:8080/";
+
+
+
+
 
 }
