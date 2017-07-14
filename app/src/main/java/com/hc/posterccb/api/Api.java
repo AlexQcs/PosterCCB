@@ -19,6 +19,10 @@ public class Api {
     public static String BASE_URL ="http://192.168.0.30:8080/";
 
 
+    //请求头  command
+    public static String  POST_POLLING="getTask";
+
+
 
 
 

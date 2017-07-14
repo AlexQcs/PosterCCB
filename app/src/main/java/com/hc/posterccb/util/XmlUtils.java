@@ -1,10 +1,18 @@
 package com.hc.posterccb.util;
 
 
-import com.hc.posterccb.bean.TestResult;
+import android.util.Xml;
+
+import com.hc.posterccb.Constant;
+import com.hc.posterccb.bean.PostResult;
+import com.hc.posterccb.bean.polling.ProgramBean;
+import com.hc.posterccb.bean.polling.PollResultBean;
+import com.hc.posterccb.bean.polling.UpGradeBean;
 
 import org.xmlpull.v1.XmlPullParser;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
@@ -30,9 +38,9 @@ public class XmlUtils {
      * @return 一个bean和一个list的结果
      * @throws Exception
      */
-    public static <T, T1> TestResult<T> getBeanByParseXml(XmlPullParser parser, String listRoot, Class<T> listClazz, String beanRoot, Class<T1> beanClazz) throws Exception {
+    public static <T, T1> PostResult<T> getBeanByParseXml(XmlPullParser parser, String listRoot, Class<T> listClazz, String beanRoot, Class<T1> beanClazz) throws Exception {
         //最后结果
-        TestResult<T> result = null;
+        PostResult<T> result = null;
         //list  存放一堆item
         ArrayList<T> list = null;
         //内层ListBean
@@ -50,7 +58,7 @@ public class XmlUtils {
                     //如果是xml文件开始标签，则初始化一些数据
                     case XmlPullParser.START_DOCUMENT:
                         //最后的结果
-                        result = new TestResult<T>();
+                        result = new PostResult<T>();
                         //list
                         list = new ArrayList<T>();
                         //将list加入到result中，当前list是空的，等后面加入了数据后，就不是空了
@@ -137,6 +145,71 @@ public class XmlUtils {
         return result;
 
     }
+
+
+    public static String getXmlType(String xmlStr) {
+        String xmlType = "no";
+        try {
+            // 由android.util.Xml创建一个XmlPullParser实例
+            InputStream in = new ByteArrayInputStream( xmlStr.getBytes());
+            XmlPullParser parser = Xml.newPullParser();
+            parser.setInput(in, "UTF-8");
+            //产生第一个事件
+            int eventType = parser.getEventType();
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                switch (eventType) {
+                    //判断当前事件是否为文档开始事件
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    //判断当前事件是否为标签元素开始事件
+                    case XmlPullParser.START_TAG:
+
+                        if (parser.getName().equals(Constant.TASKTYPE)) {
+
+                            eventType = parser.next();
+                            String tasktype = parser.getText().trim();
+                            return xmlType;
+                            //根据类型返回指定字节
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+
+                        break;
+                }
+                eventType = parser.next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return xmlType;
+    }
+
+
+    public static PostResult getTaskBean(String tasktype,String xmlStr){
+
+        PostResult postResult = null;
+        try {
+            InputStream in = new ByteArrayInputStream( xmlStr.getBytes());
+            XmlPullParser parser = Xml.newPullParser();
+            parser.setInput(in, "UTF-8");
+            switch (tasktype) {
+                case Constant.POLLING_PROGRAM:
+                    LogUtils.e("XmlUtils", "检测到数据类型为播放任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG, ProgramBean.class, Constant.XML_STARTDOM, PollResultBean.class);
+                    return postResult;
+                case Constant.POLLING_UPGRADE:
+                    LogUtils.e("XmlUtils", "检测到数据类型为播放任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG, UpGradeBean.class, Constant.XML_STARTDOM, PollResultBean.class);
+                    return postResult;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return postResult;
+    }
+
+
 
 
 }

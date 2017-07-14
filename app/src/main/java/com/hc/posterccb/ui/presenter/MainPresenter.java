@@ -16,6 +16,8 @@ import java.util.HashMap;
 public class MainPresenter extends BasePresenter<MainActivity>
         implements MainContract.MainPresenter{
 
+
+
     @Override
     public void pollingTask(String command, String mac) {
         if (!getIView().checkPostParamNull()){
@@ -35,6 +37,15 @@ public class MainPresenter extends BasePresenter<MainActivity>
     }
 
     @Override
+    public void downLoadFile(String command, String mac, String path) {
+        if (!getIView().checkPostParamNull()){
+            ((MainModel)getiModelMap().get("downloadfile")).downLoadFile(path);
+        }
+    }
+
+
+
+    @Override
     public HashMap<String, IModel> getiModelMap() {
         return loadModelMap(new MainModel());
     }
@@ -43,6 +54,7 @@ public class MainPresenter extends BasePresenter<MainActivity>
     public HashMap<String, IModel> loadModelMap(IModel... models) {
         HashMap<String,IModel> map=new HashMap<>();
         map.put("polling",models[0]);
+        map.put("downloadfile",models[0]);
         return map;
     }
 

@@ -27,6 +27,9 @@ public class MainContract {
          * @throw
          */
         void pollingTask(String command,String mac);
+
+        void downLoadFile(String command,String mac,String path);
+
     }
 
 }

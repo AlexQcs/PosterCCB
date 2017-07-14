@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<command >
+	 <tasklist>
+<taskcount>1</taskcount>
+<taskitem>
+<tasktype>01</tasktype>
+<taskid>402881d323c2d3010123cfecdd100008</taskid>
+<contents>
+<content>
+<csize>38814</csize>
+<link>/download/res.xml</link>
+<md5> b39318390aba4592a3c09109d0775a92</md5>
+<stardate>2010-06-20</stardate>
+<enddate>2010-06-22</enddate>
+<playmode>1</playmode>
+</content>
+</contents>
+</taskitem>
+</tasklist>
+</command>

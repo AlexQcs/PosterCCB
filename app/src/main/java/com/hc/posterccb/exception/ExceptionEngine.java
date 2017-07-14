@@ -8,8 +8,6 @@ import org.json.JSONException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 
-import retrofit2.adapter.rxjava.HttpException;
-
 /**
  * Created by alex on 2017/7/8.
  */
@@ -80,7 +78,7 @@ public class ExceptionEngine {
             ex = new ApiException(e, ErrorType.NETWORK_ERROR);
             ex.message = "连接失败";  //均视为网络错误
             return ex;
-        } else if (e instanceof HttpException) {
+        } else if (e instanceof retrofit2.HttpException) {
             if ("HTTP 404 Not Found".equals(e.getMessage())) {
                 ex = new ApiException(e, ErrorType.NETWORK_ERROR);
                 ex.message = "没有连接服务器";

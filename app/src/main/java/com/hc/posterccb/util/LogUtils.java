@@ -17,7 +17,7 @@ public class LogUtils {
      */
     public static void d(String tag, String msg) {
         if (isDebug) {
-            Log.d("jiemo_" + tag, msg);
+            Log.d("alex----->" + tag, msg);
         }
     }
 
@@ -26,7 +26,7 @@ public class LogUtils {
      */
     public static void e(String tag, String msg) {
         if (isDebug) {
-            Log.e("jiemo_" + tag, msg);
+            Log.e("alex----->" + tag, msg);
         }
     }
 
@@ -35,7 +35,7 @@ public class LogUtils {
      */
     public static void e(Class cls, String msg) {
         if (isDebug) {
-            Log.e("jiemo_" + cls.getSimpleName(), msg);
+            Log.e("alex----->" + cls.getSimpleName(), msg);
         }
     }
 

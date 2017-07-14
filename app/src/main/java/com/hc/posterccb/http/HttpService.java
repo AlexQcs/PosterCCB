@@ -1,8 +1,8 @@
 package com.hc.posterccb.http;
 
 import okhttp3.ResponseBody;
-import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.POST;
 import rx.Observable;
 
 /**
@@ -12,6 +12,6 @@ import rx.Observable;
 
 public interface HttpService {
 
-    @GET("/xmlserver/revXml")
+    @POST("/xmlserver/revXml")
     Observable<ResponseBody> polling(@Header("command")String command, @Header("mac")String mac);
 }

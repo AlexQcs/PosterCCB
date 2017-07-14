@@ -10,12 +10,12 @@ import com.hc.posterccb.ui.presenter.MainPresenter;
 import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.StringUtils;
 
-public class MainActivity extends BaseActivity<MainPresenter> implements MainContract.MainView{
+public class MainActivity extends BaseActivity<MainPresenter> implements MainContract.MainView {
 
-    private String TAG="MainActivity";
+    private String TAG = "MainActivity";
 
-    private String mTaskName="getTask";
-    private String mSerialNumber= Constant.getSerialNumber();
+    private String mTaskName = "getTask";
+    private String mSerialNumber = Constant.getSerialNumber();
 
     @Override
     protected MainPresenter loadPresenter() {
@@ -24,6 +24,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     @Override
     protected void initData() {
+
         mPresenter.pollingTask(mTaskName,mSerialNumber);
     }
 
@@ -47,21 +48,21 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     }
 
-    public boolean checkPostParamNull(){
-        boolean isNull=false;
-        if (StringUtils.isEmpty(mTaskName)){
-            LogUtils.e(TAG,"任务名称为空");
-            isNull=true;
+    public boolean checkPostParamNull() {
+        boolean isNull = false;
+        if (StringUtils.isEmpty(mTaskName)) {
+            LogUtils.e(TAG, "任务名称为空");
+            isNull = true;
         } else if (StringUtils.isEmpty(mSerialNumber)) {
-            LogUtils.e(TAG,"序列号为空");
-            isNull=true;
+            LogUtils.e(TAG, "序列号为空");
+            isNull = true;
         }
         return isNull;
     }
 
     @Override
     public void pollingSuccess(String msg) {
-        toast(msg);
+
     }
 
     @Override

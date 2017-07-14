@@ -6,7 +6,7 @@ import java.util.ArrayList;
  * Created by alex on 2017/7/3.
  */
 
-public class TestResult<T> {
+public class PostResult<T> {
     private Object bean;
     private ArrayList<T> mList;
 
