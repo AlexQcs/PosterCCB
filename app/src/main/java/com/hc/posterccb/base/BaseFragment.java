@@ -1,5 +1,6 @@
 package com.hc.posterccb.base;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -11,6 +12,7 @@ import com.hc.posterccb.mvp.IView;
 import com.hc.posterccb.util.TUtil;
 
 import butterknife.ButterKnife;
+import butterknife.Unbinder;
 
 /**
  * Created by alex on 2017/7/8.
@@ -20,17 +22,21 @@ public abstract class BaseFragment<T extends BasePresenter,E extends BaseModel> 
     protected View rootView;
     protected T mPresenter;
     protected E mModel;
+    protected Unbinder mUnbinder;
+    protected Context mContext;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         if (rootView==null)
             rootView=inflater.inflate(getLayoutResource(),container,false);
-        ButterKnife.bind(this,rootView);
+        mContext=getActivity();
+        mUnbinder=ButterKnife.bind(mContext,rootView);
         mPresenter= TUtil.getT(this,0);
         mModel=TUtil.getT(this,1);
         initPresenter();
         initView();
+
         return rootView;
     }
 
@@ -50,7 +56,7 @@ public abstract class BaseFragment<T extends BasePresenter,E extends BaseModel> 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        ButterKnife.unbind(this);
+        mUnbinder.unbind();
         if (mPresenter!=null){
             mPresenter.detachView();
         }

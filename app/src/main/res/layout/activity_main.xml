@@ -1,33 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="1920dp"
     android:layout_height="1080dp"
-    tools:context="com.hc.posterccb.ui.acitivity.MainActivity"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context="com.hc.posterccb.ui.acitivity.MainActivity">
 
-    <com.pili.pldroid.player.widget.PLVideoView
-        android:id="@+id/videoview_one"
-        android:layout_width="1920dp"
-        android:layout_height="1080dp"
-        >
 
-    </com.pili.pldroid.player.widget.PLVideoView>
-    <com.pili.pldroid.player.widget.PLVideoView
-        android:id="@+id/videoview_two"
-        android:layout_width="1920dp"
-        android:layout_height="1080dp"
-        >
+    <!--<com.pili.pldroid.player.widget.PLVideoView-->
+    <!--android:id="@+id/videoview_one"-->
+    <!--android:layout_width="1920dp"-->
+    <!--android:layout_height="1080dp"-->
+    <!--&gt;-->
 
-    </com.pili.pldroid.player.widget.PLVideoView>
+    <!--</com.pili.pldroid.player.widget.PLVideoView>-->
+
+    <!--<com.pili.pldroid.player.widget.PLVideoView-->
+    <!--android:id="@+id/videoview_two"-->
+    <!--android:layout_width="1920dp"-->
+    <!--android:layout_height="1080dp"-->
+    <!--&gt;-->
+
+    <!--</com.pili.pldroid.player.widget.PLVideoView>-->
     <Button
-        android:id="@+id/btn_upload"
+        android:id="@+id/btn_test"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-    <Button
-        android:id="@+id/btn_download"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-</LinearLayout>
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="测试"
+        android:textSize="40sp"/>
+
+    <com.hc.posterccb.widget.MarqueeTextView
+        android:id="@+id/tv_realtime_top"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:background="#00000000"
+        android:maxLines="1"
+        android:text="Return in bounds (allocated by the caller) the smallest rectangle that encloses all of the characters, with an implied origin at (0,0).由调用者返回在边界(分配)的最小矩形包含所有的字符,以隐含原点(0,0)。"
+        android:textColor="#000000"
+        android:textSize="20sp"/>
+
+</RelativeLayout>

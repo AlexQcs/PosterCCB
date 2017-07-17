@@ -1,18 +1,38 @@
 package com.hc.posterccb.ui.acitivity;
 
+import android.os.PowerManager;
 import android.view.View;
+import android.widget.Button;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
 import com.hc.posterccb.base.BaseActivity;
 import com.hc.posterccb.ui.contract.MainContract;
 import com.hc.posterccb.ui.presenter.MainPresenter;
+import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.StringUtils;
+import com.hc.posterccb.widget.MarqueeTextView;
+
+import butterknife.BindView;
+import butterknife.OnClick;
+
 
 public class MainActivity extends BaseActivity<MainPresenter> implements MainContract.MainView {
 
+    @BindView(R.id.tv_realtime_top)
+    MarqueeTextView mStvRealTimeTop;
+
+    @BindView(R.id.btn_test)
+    Button mBtnTest;
+
     private String TAG = "MainActivity";
+
+    private PowerManager localPowerManager = null;// 电源管理对象
+    private PowerManager.WakeLock localWakeLock = null;// 电源锁
+
+//    (R.id.tv_realtime_top)
+//    ScrollTextView mTvRealTimeTop;
 
     private String mTaskName = "getTask";
     private String mSerialNumber = Constant.getSerialNumber();
@@ -24,8 +44,8 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     @Override
     protected void initData() {
-
-        mPresenter.pollingTask(mTaskName,mSerialNumber);
+        FileUtils.checkAppFile();
+        mPresenter.pollingTask(mTaskName, mSerialNumber);
     }
 
     @Override
@@ -33,8 +53,35 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     }
 
+    @OnClick(R.id.btn_test)
+    void testClick() {
+        LogUtils.e(TAG, "按钮点击");
+        if (localWakeLock.isHeld()) {
+            return;
+        } else {
+            localWakeLock.setReferenceCounted(false);
+            localWakeLock.release(); // 释放设备电源锁
+        }
+//        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
     @Override
     protected void initView() {
+//        mTvRealTimeTop.startScroll();
+//        mStvRealTimeTop.startScroll();
+//        mStvRealTimeTop.setRndDuration(5000);
+//        mStvRealTimeTop.computeScroll();
+        mStvRealTimeTop.init(getWindowManager());// 初始化必要参数
+        mStvRealTimeTop.setSpeed(4.0);// 设置滚动速度
+        mStvRealTimeTop.startScroll();// 开始滚动
+        localPowerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        // 获取PowerManager.WakeLock对象,后面的参数|表示同时传入两个值,最后的是LogCat里用的Tag
+        localWakeLock = this.localPowerManager.newWakeLock(32, "hahaha");// 第一个参数为电源锁级别，第二个是日志tag
+        localWakeLock.acquire();// 申请设备电源锁
+//        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+//做我们的工作，在这个阶段，我们的屏幕会持续点亮
+//释放锁，屏幕熄灭。
 
     }
 

@@ -5,8 +5,11 @@ import android.util.Xml;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.bean.PostResult;
-import com.hc.posterccb.bean.polling.ProgramBean;
+import com.hc.posterccb.bean.polling.ControlBean;
 import com.hc.posterccb.bean.polling.PollResultBean;
+import com.hc.posterccb.bean.polling.ProgramBean;
+import com.hc.posterccb.bean.polling.RealTimeMsgBean;
+import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -168,7 +171,7 @@ public class XmlUtils {
                         if (parser.getName().equals(Constant.TASKTYPE)) {
 
                             eventType = parser.next();
-                            String tasktype = parser.getText().trim();
+                            xmlType = parser.getText().trim();
                             return xmlType;
                             //根据类型返回指定字节
                         }
@@ -195,20 +198,28 @@ public class XmlUtils {
             parser.setInput(in, "UTF-8");
             switch (tasktype) {
                 case Constant.POLLING_PROGRAM:
-                    LogUtils.e("XmlUtils", "检测到数据类型为播放任务");
+                    LogUtils.e("XmlUtils", "检测到数据类型为播放类任务");
                     postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG, ProgramBean.class, Constant.XML_STARTDOM, PollResultBean.class);
-                    return postResult;
+                    break;
+                case Constant.POLLING_CONTROL:
+                    LogUtils.e("XmlUtils", "检测到数据类型为控制类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ControlBean.class);
+                    break;
                 case Constant.POLLING_UPGRADE:
-                    LogUtils.e("XmlUtils", "检测到数据类型为播放任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG, UpGradeBean.class, Constant.XML_STARTDOM, PollResultBean.class);
-                    return postResult;
+                    LogUtils.e("XmlUtils", "检测到数据类型为升级类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, UpGradeBean.class);
+                    break;
+                case Constant.POLLING_REALTIMEMSG:
+                    LogUtils.e("XmlUtils", "检测到数据类型为即时消息类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM, RealTimeMsgBean.class);
+                    break;
             }
+            return postResult;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return postResult;
     }
-
 
 
 

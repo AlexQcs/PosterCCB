@@ -10,6 +10,7 @@
     <!--添加网络状态监测的权限-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.DEVICE_POWER"/>
 
     <application
         android:allowBackup="true"

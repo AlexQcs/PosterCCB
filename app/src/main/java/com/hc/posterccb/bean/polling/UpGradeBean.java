@@ -51,4 +51,15 @@ public class UpGradeBean {
     public void setLink(String link) {
         this.link = link;
     }
+
+    @Override
+    public String toString() {
+        return "UpGradeBean{" +
+                "taskcount='" + taskcount + '\'' +
+                ", tasktype='" + tasktype + '\'' +
+                ", taskid='" + taskid + '\'' +
+                ", version='" + version + '\'' +
+                ", link='" + link + '\'' +
+                '}';
+    }
 }

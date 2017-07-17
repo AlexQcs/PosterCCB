@@ -9,6 +9,8 @@ import android.widget.Toast;
 import com.hc.posterccb.mvp.IView;
 import com.hc.posterccb.util.LogUtils;
 
+import butterknife.ButterKnife;
+
 /**
  * Created by alex on 2017/7/7.
  */
@@ -22,6 +24,7 @@ public abstract class BaseActivity<P extends BasePresenter> extends FragmentActi
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(getView());
+        ButterKnife.bind(this);
         mPresenter=loadPresenter();
         initCommonData();
         initView();
