@@ -29,7 +29,7 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
         if (rootView==null)
             rootView=inflater.inflate(getLayoutResource(),container,false);
         mContext=getActivity();
-        mUnbinder=ButterKnife.bind(mContext,rootView);
+        mUnbinder=ButterKnife.bind(this,rootView);
         mPresenter= loadPresenter();
         initCommonData();
         initView();

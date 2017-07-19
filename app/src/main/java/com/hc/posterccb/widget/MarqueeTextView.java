@@ -39,7 +39,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
     private static int SCREEN_HEIGHT;
 
     public MarqueeTextView(Context context) {
-        super(context);
+        this(context,null);
         initView();
     }
 

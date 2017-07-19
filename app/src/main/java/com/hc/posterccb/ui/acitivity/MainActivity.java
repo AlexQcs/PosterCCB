@@ -1,21 +1,26 @@
 package com.hc.posterccb.ui.acitivity;
 
+import android.app.FragmentManager;
 import android.graphics.Color;
 import android.os.PowerManager;
+import android.support.v4.app.FragmentTransaction;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
 import com.hc.posterccb.base.BaseActivity;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.ui.contract.MainContract;
+import com.hc.posterccb.ui.fragment.Full_H_Fragment;
 import com.hc.posterccb.ui.presenter.MainPresenter;
 import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.widget.MarqueeTextView;
 
+import butterknife.BindAnim;
 import butterknife.BindView;
 import butterknife.OnClick;
 
@@ -24,15 +29,21 @@ import static java.lang.Integer.parseInt;
 
 public class MainActivity extends BaseActivity<MainPresenter> implements MainContract.MainView {
 
-    @BindView(R.id.tv_realtime_top)
+    @BindView(R.id.tv_realtimetop)
     MarqueeTextView mStvRealTimeTop;
-    @BindView(R.id.tv_realtime_bottom)
+    @BindView(R.id.tv_realtimebottom)
     MarqueeTextView mStvRealTimeBottom;
 
-    @BindView(R.id.btn_test)
-    Button mBtnTest;
+
+
+    private Full_H_Fragment mFull_H_Fragment;
+
+    private android.support.v4.app.FragmentManager mFragmentManager;
+    private FragmentTransaction mFragmentTransaction;
 
     private String TAG = "MainActivity";
+
+
 
     private PowerManager localPowerManager = null;// 电源管理对象
     private PowerManager.WakeLock localWakeLock = null;// 电源锁
@@ -67,53 +78,19 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     }
 
-    @OnClick(R.id.btn_test)
-    void testClick() {
-        LogUtils.e(TAG, "按钮点击");
-        speed = speed + 0.1;
-        mStvRealTimeTop.setSpeed(speed);// 设置滚动速度
-        mStvRealTimeBottom.setSpeed(speed);
-        topStr = topStr + "1";
-        bottomStr = bottomStr + "1";
-
-        LogUtils.e(TAG, topStr + "          " + bottomStr);
-
-        mStvRealTimeTop.setText(String.valueOf(topStr));
-        mStvRealTimeBottom.setText(String.valueOf(bottomStr));
-
-        mStvRealTimeTop.setTextSize(100);
-        mStvRealTimeTop.setTextColor(0xFF00FF);
-        mStvRealTimeTop.setBackgroundResource(R.color.colorAccent);
-
-
-        LogUtils.e("滑动次数", mStvRealTimeTop.getMarquanTimes() + "");
-        if (mStvRealTimeTop.getMarquanTimes() == 5) {
-            mStvRealTimeTop.stopScroll();
-        }
-        if (localWakeLock.isHeld()) {
-            return;
-        } else {
-            localWakeLock.setReferenceCounted(false);
-            localWakeLock.release(); // 释放设备电源锁
-        }
-//        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    }
-
     @Override
     protected void initView() {
 
         mStvRealTimeTop.init(getWindowManager(), 4);// 初始化必要参数
         mStvRealTimeBottom.init(getWindowManager(), 0);
-        mStvRealTimeTop.setSpeed(speed);// 设置滚动速度
-        mStvRealTimeBottom.setSpeed(speed);
-        mStvRealTimeBottom.startScroll();
-        mStvRealTimeTop.startScroll();//开始滚动
-        mStvRealTimeTop.setText(String.valueOf("中中中"));
-        mStvRealTimeBottom.setText(String.valueOf("下面"));
 
-        mStvRealTimeTop.setTextSize(50);
-        mStvRealTimeTop.setTextColor(0xFF00FF);
-        mStvRealTimeTop.setBackgroundResource(R.color.colorAccent);
+        mFull_H_Fragment=new Full_H_Fragment();
+        mFragmentManager=getSupportFragmentManager();
+        mFragmentTransaction=mFragmentManager.beginTransaction();
+//
+        mFragmentTransaction.add(R.id.frame_fragment,mFull_H_Fragment,"Full_H_Fragment");
+        mFragmentTransaction.commit();
+
 
         topStr = mStvRealTimeTop.getText().toString();
         bottomStr = mStvRealTimeBottom.getText().toString();
@@ -122,6 +99,12 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         // 获取PowerManager.WakeLock对象,后面的参数|表示同时传入两个值,最后的是LogCat里用的Tag
         localWakeLock = this.localPowerManager.newWakeLock(32, "hahaha");// 第一个参数为电源锁级别，第二个是日志tag
         localWakeLock.acquire();// 申请设备电源锁
+        if (localWakeLock.isHeld()) {
+            return;
+        } else {
+            localWakeLock.setReferenceCounted(false);
+            localWakeLock.release(); // 释放设备电源锁
+        }
 //        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 //做我们的工作，在这个阶段，我们的屏幕会持续点亮
@@ -145,10 +128,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
             LogUtils.e(TAG, "任务名称为空");
             isNull = true;
         }
-        else if (StringUtils.isEmpty(mSerialNumber)) {
-            LogUtils.e(TAG, "序列号为空");
-            isNull = true;
-        }
+//        else if (StringUtils.isEmpty(mSerialNumber)) {
+//            LogUtils.e(TAG, "序列号为空");
+//            isNull = true;
+//        }
         return isNull;
     }
 

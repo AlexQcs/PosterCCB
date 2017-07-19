@@ -26,6 +26,7 @@ public abstract class BaseActivity<P extends BasePresenter> extends FragmentActi
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(getView());
+        ButterKnife.bind(this);
         mUnbinder=ButterKnife.bind(this);
         mPresenter=loadPresenter();
         initCommonData();
