@@ -3,24 +3,27 @@ package com.hc.posterccb.ui.model;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.google.gson.Gson;
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.base.BaseModel;
 import com.hc.posterccb.bean.PostResult;
+import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
+import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.exception.ApiException;
 import com.hc.posterccb.subscriber.CommonSubscriber;
+import com.hc.posterccb.util.DateFormatUtils;
+import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.JsonUtils;
-import com.hc.posterccb.util.ListDataSave;
 import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.XmlUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.ResponseBody;
@@ -56,7 +59,7 @@ public class MainModel extends BaseModel {
                                             PostResult postResult = XmlUtils.getTaskBean(type, resStr);//通过返回的响应xml报文解析出是哪个任务
                                             Log.e("MainModel", postResult.toString());
                                             //处理任务类型
-                                            resResult(type,postResult);
+                                            resResult(type, postResult, infoHint);
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         }
@@ -83,7 +86,7 @@ public class MainModel extends BaseModel {
     }
 
 
-    public void resResult(String taskType, PostResult postResult) {
+    public void resResult(String taskType, PostResult postResult, InfoHint infoHint) {
         if (postResult.getBean() == null) {
             return;
         }
@@ -94,23 +97,33 @@ public class MainModel extends BaseModel {
                 resProgram(list);
                 break;
             }
-            case Constant.POLLING_UPGRADE:{
-                UpGradeBean bean= (UpGradeBean) postResult.getBean();
+            //升级类任务
+            case Constant.POLLING_UPGRADE: {
+                UpGradeBean bean = (UpGradeBean) postResult.getBean();
                 resResUpgrade(bean);
                 break;
             }
-
-            case Constant.POLLING_CONTROL:{
-                ControlBean bean= (ControlBean) postResult.getBean();
+            //控制类任务
+            case Constant.POLLING_CONTROL: {
+                ControlBean bean = (ControlBean) postResult.getBean();
                 break;
             }
-
-            case Constant.POLLING_REALTIMEMSG:{
-                RealTimeMsgBean bean= (RealTimeMsgBean) postResult.getBean();
-                resResRealTimeMsg(bean);
+            //即时消息类任务
+            case Constant.POLLING_REALTIMEMSG: {
+                RealTimeMsgBean bean = (RealTimeMsgBean) postResult.getBean();
+                resResRealTimeMsg(bean, infoHint);
                 break;
             }
-
+            case Constant.POLLING_CANCELREALTIMEMSG: {
+                PollResultBean bean = (PollResultBean) postResult.getBean();
+                resResCacnleRealTimeMsg(bean, infoHint);
+                break;
+            }
+            case Constant.POLLING_CONFIG: {
+                ConfigBean bean = (ConfigBean) postResult.getBean();
+                resResConfig(bean);
+                break;
+            }
 
         }
     }
@@ -118,32 +131,55 @@ public class MainModel extends BaseModel {
     //播放类任务
     private void resProgram(ArrayList<ProgramBean> list) {
 
-        for (ProgramBean bean : list) {
-            LogUtils.e("resProgram",bean.toString());
+        String arrayStr = JsonUtils.ArrayList2JsonStr(list);
+        LogUtils.e("resProgram", arrayStr);
+        try {
+            FileUtils.coverTxtToFile(arrayStr, Constant.LOCAL_PROGRAM_TXT);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        Gson gson=new Gson();
-        String arrayStr= JsonUtils.ArrayList2JsonStr(list);
-//        JSONArray array= gson.fromObject(list);
-        LogUtils.e("resProgram",arrayStr);
-        ArrayList<ProgramBean> resList=new ArrayList<>();
-        resList=JsonUtils.JsonStr2ArrayList(arrayStr,resList);
-        for (ProgramBean programBean : resList) {
-            LogUtils.e("resProgram",programBean.toString());
-        }
-
-
-        ListDataSave listDataSave=new ListDataSave(ProApplication.getmContext(),"CCB");
-        listDataSave.setDataList("program",list);
     }
 
     //升级任务
     private void resResUpgrade(UpGradeBean bean) {
-       LogUtils.e("resResUpgrade", bean.toString());
+        LogUtils.e("resResUpgrade", bean.toString());
     }
 
     //即时消息类任务
-    private void resResRealTimeMsg(RealTimeMsgBean bean){
+    private void resResRealTimeMsg(RealTimeMsgBean bean, final InfoHint infoHint) {
 
+        final String startTime = bean.getStarttime();
+        final String endtime = bean.getEndtime();
+        infoHint.realTimeMessage(bean);
+        Observable.interval(1, TimeUnit.SECONDS)
+                .subscribe(new Action1<Long>() {
+                    @Override
+                    public void call(Long aLong) {
+                        Date date = new Date();
+                        String currentTime = DateFormatUtils.date2String(date);
+                        if (currentTime.equals(startTime)) {
+                            infoHint.realtimeStart();
+                        } else if (currentTime.equals(endtime)) {
+                            infoHint.realTimeStop();
+                        }
+                    }
+                });
+    }
+
+    //取消即时消息任务
+    private void resResCacnleRealTimeMsg(PollResultBean bean, final InfoHint infoHint) {
+        infoHint.realTimeCancle();
+    }
+
+    //终端配置信息雷任务
+    public void resResConfig(ConfigBean bean) {
+        String jsonStr = JsonUtils.Bean2JsonStr(bean);
+        LogUtils.e("resResConfig", jsonStr);
+        try {
+            FileUtils.coverTxtToFile(jsonStr, Constant.LOCAL_PROGRAM_TXT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -155,5 +191,28 @@ public class MainModel extends BaseModel {
         //请求没有返回
         void failInfo(String str);
 
+        /**
+         * 此方法用于:即时消息任务
+         *
+         * @param bean
+         *         字体大小
+         * @author.Alex.on.2017年7月19日08:49:11
+         */
+        void realTimeMessage(RealTimeMsgBean bean);
+
+        /**
+         * 此方法用于:开始即时消息任务
+         */
+        void realtimeStart();
+
+        /**
+         * 此方法用于:停止即时消息任务
+         */
+        void realTimeStop();
+
+        /**
+         * 此方法用于:取消即时消息任务
+         */
+        void realTimeCancle();
     }
 }

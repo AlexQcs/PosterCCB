@@ -5,9 +5,11 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -27,6 +29,11 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
     public boolean isStarting = false;// 是否开始滚动
     private Paint paint = null;// 绘图样式
     private String text = "";// 文本内容
+
+    private WindowManager mWindowManager;
+
+    private int mMarquanTimes = 1;//控件轮播次数
+    private int mCount = 0;//允许轮播次数
 
     private static int SCREEN_WIDTH;
     private static int SCREEN_HEIGHT;
@@ -56,11 +63,13 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
         return true;
     }
 
-    public void init(WindowManager windowManager) {
+    public void init(WindowManager windowManager, int count) {
+        mWindowManager = windowManager;
+        mCount = count;
         paint = getPaint();
         // 邹奇   2016/11/30  这里可以自己设置文字显示的颜色，这里我设置为了蓝色，下载我的apk自己体验
         // 默认为黑色
-        if(color != 0){
+        if (color != 0) {
             paint.setColor(color);
         }
         text = getText().toString();
@@ -71,15 +80,15 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
                 Display display = windowManager.getDefaultDisplay();
                 Point size = new Point();
                 display.getSize(size);
-                SCREEN_WIDTH= size.x;
-                SCREEN_HEIGHT= size.y;
+                SCREEN_WIDTH = size.x;
+                SCREEN_HEIGHT = size.y;
                 viewWidth = SCREEN_WIDTH;
             }
         }
         step = textLength;
         temp_view_plus_text_length = viewWidth + textLength;
         temp_view_plus_two_text_length = viewWidth + textLength * 2;
-        y = getTextSize() + getPaddingTop();
+//        y = getTextSize() + getPaddingTop();
     }
 
     @Override
@@ -102,7 +111,6 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
         }
         SavedState ss = (SavedState) state;
         super.onRestoreInstanceState(ss.getSuperState());
-
         step = ss.step;
         isStarting = ss.isStarting;
 
@@ -119,7 +127,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
         @Override
         public void writeToParcel(Parcel out, int flags) {
             super.writeToParcel(out, flags);
-            out.writeBooleanArray(new boolean[] { isStarting });
+            out.writeBooleanArray(new boolean[]{isStarting});
             out.writeFloat(step);
         }
 
@@ -145,11 +153,13 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
         }
     }
 
+    //开始
     public void startScroll() {
         isStarting = true;
         invalidate();
     }
 
+    //停止
     public void stopScroll() {
         isStarting = false;
         invalidate();
@@ -157,36 +167,52 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
 
     @Override
     public void onDraw(Canvas canvas) {
+        Rect bounds = new Rect();
+        Paint.FontMetrics fm = paint.getFontMetrics();
+//        paint.setTextAlign(Paint.Align.CENTER);
+        paint.getTextBounds(getText().toString(), 0, getText().toString().length(), bounds);
+
+        y = (getMeasuredHeight() / 2 + bounds.height() / 2) ;
+//        + (fm.descent - fm.ascent) / 2 - fm.descent;
         canvas.drawText(text, temp_view_plus_text_length - step, y, paint);
         if (!isStarting) {
             return;
         }
-        if(speed != 0){
+        if (speed != 0) {
             step += speed;// speed为用户自己设定的文字滚动速度
-        }else {
+        } else {
             step += 0.5;// 用户没有设置速度，则默认0.5为文字滚动速度。
         }
-        if (step > temp_view_plus_two_text_length)
+        if (step > temp_view_plus_two_text_length) {
+            Log.d("mMarquanTimes", mMarquanTimes + "");
+            mMarquanTimes++;
+            if (mMarquanTimes == mCount) stopScroll();
             step = textLength;
+        }
         invalidate();
-
     }
 
     private double speed = 0;// 邹奇  2016/11/30  声明变量表示文字滚动的速度
+
     /**
      * 邹奇   2016/11/30  用户自己设定文字的滚动速度
-     * @param speed 速度（一般设置值为2.0即可，快慢自己可以设置新值调节）
+     *
+     * @param speed
+     *         速度（一般设置值为2.0即可，快慢自己可以设置新值调节）
      */
-    public void setSpeed(double speed){
+    public void setSpeed(double speed) {
         this.speed = speed;
     }
 
     private int color = 0;// 邹奇 2016/11/30  声明变量表示文字显示的颜色
+
     /**
      * 邹奇   2016/11/30  用户自己设定文字显示的颜色
-     * @param color 颜色
+     *
+     * @param color
+     *         颜色
      */
-    public void setColors(int color){
+    public void setColors(int color) {
         this.color = color;
     }
 
@@ -199,11 +225,21 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
     @Override
     protected void onTextChanged(CharSequence text, int start, int lengthBefore, int lengthAfter) {
         super.onTextChanged(text, start, lengthBefore, lengthAfter);
+        init(mWindowManager, mCount);
         startScroll();
+    }
+
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
     }
 
     /**
      * 判断TextView的内容宽度是否超出其可用宽度
+     *
      * @return
      */
     public boolean isOverFlowed() {
@@ -211,13 +247,19 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
         Paint textViewPaint = getPaint();
         float textWidth = textViewPaint.measureText(getText().toString());
         if (textWidth > availableWidth) {
-            LogUtils.e("isOverFlowed","滑动");
+            LogUtils.e("isOverFlowed", "滑动");
             return true;
         } else {
-            LogUtils.e("isOverFlowed","不滑动");
+            LogUtils.e("isOverFlowed", "不滑动");
             return false;
         }
     }
 
+    public int getMarquanTimes() {
+        return mMarquanTimes;
+    }
 
+    public void setMarquanTimes(int marquanTimes) {
+        mMarquanTimes = marquanTimes;
+    }
 }

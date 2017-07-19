@@ -6,9 +6,9 @@ package com.hc.posterccb.bean.polling;
  */
 
 public class ConfigBean {
-    public String taskcount;//
-    public String taskitem;//
-    public String taskid;//
+    public String taskcount;
+    public String taskitem;
+    public String taskid;
     public String staruptime;//开机时间 HH:MM:SS
     public String shutdowntime;//关机时间 HH:MM:SS
     public String diskspacealarm;//硬盘告警阀值，单位（MB）

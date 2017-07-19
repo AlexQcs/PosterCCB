@@ -1,5 +1,6 @@
 package com.hc.posterccb.ui.acitivity;
 
+import android.graphics.Color;
 import android.os.PowerManager;
 import android.view.View;
 import android.widget.Button;
@@ -7,6 +8,7 @@ import android.widget.Button;
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
 import com.hc.posterccb.base.BaseActivity;
+import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.ui.contract.MainContract;
 import com.hc.posterccb.ui.presenter.MainPresenter;
 import com.hc.posterccb.util.FileUtils;
@@ -17,11 +19,15 @@ import com.hc.posterccb.widget.MarqueeTextView;
 import butterknife.BindView;
 import butterknife.OnClick;
 
+import static java.lang.Integer.parseInt;
+
 
 public class MainActivity extends BaseActivity<MainPresenter> implements MainContract.MainView {
 
     @BindView(R.id.tv_realtime_top)
     MarqueeTextView mStvRealTimeTop;
+    @BindView(R.id.tv_realtime_bottom)
+    MarqueeTextView mStvRealTimeBottom;
 
     @BindView(R.id.btn_test)
     Button mBtnTest;
@@ -31,11 +37,19 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     private PowerManager localPowerManager = null;// 电源管理对象
     private PowerManager.WakeLock localWakeLock = null;// 电源锁
 
-//    (R.id.tv_realtime_top)
+    //    (R.id.tv_realtime_top)
 //    ScrollTextView mTvRealTimeTop;
-
+    //轮询任务tag
     private String mTaskName = "getTask";
+    //机器码
     private String mSerialNumber = Constant.getSerialNumber();
+    //区分即时消息类的位置
+    private String mRealTimePosition = "top";
+
+    private String topStr;
+    private String bottomStr;
+    private double speed = 3;
+
 
     @Override
     protected MainPresenter loadPresenter() {
@@ -56,6 +70,26 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @OnClick(R.id.btn_test)
     void testClick() {
         LogUtils.e(TAG, "按钮点击");
+        speed = speed + 0.1;
+        mStvRealTimeTop.setSpeed(speed);// 设置滚动速度
+        mStvRealTimeBottom.setSpeed(speed);
+        topStr = topStr + "1";
+        bottomStr = bottomStr + "1";
+
+        LogUtils.e(TAG, topStr + "          " + bottomStr);
+
+        mStvRealTimeTop.setText(String.valueOf(topStr));
+        mStvRealTimeBottom.setText(String.valueOf(bottomStr));
+
+        mStvRealTimeTop.setTextSize(100);
+        mStvRealTimeTop.setTextColor(0xFF00FF);
+        mStvRealTimeTop.setBackgroundResource(R.color.colorAccent);
+
+
+        LogUtils.e("滑动次数", mStvRealTimeTop.getMarquanTimes() + "");
+        if (mStvRealTimeTop.getMarquanTimes() == 5) {
+            mStvRealTimeTop.stopScroll();
+        }
         if (localWakeLock.isHeld()) {
             return;
         } else {
@@ -67,13 +101,23 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     @Override
     protected void initView() {
-//        mTvRealTimeTop.startScroll();
-//        mStvRealTimeTop.startScroll();
-//        mStvRealTimeTop.setRndDuration(5000);
-//        mStvRealTimeTop.computeScroll();
-        mStvRealTimeTop.init(getWindowManager());// 初始化必要参数
-        mStvRealTimeTop.setSpeed(4.0);// 设置滚动速度
-        mStvRealTimeTop.startScroll();// 开始滚动
+
+        mStvRealTimeTop.init(getWindowManager(), 4);// 初始化必要参数
+        mStvRealTimeBottom.init(getWindowManager(), 0);
+        mStvRealTimeTop.setSpeed(speed);// 设置滚动速度
+        mStvRealTimeBottom.setSpeed(speed);
+        mStvRealTimeBottom.startScroll();
+        mStvRealTimeTop.startScroll();//开始滚动
+        mStvRealTimeTop.setText(String.valueOf("中中中"));
+        mStvRealTimeBottom.setText(String.valueOf("下面"));
+
+        mStvRealTimeTop.setTextSize(50);
+        mStvRealTimeTop.setTextColor(0xFF00FF);
+        mStvRealTimeTop.setBackgroundResource(R.color.colorAccent);
+
+        topStr = mStvRealTimeTop.getText().toString();
+        bottomStr = mStvRealTimeBottom.getText().toString();
+
         localPowerManager = (PowerManager) getSystemService(POWER_SERVICE);
         // 获取PowerManager.WakeLock对象,后面的参数|表示同时传入两个值,最后的是LogCat里用的Tag
         localWakeLock = this.localPowerManager.newWakeLock(32, "hahaha");// 第一个参数为电源锁级别，第二个是日志tag
@@ -100,11 +144,89 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         if (StringUtils.isEmpty(mTaskName)) {
             LogUtils.e(TAG, "任务名称为空");
             isNull = true;
-        } else if (StringUtils.isEmpty(mSerialNumber)) {
+        }
+        else if (StringUtils.isEmpty(mSerialNumber)) {
             LogUtils.e(TAG, "序列号为空");
             isNull = true;
         }
         return isNull;
+    }
+
+    @Override
+    public void setRealTimeText(RealTimeMsgBean bean) {
+
+        String position = bean.getPosition();
+        mRealTimePosition = position;
+        if (position.equals("top")) {
+            setMarqueeTextView(mStvRealTimeTop, bean);
+        } else if (position.equals("under")) {
+            setMarqueeTextView(mStvRealTimeBottom, bean);
+        }
+    }
+
+    @Override
+    public void startRealtimeTask() {
+        if (mRealTimePosition.equals("top")) {
+            mStvRealTimeTop.startScroll();
+        } else if (mRealTimePosition.equals("under")) {
+            mStvRealTimeBottom.startScroll();
+        }
+    }
+
+    @Override
+    public void stopRealtimeTask() {
+        if (mRealTimePosition.equals("top")) {
+            mStvRealTimeTop.stopScroll();
+        } else if (mRealTimePosition.equals("under")) {
+            mStvRealTimeBottom.stopScroll();
+        }
+    }
+
+    @Override
+    public void cancleRealtimeTask() {
+        mStvRealTimeTop.stopScroll();
+        mStvRealTimeBottom.stopScroll();
+    }
+
+    void setMarqueeTextView(MarqueeTextView view, RealTimeMsgBean bean) {
+        //字体大小
+        float fontSize = Float.parseFloat(bean.getFontsize());
+        //背景颜色
+        int bgColor = Color.parseColor(bean.getBgcolor());
+        //字体颜色
+        int fontColor = Color.parseColor(bean.getFontcolor());
+        //播放速度
+        int speed = parseInt(bean.getSpeed());
+        //播放时长或者播放时间
+        if (!("").equals(bean.getCount())) {
+            int count = parseInt(bean.getCount());
+            if (mStvRealTimeTop.getMarquanTimes() == count) {
+                mStvRealTimeTop.stopScroll();
+            }
+
+        } else if (!("").equals(bean.getTimelength())) {
+            int timeLength = parseInt(bean.getTimelength());
+        }
+        //播放的内容
+        String message = bean.getMessage();
+
+        view.setText(message);
+        view.setTextSize(fontSize);
+        view.setBackgroundColor(bgColor);
+        view.setTextColor(fontColor);
+        switch (speed) {
+            case 0:
+                view.setSpeed(1);
+                break;
+            case 1:
+                view.setSpeed(2);
+                break;
+            case 2:
+                view.setSpeed(4);
+                break;
+        }
+
+
     }
 
     @Override

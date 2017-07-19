@@ -67,6 +67,7 @@ public class Http {
             @Override
             public Response intercept(Chain chain) throws IOException {
                 Request originalRequest = chain.request();
+
                 Request.Builder requestBuilder = originalRequest.newBuilder()
                         // Provide your custom header here
 //                        .header("token", (String) SpUtils.get("token", ""))

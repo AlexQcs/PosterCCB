@@ -1,8 +1,8 @@
 package com.hc.posterccb.util;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 
 /**
@@ -16,10 +16,21 @@ public class JsonUtils {
         return result;
     }
 
-    public static <T> ArrayList<T> JsonStr2ArrayList(String jsonStr,Object o){
+    public static <T> ArrayList<T> JsonStr2ArrayList(String jsonStr,Type typeOfT){
         Gson gson=new Gson();
-
-        ArrayList<T> resList= gson.fromJson(jsonStr,new TypeToken<ArrayList<T>>(){}.getType());
+        ArrayList<T> resList= gson.fromJson(jsonStr,typeOfT);
         return resList;
+    }
+
+    public static <T> String Bean2JsonStr(T t){
+        Gson gson=new Gson();
+        String result=gson.toJson(t);
+        return result;
+    }
+
+    public static <T> T JsonStr2Bean(String jsonStr,Type typeOfT){
+        Gson gson=new Gson();
+        T t=gson.fromJson(jsonStr,typeOfT);
+        return t;
     }
 }

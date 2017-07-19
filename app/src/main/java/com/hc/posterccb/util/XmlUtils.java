@@ -5,6 +5,7 @@ import android.util.Xml;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.bean.PostResult;
+import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
 import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
@@ -154,7 +155,7 @@ public class XmlUtils {
         String xmlType = "no";
         try {
             // 由android.util.Xml创建一个XmlPullParser实例
-            InputStream in = new ByteArrayInputStream( xmlStr.getBytes());
+            InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
             XmlPullParser parser = Xml.newPullParser();
             parser.setInput(in, "UTF-8");
             //产生第一个事件
@@ -189,38 +190,45 @@ public class XmlUtils {
     }
 
 
-    public static PostResult getTaskBean(String tasktype,String xmlStr){
+    public static PostResult getTaskBean(String tasktype, String xmlStr) {
 
         PostResult postResult = null;
         try {
-            InputStream in = new ByteArrayInputStream( xmlStr.getBytes());
+            InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
             XmlPullParser parser = Xml.newPullParser();
             parser.setInput(in, "UTF-8");
             switch (tasktype) {
                 case Constant.POLLING_PROGRAM:
                     LogUtils.e("XmlUtils", "检测到数据类型为播放类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG, ProgramBean.class, Constant.XML_STARTDOM, PollResultBean.class);
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, ProgramBean.class, Constant.XML_STARTDOM, PollResultBean.class);
                     break;
                 case Constant.POLLING_CONTROL:
                     LogUtils.e("XmlUtils", "检测到数据类型为控制类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ControlBean.class);
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ControlBean.class);
                     break;
                 case Constant.POLLING_UPGRADE:
                     LogUtils.e("XmlUtils", "检测到数据类型为升级类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, UpGradeBean.class);
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, UpGradeBean.class);
                     break;
                 case Constant.POLLING_REALTIMEMSG:
                     LogUtils.e("XmlUtils", "检测到数据类型为即时消息类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM, RealTimeMsgBean.class);
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, RealTimeMsgBean.class);
                     break;
-            }
-            return postResult;
+                case Constant.POLLING_CANCELREALTIMEMSG:
+                    LogUtils.e("XmlUtils", "检测到数据类型为取消即时消息类任务");
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
+                    break;
+                case Constant.POLLING_CONFIG:
+                    LogUtils.e("XmlUtils", "检测到数据类型为取消即时消息类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class ,Constant.XML_STARTDOM,ConfigBean.class);
+                    break;
+        }
+        return postResult;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return postResult;
     }
-
 
 
 }

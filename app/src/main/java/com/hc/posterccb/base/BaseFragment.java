@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.hc.posterccb.mvp.IView;
-import com.hc.posterccb.util.TUtil;
 
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
@@ -18,10 +17,9 @@ import butterknife.Unbinder;
  * Created by alex on 2017/7/8.
  */
 
-public abstract class BaseFragment<T extends BasePresenter,E extends BaseModel> extends Fragment implements IView{
+public abstract class BaseFragment<P extends BasePresenter> extends Fragment implements IView{
     protected View rootView;
-    protected T mPresenter;
-    protected E mModel;
+    protected P mPresenter;
     protected Unbinder mUnbinder;
     protected Context mContext;
 
@@ -32,13 +30,28 @@ public abstract class BaseFragment<T extends BasePresenter,E extends BaseModel> 
             rootView=inflater.inflate(getLayoutResource(),container,false);
         mContext=getActivity();
         mUnbinder=ButterKnife.bind(mContext,rootView);
-        mPresenter= TUtil.getT(this,0);
-        mModel=TUtil.getT(this,1);
+        mPresenter= loadPresenter();
+        initCommonData();
+        initView();
+        initListener();
+        initData();
         initPresenter();
         initView();
-
+        
         return rootView;
     }
+
+    protected abstract void initListener();
+
+    protected abstract void initData();
+
+    private void initCommonData() {
+        if (mPresenter!=null)
+            mPresenter.attachView(this);
+    }
+
+
+    protected abstract P loadPresenter();
 
     //获取布局文件
     protected abstract int getLayoutResource();

@@ -18,6 +18,7 @@ public class Constant {
 
     public static final String XML_STARTDOM = "command";
     public static final String XML_LISTTAG = "content";
+    public static final String XML_CONFIG = "config";
 
     //轮询返回响应类型
     //播放任务
@@ -25,11 +26,13 @@ public class Constant {
     //升级任务
     public static final String POLLING_UPGRADE = "upgrade";
     //控制类任务
-    public static final String POLLING_CONTROL="control";
-
+    public static final String POLLING_CONTROL = "control";
     //即时消息类任务
     public static final String POLLING_REALTIMEMSG = "realtimemsg";
-
+    //取消即时消息类任务
+    public static final String POLLING_CANCELREALTIMEMSG = "cancelrealtimemsg";
+    //终端配置类任务
+    public static final String POLLING_CONFIG = "config";
 
 
     public static final String LOCAL_FILE_PATH = Environment.getExternalStorageDirectory() + "/PosterCCB";
@@ -37,6 +40,7 @@ public class Constant {
     public static final String LOCAL_PROGRAM_PATH = LOCAL_FILE_PATH + "/media";
     public static final String LOCAL_PROGRAM_TXT = LOCAL_PROGRAM_PATH + "/program.txt";
     public static final String LOCAL_ERROR_TXT = LOCAL_FILE_PATH + "/error.txt";
+    public static final String LOCAL_CONFIG_TXT = LOCAL_FILE_PATH + "/config.txt";
 
     //获取机器码
     public static String getSerialNumber() {

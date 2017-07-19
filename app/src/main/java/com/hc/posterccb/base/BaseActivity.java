@@ -10,6 +10,7 @@ import com.hc.posterccb.mvp.IView;
 import com.hc.posterccb.util.LogUtils;
 
 import butterknife.ButterKnife;
+import butterknife.Unbinder;
 
 /**
  * Created by alex on 2017/7/7.
@@ -19,12 +20,13 @@ public abstract class BaseActivity<P extends BasePresenter> extends FragmentActi
 
     protected View mView;
     protected P mPresenter;
+    protected Unbinder mUnbinder;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(getView());
-        ButterKnife.bind(this);
+        mUnbinder=ButterKnife.bind(this);
         mPresenter=loadPresenter();
         initCommonData();
         initView();
@@ -98,6 +100,7 @@ public abstract class BaseActivity<P extends BasePresenter> extends FragmentActi
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mUnbinder.unbind();
         if (mPresenter!=null)
             mPresenter.detachView();
     }

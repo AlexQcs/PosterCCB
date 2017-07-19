@@ -4,6 +4,8 @@ import android.util.Log;
 
 import com.hc.posterccb.Constant;
 
+import org.apache.http.util.EncodingUtils;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,6 +22,40 @@ import java.util.List;
  */
 
 public class FileUtils {
+
+
+
+    // 读在/mnt/sdcard/目录下面的文件
+
+    public static String readFileSdcard(String fileName) {
+
+        String res = "";
+
+        try {
+
+            FileInputStream fin = new FileInputStream(fileName);
+
+            int length = fin.available();
+
+            byte[] buffer = new byte[length];
+
+            fin.read(buffer);
+
+            res = EncodingUtils.getString(buffer, "UTF-8");
+
+            fin.close();
+
+        }
+
+        catch (Exception e) {
+
+            e.printStackTrace();
+
+        }
+
+        return res;
+
+    }
 
     /**
      * 此方法用于:创建新文件夹
@@ -218,8 +254,9 @@ public class FileUtils {
             folderCreate(Constant.LOCAL_FILE_PATH);
             folderCreate(Constant.LOCAL_LOG_PATH);
             folderCreate(Constant.LOCAL_PROGRAM_PATH);
-            folderCreate(Constant.LOCAL_PROGRAM_TXT);
+            fileCreate(Constant.LOCAL_PROGRAM_TXT);
             fileCreate(Constant.LOCAL_ERROR_TXT);
+            fileCreate(Constant.LOCAL_CONFIG_TXT);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -227,8 +264,8 @@ public class FileUtils {
     }
 
 
-    // 将字符串写入到文本文件中
-    public static void writeTxtToFile(String strcontent, String filePath) throws IOException {
+    // 将字符串追加写入到文本文件中
+    public static void additionTxtToFile(String strcontent, String filePath) throws IOException {
         FileWriter fw = null;
         BufferedWriter bw = null;
         String datetime = "";
@@ -236,13 +273,32 @@ public class FileUtils {
             SimpleDateFormat tempDate = new SimpleDateFormat("yyyy-MM-dd" + " " + "hh:mm:ss   ");
             datetime = tempDate.format(new Date()).toString();
             fw = new FileWriter(filePath, true);
-
             bw = new BufferedWriter(fw);
-
             String myreadline = datetime + strcontent;
-
             bw.write(myreadline + "\r\n");
             bw.newLine();
+            bw.flush();
+            bw.close();
+            fw.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            try {
+                bw.close();
+                fw.close();
+            } catch (IOException e1) {
+
+            }
+        }}
+
+        // 将字符串覆盖写入到文本文件中
+    public static void coverTxtToFile(String strcontent, String filePath) throws IOException {
+        FileWriter fw = null;
+        BufferedWriter bw = null;
+
+        try {
+            fw = new FileWriter(filePath, false);
+            bw = new BufferedWriter(fw);
+            bw.write(strcontent);
             bw.flush();
             bw.close();
             fw.close();
