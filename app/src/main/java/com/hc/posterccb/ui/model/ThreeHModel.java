@@ -10,11 +10,10 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 /**
- * Created by alex on 2017/7/19.
+ * Created by alex on 2017/7/20.
  */
 
-public class FullHModel extends BaseModel {
-
+public class ThreeHModel extends BaseModel {
     public void getProgram(@NonNull String programPath, final InfoHint infoHint) {
 //        String jsonStr = FileUtils.readFileSdcard(programPath);
 //        ArrayList<ProgramBean> programList = JsonUtils.JsonStr2ArrayList(jsonStr, new TypeToken<ArrayList<ProgramBean>>() {
@@ -66,4 +65,5 @@ public class FullHModel extends BaseModel {
 
         void playSuccessLog(String msg);
     }
+
 }

@@ -1,12 +1,11 @@
 package com.hc.posterccb.ui.contract;
 
 /**
- * Created by alex on 2017/7/19.
+ * Created by alex on 2017/7/20.
  */
 
-public class FullHContract {
-
-    public interface FullHView {
+public class ThreeHContract {
+    public interface ThreeHView {
         //        void playProgram(ArrayList<ProgramBean> list);
         void playProgram(String path);
 
@@ -15,7 +14,7 @@ public class FullHContract {
         void playError(String msg);
     }
 
-    public interface FullHFragmentPresenter {
+    public interface ThreeHFragmentPresenter {
         void getProgramList(String path);
     }
 }

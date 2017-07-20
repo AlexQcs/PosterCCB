@@ -16,6 +16,37 @@ public class FullHFragmentPresenter extends BasePresenter<Full_H_Fragment> imple
 
 
     @Override
+    public void getProgramList(String path) {
+        if (!getIView().checkPostParamNull()) {
+            ((FullHModel) getiModelMap().get("postplaylog")).getProgram(path, new FullHModel.InfoHint() {
+
+//                @Override
+//                public void playVideo(ArrayList<ProgramBean> list) {
+//                    getIView().playProgram(list);
+//                }
+
+                //                @Override
+
+
+                @Override
+                public void playVideo(String path) {
+                    getIView().playProgram(path);
+                }
+
+                @Override
+                public void playErrorLog(String msg) {
+                    getIView().playSuccess(msg);
+                }
+
+                @Override
+                public void playSuccessLog(String msg) {
+                    getIView().playError(msg);
+                }
+            });
+        }
+    }
+
+    @Override
     public HashMap<String, IModel> getiModelMap() {
         return loadModelMap(new FullHModel());
     }
@@ -27,8 +58,5 @@ public class FullHFragmentPresenter extends BasePresenter<Full_H_Fragment> imple
         return map;
     }
 
-    @Override
-    public void buildPlayLog(String log) {
 
-    }
 }

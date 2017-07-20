@@ -1,12 +1,9 @@
 package com.hc.posterccb.ui.acitivity;
 
-import android.app.FragmentManager;
 import android.graphics.Color;
 import android.os.PowerManager;
 import android.support.v4.app.FragmentTransaction;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
@@ -20,9 +17,7 @@ import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.widget.MarqueeTextView;
 
-import butterknife.BindAnim;
 import butterknife.BindView;
-import butterknife.OnClick;
 
 import static java.lang.Integer.parseInt;
 
@@ -35,14 +30,12 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     MarqueeTextView mStvRealTimeBottom;
 
 
-
     private Full_H_Fragment mFull_H_Fragment;
 
     private android.support.v4.app.FragmentManager mFragmentManager;
     private FragmentTransaction mFragmentTransaction;
 
     private String TAG = "MainActivity";
-
 
 
     private PowerManager localPowerManager = null;// 电源管理对象
@@ -84,11 +77,11 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mStvRealTimeTop.init(getWindowManager(), 4);// 初始化必要参数
         mStvRealTimeBottom.init(getWindowManager(), 0);
 
-        mFull_H_Fragment=new Full_H_Fragment();
-        mFragmentManager=getSupportFragmentManager();
-        mFragmentTransaction=mFragmentManager.beginTransaction();
+        mFull_H_Fragment = new Full_H_Fragment();
+        mFragmentManager = getSupportFragmentManager();
+        mFragmentTransaction = mFragmentManager.beginTransaction();
 //
-        mFragmentTransaction.add(R.id.frame_fragment,mFull_H_Fragment,"Full_H_Fragment");
+        mFragmentTransaction.add(R.id.frame_fragment, mFull_H_Fragment, "Full_H_Fragment");
         mFragmentTransaction.commit();
 
 

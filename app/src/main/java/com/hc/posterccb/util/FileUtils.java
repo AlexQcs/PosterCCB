@@ -24,6 +24,14 @@ import java.util.List;
 public class FileUtils {
 
 
+    public static boolean isExist(String path) {
+        File file = new File(path);
+        if (file.isFile() && file.exists()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     // 读在/mnt/sdcard/目录下面的文件
 
@@ -45,9 +53,7 @@ public class FileUtils {
 
             fin.close();
 
-        }
-
-        catch (Exception e) {
+        } catch (Exception e) {
 
             e.printStackTrace();
 
@@ -61,7 +67,7 @@ public class FileUtils {
      * 此方法用于:创建新文件夹
      *
      * @param path
-     *        文件路径
+     *         文件路径
      * @author.Alex.on.2017年6月10日
      */
     public static void folderCreate(String path) {
@@ -75,7 +81,7 @@ public class FileUtils {
      * 此方法用于:创建新文件
      *
      * @param path
-     *        文件路径
+     *         文件路径
      * @author.Alex.on.2017年6月10日
      */
     public static void fileCreate(String path) {
@@ -247,7 +253,6 @@ public class FileUtils {
     }
 
 
-
     public static void checkAppFile() {
 
         try {
@@ -288,9 +293,10 @@ public class FileUtils {
             } catch (IOException e1) {
 
             }
-        }}
+        }
+    }
 
-        // 将字符串覆盖写入到文本文件中
+    // 将字符串覆盖写入到文本文件中
     public static void coverTxtToFile(String strcontent, String filePath) throws IOException {
         FileWriter fw = null;
         BufferedWriter bw = null;
@@ -317,7 +323,9 @@ public class FileUtils {
 
     /**
      * 用于获取文件夹下面的子文件列表
-     * @param dirPath 目标文件夹
+     *
+     * @param dirPath
+     *         目标文件夹
      * @return List<String>
      */
 
