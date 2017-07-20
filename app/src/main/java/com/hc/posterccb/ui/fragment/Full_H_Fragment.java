@@ -16,14 +16,14 @@ import butterknife.BindView;
 
 public class Full_H_Fragment extends BaseFragment<FullHFragmentPresenter> implements FullHContract.FullHView {
 
-    private static final int MESSAGE_ID_RECONNECTING = 0x01;
-
     private static final String TAG = "Full_H_Fragment";
 
     @BindView(R.id.videoview_one)
     PLVideoView mPLVideoView;
 
-    private String mProgramsPath = Constant.VIDEO_PATH;
+    private String mProgramsPath = Constant.VIDEO1_PATH;
+
+    private static final int MESSAGE_ID_RECONNECTING = 0x01;
     private boolean mIsFragmentPaused = true;
     private String mProgramsPath01 = Constant.VIDEO2_PATH;
 

@@ -16,12 +16,12 @@ import butterknife.BindView;
 
 public class Full_V_Fragment extends BaseFragment<FullVFragmentPresenter> implements FullVContract.FullVView{
 
-    private static final String TAG = "Full_H_Fragment";
+    private static final String TAG = "Full_V_Fragment";
 
     @BindView(R.id.videoview_one)
     PLVideoView mPLVideoView;
 
-    private String mProgramsPath = Constant.VIDEO_PATH;
+    private String mProgramsPath = Constant.VIDEO1_PATH;
 
     @Override
     public void playProgram(String path) {

@@ -1,13 +1,25 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
              xmlns:tools="http://schemas.android.com/tools"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
+             android:layout_width="1080dp"
+             android:layout_height="1920dp"
+              android:orientation="vertical"
              tools:context="com.hc.posterccb.ui.fragment.Three_H_Fragment">
 
     <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment"/>
+    <com.pili.pldroid.player.widget.PLVideoView
+        android:id="@+id/videoview_one"
+        android:layout_width="640dp"
+        android:layout_height="360dp">
+    </com.pili.pldroid.player.widget.PLVideoView>
+    <com.pili.pldroid.player.widget.PLVideoView
+        android:id="@+id/videoview_two"
+        android:layout_width="640dp"
+        android:layout_height="360dp">
+    </com.pili.pldroid.player.widget.PLVideoView>
+    <com.pili.pldroid.player.widget.PLVideoView
+        android:id="@+id/videoview_three"
+        android:layout_width="640dp"
+        android:layout_height="360dp">
+    </com.pili.pldroid.player.widget.PLVideoView>
 
-</FrameLayout>
+</LinearLayout>

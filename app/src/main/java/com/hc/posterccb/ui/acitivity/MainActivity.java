@@ -11,6 +11,7 @@ import com.hc.posterccb.base.BaseActivity;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.ui.contract.MainContract;
 import com.hc.posterccb.ui.fragment.Full_H_Fragment;
+import com.hc.posterccb.ui.fragment.Three_H_Fragment;
 import com.hc.posterccb.ui.presenter.MainPresenter;
 import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.LogUtils;
@@ -31,6 +32,8 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
 
     private Full_H_Fragment mFull_H_Fragment;
+
+    private Three_H_Fragment mThreeHFragment;
 
     private android.support.v4.app.FragmentManager mFragmentManager;
     private FragmentTransaction mFragmentTransaction;
@@ -78,10 +81,12 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mStvRealTimeBottom.init(getWindowManager(), 0);
 
         mFull_H_Fragment = new Full_H_Fragment();
+        mThreeHFragment=new Three_H_Fragment();
+
         mFragmentManager = getSupportFragmentManager();
         mFragmentTransaction = mFragmentManager.beginTransaction();
 //
-        mFragmentTransaction.add(R.id.frame_fragment, mFull_H_Fragment, "Full_H_Fragment");
+        mFragmentTransaction.add(R.id.frame_fragment, mThreeHFragment, "Three_H_Fragment");
         mFragmentTransaction.commit();
 
 

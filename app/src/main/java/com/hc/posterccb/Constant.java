@@ -10,8 +10,9 @@ import java.lang.reflect.Method;
 
 public class Constant {
     public static final String XML_HEAD = "\"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n\"";
-    public static final String VIDEO_PATH = Environment.getExternalStorageDirectory() + "/mv.mp4";
-    public static final String VIDEO2_PATH = Environment.getExternalStorageDirectory() + "/mv2.mp4";
+    public static final String VIDEO1_PATH = Environment.getExternalStorageDirectory() + "/Misc/mv1.mp4";
+    public static final String VIDEO2_PATH = Environment.getExternalStorageDirectory() + "/Misc/mv2.mp4";
+    public static final String VIDEO3_PATH = Environment.getExternalStorageDirectory() + "/Misc/mv3.mp4";
     public static final String UDP_TESTPATH = Environment.getExternalStorageDirectory() + "/Misc/test/";
 
 
