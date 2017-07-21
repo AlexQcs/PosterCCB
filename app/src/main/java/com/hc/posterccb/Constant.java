@@ -10,9 +10,9 @@ import java.lang.reflect.Method;
 
 public class Constant {
     public static final String XML_HEAD = "\"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n\"";
-    public static final String VIDEO1_PATH = Environment.getExternalStorageDirectory() + "/Misc/mv1.mp4";
-    public static final String VIDEO2_PATH = Environment.getExternalStorageDirectory() + "/Misc/mv2.mp4";
-    public static final String VIDEO3_PATH = Environment.getExternalStorageDirectory() + "/Misc/mv3.mp4";
+    public static final String VIDEO1_PATH = Environment.getExternalStorageDirectory() + "/mv1.mp4";
+    public static final String VIDEO2_PATH = Environment.getExternalStorageDirectory() + "/mv2.mp4";
+    public static final String VIDEO3_PATH = Environment.getExternalStorageDirectory() + "/mv3.mp4";
     public static final String UDP_TESTPATH = Environment.getExternalStorageDirectory() + "/Misc/test/";
 
 
@@ -35,6 +35,20 @@ public class Constant {
     public static final String POLLING_CANCELREALTIMEMSG = "cancelrealtimemsg";
     //终端配置类任务
     public static final String POLLING_CONFIG = "config";
+    //播放控制类任务
+    public static final String POLLING_CONTROLPROGRAM = "controlprogram";
+    //通知终端配置上报
+    public static final String POLLING_CFGREPORT = "cfgreport";
+    //通知终端工作状态上报
+    public static final String POLLING_WORKSTATUSREPORT = "workstatusreport";
+    //通知终端在播内容上报
+    public static final String POLLING_MONITORREPORT="monitorreport";
+    //通知终端日志上报
+    public static final String POLLING_LOGREPORT="logreport";
+    //通知终端下载资源文件
+    public static final String POLLING_DOWNLOADRES="downloadres";
+    //通知终端上报资源下载状态
+    public static final String POLLING_DOWNLOADSTATUSREPORT="downloadstatusreport";
 
 
     public static final String LOCAL_FILE_PATH = Environment.getExternalStorageDirectory() + "/PosterCCB";

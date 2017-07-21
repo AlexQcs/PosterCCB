@@ -1,25 +1,34 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             xmlns:tools="http://schemas.android.com/tools"
-             android:layout_width="1080dp"
-             android:layout_height="1920dp"
-              android:orientation="vertical"
-             tools:context="com.hc.posterccb.ui.fragment.Three_H_Fragment">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="1920dp"
+                android:layout_height="1080dp"
+                android:id="@+id/relative_three_h"
+                tools:context="com.hc.posterccb.ui.fragment.Three_H_Fragment">
 
     <!-- TODO: Update blank fragment layout -->
     <com.pili.pldroid.player.widget.PLVideoView
         android:id="@+id/videoview_one"
-        android:layout_width="640dp"
-        android:layout_height="360dp">
-    </com.pili.pldroid.player.widget.PLVideoView>
-    <com.pili.pldroid.player.widget.PLVideoView
-        android:id="@+id/videoview_two"
-        android:layout_width="640dp"
-        android:layout_height="360dp">
-    </com.pili.pldroid.player.widget.PLVideoView>
-    <com.pili.pldroid.player.widget.PLVideoView
-        android:id="@+id/videoview_three"
-        android:layout_width="640dp"
-        android:layout_height="360dp">
+        android:layout_width="610dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true">
     </com.pili.pldroid.player.widget.PLVideoView>
 
-</LinearLayout>
+    <com.pili.pldroid.player.widget.PLVideoView
+        android:id="@+id/videoview_two"
+        android:layout_width="1310dp"
+        android:layout_height="540dp"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@id/videoview_one">
+    </com.pili.pldroid.player.widget.PLVideoView>
+
+    <com.pili.pldroid.player.widget.PLVideoView
+        android:id="@+id/videoview_three"
+        android:layout_width="1310dp"
+        android:layout_height="540dp"
+        android:layout_below="@id/videoview_two"
+        android:layout_toRightOf="@id/videoview_one">
+    </com.pili.pldroid.player.widget.PLVideoView>
+
+
+</RelativeLayout>

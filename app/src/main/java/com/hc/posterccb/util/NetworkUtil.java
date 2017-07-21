@@ -38,9 +38,7 @@ public class NetworkUtil {
         if (null == manager)
             return false;
         NetworkInfo info = manager.getActiveNetworkInfo();
-        if (null == info || !info.isAvailable())
-            return false;
-        return true;
+        return  !(null == info || !info.isAvailable());
     }
 
     /**
@@ -129,11 +127,7 @@ public class NetworkUtil {
         ConnectivityManager connectivityManager = (ConnectivityManager) context
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetInfo = connectivityManager.getActiveNetworkInfo();
-        if (activeNetInfo != null
-                && activeNetInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
-            return true;
-        }
-        return false;
+        return  (activeNetInfo != null && activeNetInfo.getType() == ConnectivityManager.TYPE_MOBILE);
     }
 
     /**
@@ -146,11 +140,8 @@ public class NetworkUtil {
         ConnectivityManager connectivityManager = (ConnectivityManager) context
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetInfo = connectivityManager.getActiveNetworkInfo();
-        if (activeNetInfo != null
-                && activeNetInfo.getType() == ConnectivityManager.TYPE_WIFI) {
-            return true;
-        }
-        return false;
+        return  (activeNetInfo != null
+                && activeNetInfo.getType() == ConnectivityManager.TYPE_WIFI) ;
     }
 
     /**
@@ -163,13 +154,10 @@ public class NetworkUtil {
         ConnectivityManager connectivityManager = (ConnectivityManager) context
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetInfo = connectivityManager.getActiveNetworkInfo();
-        if (activeNetInfo != null
+        return  (activeNetInfo != null
                 && (activeNetInfo.getSubtype() == TelephonyManager.NETWORK_TYPE_EDGE
                 || activeNetInfo.getSubtype() == TelephonyManager.NETWORK_TYPE_GPRS || activeNetInfo
-                .getSubtype() == TelephonyManager.NETWORK_TYPE_CDMA)) {
-            return true;
-        }
-        return false;
+                .getSubtype() == TelephonyManager.NETWORK_TYPE_CDMA)) ;
     }
 
     /**

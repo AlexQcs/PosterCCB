@@ -19,22 +19,37 @@ public class Second_H_Fragment extends BaseFragment<SecondHPresenter> implements
     private static final String TAG = "Second_H_Fragment";
 
     @BindView(R.id.videoview_one)
-    PLVideoView mPLVideoView;
+    PLVideoView mPLVideoViewOne;
+
+    @BindView(R.id.videoview_two)
+    PLVideoView mPLVideoViewTwo;
+
 
     private String mProgramsPath = Constant.VIDEO1_PATH;
 
     @Override
     public void playProgram(String path) {
-        mPLVideoView.setVideoPath(mProgramsPath);
-        mPLVideoView.start();
-        mPLVideoView.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
+        mPLVideoViewOne.setVideoPath(mProgramsPath);
+        mPLVideoViewOne.start();
+        mPLVideoViewOne.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(PLMediaPlayer player) {
-                mPLVideoView.seekTo(0);
-                mPLVideoView.start();
+                mPLVideoViewOne.seekTo(0);
+                mPLVideoViewOne.start();
             }
         });
-        mPLVideoView.setOnErrorListener(mOnErrorListener);
+        mPLVideoViewOne.setOnErrorListener(mOnErrorListener);
+
+        mPLVideoViewTwo.setVideoPath(mProgramsPath);
+        mPLVideoViewTwo.start();
+        mPLVideoViewTwo.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(PLMediaPlayer player) {
+                mPLVideoViewTwo.seekTo(0);
+                mPLVideoViewTwo.start();
+            }
+        });
+        mPLVideoViewTwo.setOnErrorListener(mOnErrorListener);
     }
 
     @Override

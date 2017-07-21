@@ -26,11 +26,7 @@ public class FileUtils {
 
     public static boolean isExist(String path) {
         File file = new File(path);
-        if (file.isFile() && file.exists()) {
-            return true;
-        } else {
-            return false;
-        }
+        return  (file.isFile() && file.exists());
     }
 
     // 读在/mnt/sdcard/目录下面的文件

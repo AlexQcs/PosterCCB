@@ -9,6 +9,8 @@ import com.hc.posterccb.base.BaseModel;
 import com.hc.posterccb.bean.PostResult;
 import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
+import com.hc.posterccb.bean.polling.ControlProgramBean;
+import com.hc.posterccb.bean.polling.LogReportBean;
 import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
@@ -114,18 +116,75 @@ public class MainModel extends BaseModel {
                 resResRealTimeMsg(bean, infoHint);
                 break;
             }
+            //取消即时类任务
             case Constant.POLLING_CANCELREALTIMEMSG: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
                 resResCacnleRealTimeMsg(bean, infoHint);
                 break;
             }
+            //配置类任务
             case Constant.POLLING_CONFIG: {
                 ConfigBean bean = (ConfigBean) postResult.getBean();
                 resResConfig(bean);
                 break;
             }
+            //控制类任务
+            case Constant.POLLING_CONTROLPROGRAM: {
+                ControlProgramBean bean = (ControlProgramBean) postResult.getBean();
+                resResControlProgram(bean);
+                break;
+            }
+            //终端配置信息日志上报任务
+            case Constant.POLLING_CFGREPORT:{
+                PollResultBean bean=(PollResultBean)postResult.getBean();
+                resResPollResult(bean);
+                break;
+            }
+            //终端配置信息日志上报任务
+            case Constant.POLLING_WORKSTATUSREPORT:{
+                PollResultBean bean=(PollResultBean)postResult.getBean();
+                resResWorkStatuSpreport(bean);
+                break;
+            }
+            //终端工作状态上报类任务
+            case Constant.POLLING_MONITORREPORT:{
+                PollResultBean bean=(PollResultBean)postResult.getBean();
+                resResMonitorReport(bean);
+                break;
+            }
+            case Constant.POLLING_LOGREPORT:{
+                LogReportBean bean=(LogReportBean)postResult.getBean();
+                resResLogReport(bean);
+                break;
+            }
+
+            case Constant.POLLING_DOWNLOADRES:{
+
+            }
 
         }
+    }
+
+    private void resResLogReport(LogReportBean bean) {
+
+    }
+
+    private void resResMonitorReport(PollResultBean bean) {
+
+    }
+
+    private void resResWorkStatuSpreport(PollResultBean bean) {
+
+    }
+
+    //终端配置信息日志上报
+    private void resResPollResult(PollResultBean bean) {
+
+    }
+
+    //控制类任务
+    private void resResControlProgram(ControlProgramBean bean) {
+
     }
 
     //播放类任务

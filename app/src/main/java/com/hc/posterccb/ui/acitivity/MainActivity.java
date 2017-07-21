@@ -4,10 +4,12 @@ import android.graphics.Color;
 import android.os.PowerManager;
 import android.support.v4.app.FragmentTransaction;
 import android.view.View;
+import android.widget.Button;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
 import com.hc.posterccb.base.BaseActivity;
+import com.hc.posterccb.base.BaseFragment;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.ui.contract.MainContract;
 import com.hc.posterccb.ui.fragment.Full_H_Fragment;
@@ -19,6 +21,7 @@ import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.widget.MarqueeTextView;
 
 import butterknife.BindView;
+import butterknife.OnClick;
 
 import static java.lang.Integer.parseInt;
 
@@ -30,6 +33,18 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @BindView(R.id.tv_realtimebottom)
     MarqueeTextView mStvRealTimeBottom;
 
+    @BindView(R.id.btn_pause)
+    Button mBtnPause;
+    @BindView(R.id.btn_relay)
+    Button mBtnRelay;
+    @BindView(R.id.btn_delete)
+    Button mBtnDelete;
+    @BindView(R.id.btn_cancle)
+    Button mBtnCancle;
+
+    private ActivityInteraction mInteraction;
+
+    private BaseFragment mBaseFragment;
 
     private Full_H_Fragment mFull_H_Fragment;
 
@@ -69,9 +84,27 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mPresenter.pollingTask(mTaskName, mSerialNumber);
     }
 
+    @OnClick({R.id.btn_cancle,R.id.btn_delete,R.id.btn_relay,R.id.btn_pause})
+    void contoller(View view){
+        switch (view.getId()){
+            case R.id.btn_pause:
+                mInteraction.pause(1);
+                break;
+            case R.id.btn_relay:
+                mInteraction.relay(1);
+                break;
+        }
+    }
+
+
     @Override
     protected void initListener() {
 
+    }
+
+    public interface ActivityInteraction{
+        void pause(int id);
+        void relay(int id);
     }
 
     @Override
@@ -86,6 +119,13 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mFragmentManager = getSupportFragmentManager();
         mFragmentTransaction = mFragmentManager.beginTransaction();
 //
+
+        if (mThreeHFragment instanceof ActivityInteraction){
+            mInteraction=(ActivityInteraction)mThreeHFragment;
+        }else {
+            throw new IllegalArgumentException("activity must implements FragmentInteraction");
+        }
+
         mFragmentTransaction.add(R.id.frame_fragment, mThreeHFragment, "Three_H_Fragment");
         mFragmentTransaction.commit();
 

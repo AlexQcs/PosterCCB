@@ -7,6 +7,9 @@ import com.hc.posterccb.Constant;
 import com.hc.posterccb.bean.PostResult;
 import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
+import com.hc.posterccb.bean.polling.ControlProgramBean;
+import com.hc.posterccb.bean.polling.DownLoadFileBean;
+import com.hc.posterccb.bean.polling.LogReportBean;
 import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
@@ -219,8 +222,36 @@ public class XmlUtils {
                     postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
                     break;
                 case Constant.POLLING_CONFIG:
-                    LogUtils.e("XmlUtils", "检测到数据类型为取消即时消息类任务");
+                    LogUtils.e("XmlUtils", "检测到数据类型为终端配置类任务");
                     postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class ,Constant.XML_STARTDOM,ConfigBean.class);
+                    break;
+                case Constant.POLLING_CONTROLPROGRAM:
+                    LogUtils.e("XmlUtils","检测到数据类型为控制类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,ControlProgramBean.class);
+                    break;
+                case Constant.POLLING_CFGREPORT:
+                    LogUtils.e("XmlUtils","检测到数据类型为终端配置信息日志上报类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,PollResultBean.class);
+                    break;
+                case Constant.POLLING_WORKSTATUSREPORT:
+                    LogUtils.e("XmlUtils","检测到数据类型为终端工作状态上报类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,PollResultBean.class);
+                    break;
+                case Constant.POLLING_MONITORREPORT:
+                    LogUtils.e("XmlUtils","检测到数据类型为终端在播内容上报类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,PollResultBean.class);
+                    break;
+                case Constant.POLLING_LOGREPORT:
+                    LogUtils.e("XmlUtils","检测到数据类型为终端日志上报类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,LogReportBean.class);
+                    break;
+                case Constant.POLLING_DOWNLOADRES:
+                    LogUtils.e("XmlUtils","检测到数据类型为通知终端下载资源文件类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,DownLoadFileBean.class);
+                    break;
+                case Constant.POLLING_DOWNLOADSTATUSREPORT:
+                    LogUtils.e("XmlUtils","检测到数据类型为通知终端上报资源下载状态类任务");
+                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,PollResultBean.class);
                     break;
         }
         return postResult;

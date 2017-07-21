@@ -48,4 +48,29 @@
         android:textColor="#000000"
         android:textSize="50sp"/>
 
+    <Button
+        android:id="@+id/btn_pause"
+        android:text="停止"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <Button
+        android:id="@+id/btn_relay"
+        android:layout_below="@id/btn_pause"
+        android:text="恢复"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <Button
+        android:id="@+id/btn_delete"
+        android:text="删除"
+        android:layout_below="@id/btn_relay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btn_cancle"
+        android:text="取消"
+        android:layout_below="@id/btn_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
 </RelativeLayout>

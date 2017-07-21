@@ -1,8 +1,12 @@
 package com.hc.posterccb.ui.fragment;
 
+import android.graphics.Color;
+import android.widget.RelativeLayout;
+
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
 import com.hc.posterccb.base.BaseFragment;
+import com.hc.posterccb.ui.acitivity.MainActivity;
 import com.hc.posterccb.ui.contract.ThreeHContract;
 import com.hc.posterccb.ui.presenter.ThreeHPresenter;
 import com.hc.posterccb.util.LogUtils;
@@ -13,10 +17,9 @@ import com.pili.pldroid.player.widget.PLVideoView;
 
 import butterknife.BindView;
 
+public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements ThreeHContract.ThreeHView, MainActivity.ActivityInteraction {
 
-public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements ThreeHContract.ThreeHView {
-
-    private AVOptions options = new AVOptions();
+    private AVOptions options;
     public final static int MEDIA_CODEC_SW_DECODE = 0;
     public final static int MEDIA_CODEC_HW_DECODE = 1;
     public final static int MEDIA_CODEC_AUTO = 2;
@@ -32,6 +35,9 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
     @BindView(R.id.videoview_three)
     PLVideoView mPLVideoViewThree;
 
+    @BindView(R.id.relative_three_h)
+    RelativeLayout mRootView;
+
 
     private String mProgramsPath01 = Constant.VIDEO1_PATH;
     private String mProgramsPath02 = Constant.VIDEO2_PATH;
@@ -44,7 +50,6 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
         mPLVideoViewThree.setAVOptions(options);
 
         mPLVideoViewOne.setVideoPath(mProgramsPath01);
-        mPLVideoViewOne.start();
         mPLVideoViewOne.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(PLMediaPlayer player) {
@@ -55,7 +60,6 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
         mPLVideoViewOne.setOnErrorListener(mOnErrorListener);
 
         mPLVideoViewTwo.setVideoPath(mProgramsPath02);
-        mPLVideoViewTwo.start();
         mPLVideoViewTwo.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(PLMediaPlayer player) {
@@ -66,7 +70,6 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
         mPLVideoViewTwo.setOnErrorListener(mOnErrorListener);
 
         mPLVideoViewThree.setVideoPath(mProgramsPath03);
-        mPLVideoViewThree.start();
         mPLVideoViewThree.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(PLMediaPlayer player) {
@@ -76,6 +79,7 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
         });
         mPLVideoViewThree.setOnErrorListener(mOnErrorListener);
     }
+
 
     @Override
     public void playSuccess(String msg) {
@@ -94,8 +98,9 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
 
     @Override
     protected void initData() {
+        options = new AVOptions();
         mPresenter.getProgramList(mProgramsPath01);
-        int codec=AVOptions.MEDIA_CODEC_AUTO;
+        int codec = AVOptions.MEDIA_CODEC_AUTO;
 // 解码方式:
 // codec＝AVOptions.MEDIA_CODEC_HW_DECODE，硬解
 // codec=AVOptions.MEDIA_CODEC_SW_DECODE, 软解
@@ -155,7 +160,7 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
 
     @Override
     protected void initView() {
-
+        mRootView.setBackgroundColor(Color.parseColor("#ff0000"));
     }
 
     public boolean checkPostParamNull() {
@@ -177,48 +182,48 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
             boolean isNeedReconnect = false;
             switch (errorCode) {
                 case PLMediaPlayer.ERROR_CODE_INVALID_URI:
-                    LogUtils.e(TAG,"Invalid URL !");
+                    LogUtils.e(TAG, "Invalid URL !");
                     break;
                 case PLMediaPlayer.ERROR_CODE_404_NOT_FOUND:
-                    LogUtils.e(TAG,"404 resource not found !");
+                    LogUtils.e(TAG, "404 resource not found !");
                     break;
                 case PLMediaPlayer.ERROR_CODE_CONNECTION_REFUSED:
-                    LogUtils.e(TAG,"Connection refused !");
+                    LogUtils.e(TAG, "Connection refused !");
                     break;
                 case PLMediaPlayer.ERROR_CODE_CONNECTION_TIMEOUT:
-                    LogUtils.e(TAG,"Connection timeout !");
+                    LogUtils.e(TAG, "Connection timeout !");
                     isNeedReconnect = true;
                     break;
                 case PLMediaPlayer.ERROR_CODE_EMPTY_PLAYLIST:
-                    LogUtils.e(TAG,"Empty playlist !");
+                    LogUtils.e(TAG, "Empty playlist !");
                     break;
                 case PLMediaPlayer.ERROR_CODE_STREAM_DISCONNECTED:
-                    LogUtils.e(TAG,"Stream disconnected !");
+                    LogUtils.e(TAG, "Stream disconnected !");
                     isNeedReconnect = true;
                     break;
                 case PLMediaPlayer.ERROR_CODE_IO_ERROR:
-                    LogUtils.e(TAG,"Network IO Error !");
+                    LogUtils.e(TAG, "Network IO Error !");
                     isNeedReconnect = true;
                     break;
                 case PLMediaPlayer.ERROR_CODE_UNAUTHORIZED:
-                    LogUtils.e(TAG,"Unauthorized Error !");
+                    LogUtils.e(TAG, "Unauthorized Error !");
                     break;
                 case PLMediaPlayer.ERROR_CODE_PREPARE_TIMEOUT:
-                    LogUtils.e(TAG,"Prepare timeout !");
+                    LogUtils.e(TAG, "Prepare timeout !");
                     isNeedReconnect = true;
                     break;
                 case PLMediaPlayer.ERROR_CODE_READ_FRAME_TIMEOUT:
-                    LogUtils.e(TAG,"Read frame timeout !");
+                    LogUtils.e(TAG, "Read frame timeout !");
                     isNeedReconnect = true;
                     break;
                 case PLMediaPlayer.ERROR_CODE_HW_DECODE_FAILURE:
-                    LogUtils.e(TAG, AVOptions.MEDIA_CODEC_SW_DECODE+"");
+                    LogUtils.e(TAG, AVOptions.MEDIA_CODEC_SW_DECODE + "");
                     isNeedReconnect = true;
                     break;
                 case PLMediaPlayer.MEDIA_ERROR_UNKNOWN:
                     break;
                 default:
-                    LogUtils.e(TAG,"unknown error !");
+                    LogUtils.e(TAG, "unknown error !");
                     break;
             }
             // Todo pls handle the error status here, reconnect or call finish()
@@ -227,4 +232,25 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
             return true;
         }
     };
+
+    @Override
+    public void pause(int id) {
+        mPLVideoViewOne.pause();
+        mPLVideoViewTwo.pause();
+        mPLVideoViewThree.pause();
+    }
+
+
+    @Override
+    public void relay(int id) {
+        mPLVideoViewOne.start();
+        mPLVideoViewTwo.start();
+        mPLVideoViewThree.start();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mPLVideoViewOne.stopPlayback();
+    }
 }

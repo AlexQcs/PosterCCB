@@ -12,8 +12,7 @@ import java.util.Locale;
 public class DateFormatUtils {
     public static String date2String(Date date) {
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.CHINA);
-        String result = sdf.format(date);
-        return result;
+        return sdf.format(date);
     }
 
     public static Date string2Date(String dateStr) {

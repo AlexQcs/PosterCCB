@@ -29,6 +29,8 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
     public boolean isStarting = false;// 是否开始滚动
     private Paint paint = null;// 绘图样式
     private String text = "";// 文本内容
+    private Rect bounds;
+    private Paint.FontMetrics fm;
 
     private WindowManager mWindowManager;
 
@@ -64,6 +66,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
     }
 
     public void init(WindowManager windowManager, int count) {
+        bounds = new Rect();
         mWindowManager = windowManager;
         mCount = count;
         paint = getPaint();
@@ -167,8 +170,8 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
 
     @Override
     public void onDraw(Canvas canvas) {
-        Rect bounds = new Rect();
-        Paint.FontMetrics fm = paint.getFontMetrics();
+
+        fm = paint.getFontMetrics();
 //        paint.setTextAlign(Paint.Align.CENTER);
         paint.getTextBounds(getText().toString(), 0, getText().toString().length(), bounds);
 

@@ -25,6 +25,7 @@ public class Second_V_Fragment extends BaseFragment<SecondVPresenter> implements
 
     @Override
     public void playProgram(String path) {
+
         mPLVideoView.setVideoPath(mProgramsPath);
         mPLVideoView.start();
         mPLVideoView.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
