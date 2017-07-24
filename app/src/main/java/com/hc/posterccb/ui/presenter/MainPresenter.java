@@ -52,6 +52,26 @@ public class MainPresenter extends BasePresenter<MainActivity>
                 public void realTimeCancle() {
                     getIView().cancleRealtimeTask();
                 }
+
+                @Override
+                public void videoPause() {
+
+                }
+
+                @Override
+                public void videoReplay() {
+
+                }
+
+                @Override
+                public void videoDelProgramList() {
+
+                }
+
+                @Override
+                public void videoInterruptCancle() {
+
+                }
             });
         }
     }

@@ -1,7 +1,10 @@
 package com.hc.posterccb.ui.acitivity;
 
 import android.graphics.Color;
+import android.media.AudioManager;
+import android.os.Build;
 import android.os.PowerManager;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.FragmentTransaction;
 import android.view.View;
 import android.widget.Button;
@@ -17,7 +20,9 @@ import com.hc.posterccb.ui.fragment.Three_H_Fragment;
 import com.hc.posterccb.ui.presenter.MainPresenter;
 import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.LogUtils;
+import com.hc.posterccb.util.MemInfo;
 import com.hc.posterccb.util.StringUtils;
+import com.hc.posterccb.util.VolumeUtils;
 import com.hc.posterccb.widget.MarqueeTextView;
 
 import butterknife.BindView;
@@ -32,6 +37,8 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     MarqueeTextView mStvRealTimeTop;
     @BindView(R.id.tv_realtimebottom)
     MarqueeTextView mStvRealTimeBottom;
+
+    private AudioManager am;
 
     @BindView(R.id.btn_pause)
     Button mBtnPause;
@@ -78,9 +85,13 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         return new MainPresenter();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     protected void initData() {
         FileUtils.checkAppFile();
+        long unused=MemInfo.getAvailableSize();
+        VolumeUtils.setVolum(5);
+        LogUtils.e(TAG,"剩余内存"+unused);
         mPresenter.pollingTask(mTaskName, mSerialNumber);
     }
 
@@ -110,8 +121,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @Override
     protected void initView() {
 
-        mStvRealTimeTop.init(getWindowManager(), 4);// 初始化必要参数
-        mStvRealTimeBottom.init(getWindowManager(), 0);
 
         mFull_H_Fragment = new Full_H_Fragment();
         mThreeHFragment=new Three_H_Fragment();
@@ -130,8 +139,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mFragmentTransaction.commit();
 
 
-        topStr = mStvRealTimeTop.getText().toString();
-        bottomStr = mStvRealTimeBottom.getText().toString();
 
         localPowerManager = (PowerManager) getSystemService(POWER_SERVICE);
         // 获取PowerManager.WakeLock对象,后面的参数|表示同时传入两个值,最后的是LogCat里用的Tag

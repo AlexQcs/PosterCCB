@@ -4,12 +4,14 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.hc.posterccb.Constant;
+import com.hc.posterccb.api.Api;
 import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.base.BaseModel;
 import com.hc.posterccb.bean.PostResult;
 import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
 import com.hc.posterccb.bean.polling.ControlProgramBean;
+import com.hc.posterccb.bean.polling.DownLoadFileBean;
 import com.hc.posterccb.bean.polling.LogReportBean;
 import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
@@ -17,10 +19,12 @@ import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.exception.ApiException;
 import com.hc.posterccb.subscriber.CommonSubscriber;
+import com.hc.posterccb.util.ControlUtils;
 import com.hc.posterccb.util.DateFormatUtils;
 import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.JsonUtils;
 import com.hc.posterccb.util.LogUtils;
+import com.hc.posterccb.util.SFTPUtils;
 import com.hc.posterccb.util.XmlUtils;
 
 import java.io.IOException;
@@ -30,7 +34,10 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.ResponseBody;
 import rx.Observable;
+import rx.Observer;
+import rx.Subscriber;
 import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by alex on 2017/7/10.
@@ -38,11 +45,17 @@ import rx.functions.Action1;
 
 public class MainModel extends BaseModel {
 
+    private String TAG = "MainModel";
 
+    public SFTPUtils mSFTPUtils = new SFTPUtils();
+
+    public volatile int pollingTimer = 10;
+
+    //轮询任务
     public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint) {
         if (infoHint == null)
             throw new RuntimeException("InfoHint不能为空");
-        Observable.interval(5, TimeUnit.SECONDS)
+        Observable.interval(pollingTimer, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
@@ -80,11 +93,19 @@ public class MainModel extends BaseModel {
                                 });
                     }
                 });
+    }
+
+    //下载文件
+    public void downLoadFile(@NonNull String path) {
 
     }
 
-    public void downLoadFile(@NonNull String path) {
+    //系统配置
+    public void configSystem() {
+        String jsonStr = FileUtils.getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
+        if (!jsonStr.equals("")) {
 
+        }
     }
 
 
@@ -102,89 +123,205 @@ public class MainModel extends BaseModel {
             //升级类任务
             case Constant.POLLING_UPGRADE: {
                 UpGradeBean bean = (UpGradeBean) postResult.getBean();
-                resResUpgrade(bean);
+                resUpgrade(bean);
                 break;
             }
             //控制类任务
             case Constant.POLLING_CONTROL: {
                 ControlBean bean = (ControlBean) postResult.getBean();
+                resControl(bean);
                 break;
             }
             //即时消息类任务
             case Constant.POLLING_REALTIMEMSG: {
                 RealTimeMsgBean bean = (RealTimeMsgBean) postResult.getBean();
-                resResRealTimeMsg(bean, infoHint);
+                resRealTimeMsg(bean, infoHint);
                 break;
             }
             //取消即时类任务
             case Constant.POLLING_CANCELREALTIMEMSG: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
-                resResCacnleRealTimeMsg(bean, infoHint);
+                resCacnleRealTimeMsg(bean, infoHint);
                 break;
             }
             //配置类任务
             case Constant.POLLING_CONFIG: {
                 ConfigBean bean = (ConfigBean) postResult.getBean();
-                resResConfig(bean);
+                resConfig(bean);
                 break;
             }
             //控制类任务
             case Constant.POLLING_CONTROLPROGRAM: {
                 ControlProgramBean bean = (ControlProgramBean) postResult.getBean();
-                resResControlProgram(bean);
+                resControlProgram(bean, infoHint);
                 break;
             }
             //终端配置信息日志上报任务
-            case Constant.POLLING_CFGREPORT:{
-                PollResultBean bean=(PollResultBean)postResult.getBean();
-                resResPollResult(bean);
+            case Constant.POLLING_CFGREPORT: {
+                PollResultBean bean = (PollResultBean) postResult.getBean();
+                resCfgReport(bean);
                 break;
             }
             //终端配置信息日志上报任务
-            case Constant.POLLING_WORKSTATUSREPORT:{
-                PollResultBean bean=(PollResultBean)postResult.getBean();
-                resResWorkStatuSpreport(bean);
+            case Constant.POLLING_WORKSTATUSREPORT: {
+                PollResultBean bean = (PollResultBean) postResult.getBean();
+                resResWorkStatusReport(bean);
                 break;
             }
             //终端工作状态上报类任务
-            case Constant.POLLING_MONITORREPORT:{
-                PollResultBean bean=(PollResultBean)postResult.getBean();
-                resResMonitorReport(bean);
+            case Constant.POLLING_MONITORREPORT: {
+                PollResultBean bean = (PollResultBean) postResult.getBean();
+                resMonitorReport(bean);
                 break;
             }
-            case Constant.POLLING_LOGREPORT:{
-                LogReportBean bean=(LogReportBean)postResult.getBean();
-                resResLogReport(bean);
+            case Constant.POLLING_LOGREPORT: {
+                LogReportBean bean = (LogReportBean) postResult.getBean();
+                resLogReport(bean);
                 break;
             }
 
-            case Constant.POLLING_DOWNLOADRES:{
+            case Constant.POLLING_DOWNLOADRES: {
+                DownLoadFileBean bean = (DownLoadFileBean) postResult.getBean();
+                resReDownLoadFile(bean);
+                break;
+            }
 
+            case Constant.POLLING_DOWNLOADSTATUSREPORT: {
+                PollResultBean bean = (PollResultBean) postResult.getBean();
+                resResDownLoadStatusReport(bean);
             }
 
         }
     }
 
-    private void resResLogReport(LogReportBean bean) {
+    //控制类任务  0:重启 1:休眠 2:唤醒
+    private void resControl(ControlBean bean) {
+        int control = Integer.parseInt(bean.getControl());
+        Observable.just(control)
+                .subscribe(new Action1<Integer>() {
+                    @Override
+                    public void call(Integer integer) {
+                        switch (integer) {
+                            case 0:
+                                ControlUtils.do_exec("reboot");
+                                break;
+                            case 1:
+                                try {
+                                    ControlUtils.writeFile("0");
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            case 2:
+                                try {
+                                    ControlUtils.writeFile("1");
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                        }
+                    }
+                });
+    }
+
+    //通知终端上报资源下载状态
+    private void resResDownLoadStatusReport(PollResultBean bean) {
 
     }
 
-    private void resResMonitorReport(PollResultBean bean) {
+    //通知终端下载资源文件
+    private void resReDownLoadFile(DownLoadFileBean bean) {
+        mSFTPUtils.setHost(Api.SFTP_PATH + bean.getClass());
+        mSFTPUtils.setPassword("123456");
+        mSFTPUtils.setUsername("Alex");
+        Observable.just(mSFTPUtils)
+                .subscribeOn(Schedulers.io())
+                .subscribe(new Observer<SFTPUtils>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG, "下载成功");
+                        mSFTPUtils.disconnect();
+                        Log.e(TAG, "断开连接");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG, "下载失败");
+                        Log.e(TAG, e.getMessage());
+                        mSFTPUtils.disconnect();
+                        Log.e(TAG, "断开连接");
+                    }
+
+                    @Override
+                    public void onNext(SFTPUtils utils) {
+                        Log.e(TAG, "下载文件");
+                        String localPath = Constant.UDP_TESTPATH;
+                        String remotePath = "test1/";
+                        mSFTPUtils.connect();
+                        Log.e(TAG, "连接成功");
+                        mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");
+                    }
+                });
+    }
+
+    //终端日志上报任务
+    private void resLogReport(LogReportBean bean) {
 
     }
 
-    private void resResWorkStatuSpreport(PollResultBean bean) {
+    //终端在播内容上报
+    private void resMonitorReport(PollResultBean bean) {
+        String jsonStr = FileUtils.getStringFromTxT(Constant.LOCAL_PROGRAM_TXT);
+
+    }
+
+    //终端工作状态上报
+    private void resResWorkStatusReport(PollResultBean bean) {
 
     }
 
     //终端配置信息日志上报
-    private void resResPollResult(PollResultBean bean) {
-
+    private void resCfgReport(PollResultBean bean) {
+        
     }
 
-    //控制类任务
-    private void resResControlProgram(ControlProgramBean bean) {
+    //播放类控制类
+    private void resControlProgram(ControlProgramBean bean, final InfoHint infoHint) {
+        int cmd = Integer.getInteger(bean.getCmd());
+        Observable.just(cmd)
+                .subscribe(new Subscriber<Integer>() {
+                    @Override
+                    public void onCompleted() {
 
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(Integer integer) {
+                        switch (integer) {
+                            case 1:
+                                infoHint.videoPause();
+                                break;
+                            case 2:
+                                infoHint.videoReplay();
+                                break;
+                            case 3:
+                                infoHint.videoDelProgramList();
+                                break;
+                            case 4:
+                                infoHint.videoInterruptCancle();
+                                break;
+                        }
+                    }
+                });
     }
 
     //播放类任务
@@ -200,12 +337,13 @@ public class MainModel extends BaseModel {
     }
 
     //升级任务
-    private void resResUpgrade(UpGradeBean bean) {
+    private void resUpgrade(UpGradeBean bean) {
+
         LogUtils.e("resResUpgrade", bean.toString());
     }
 
     //即时消息类任务
-    private void resResRealTimeMsg(RealTimeMsgBean bean, final InfoHint infoHint) {
+    private void resRealTimeMsg(RealTimeMsgBean bean, final InfoHint infoHint) {
 
         final String startTime = bean.getStarttime();
         final String endtime = bean.getEndtime();
@@ -226,16 +364,16 @@ public class MainModel extends BaseModel {
     }
 
     //取消即时消息任务
-    private void resResCacnleRealTimeMsg(PollResultBean bean, final InfoHint infoHint) {
+    private void resCacnleRealTimeMsg(PollResultBean bean, final InfoHint infoHint) {
         infoHint.realTimeCancle();
     }
 
-    //终端配置信息雷任务
-    public void resResConfig(ConfigBean bean) {
+    //终端配置信息类任务
+    public void resConfig(ConfigBean bean) {
         String jsonStr = JsonUtils.Bean2JsonStr(bean);
         LogUtils.e("resResConfig", jsonStr);
         try {
-            FileUtils.coverTxtToFile(jsonStr, Constant.LOCAL_PROGRAM_TXT);
+            FileUtils.coverTxtToFile(jsonStr, Constant.LOCAL_CONFIG_TXT);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -273,5 +411,18 @@ public class MainModel extends BaseModel {
          * 此方法用于:取消即时消息任务
          */
         void realTimeCancle();
+
+        //暂停播放
+        void videoPause();
+
+        //恢复播放
+        void videoReplay();
+
+        //删除当前播放列表
+        void videoDelProgramList();
+
+        //取消插播
+        void videoInterruptCancle();
+
     }
 }

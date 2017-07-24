@@ -14,4 +14,7 @@ public interface HttpService {
 
     @POST("/xmlserver/revXml")
     Observable<ResponseBody> polling(@Header("command")String command, @Header("mac")String mac);
+
+//    @POST("/xmlserver/revXml")
+//    Observable<ResponseBody>
 }

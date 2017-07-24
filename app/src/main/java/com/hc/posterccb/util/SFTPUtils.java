@@ -25,7 +25,7 @@ import java.util.Vector;
  */
 
 public class SFTPUtils {
-    private String TAG = "SFTPUTils";
+    private String TAG = "SFTPUtils";
     private String host;//地址
     private String username;//用户名
     private String password;
@@ -44,6 +44,10 @@ public class SFTPUtils {
      * mkdir()：    创建目录
      * rmdir()：    删除目录
      */
+
+    public SFTPUtils() {
+
+    }
 
     public SFTPUtils(String host, String username, String password) {
         this.host = host;
@@ -93,50 +97,51 @@ public class SFTPUtils {
     //单个文件上传
     public boolean uploadFile(String remotePath, String remoteFileName,
                               String localPath, String localFileName) {
-        FileInputStream in=null;
+        FileInputStream in = null;
 
         try {
             createDir(remotePath);
-            Log.e(TAG,remotePath);
-            File file=new File(localPath+localFileName);
-            in=new FileInputStream(file);
+            Log.e(TAG, remotePath);
+            File file = new File(localPath + localFileName);
+            in = new FileInputStream(file);
             Log.e(TAG, String.valueOf(in));
-            mSftp.put(in,remoteFileName);
+            mSftp.put(in, remoteFileName);
             Log.e(TAG, String.valueOf(mSftp));
             return true;
         } catch (Exception e) {
             e.printStackTrace();
-        }finally {
-            if (in!=null){
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
         return false;
     }
 
     //多个文件上传
-    public boolean bacthUploadFile(String remotePath,String localPath,boolean del){
+    public boolean bacthUploadFile(String remotePath, String localPath, boolean del) {
 
-        try{
-            File file=new File(localPath);
-            File[] files=file.listFiles();
+        try {
+            File file = new File(localPath);
+            File[] files = file.listFiles();
             for (int i = 0; i < files.length; i++) {
-                if (files[i].isFile()&&files[i].getName().indexOf("bak")==-1){
-                    synchronized (remotePath){
-                        if (this.uploadFile(remotePath,files[i].getName(),localPath,files[i].getName())&&del){
-                            deleteFile(localPath+files[i].getName());
+                if (files[i].isFile() && !files[i].getName().contains("bak")) {
+                    synchronized (remotePath) {
+                        if (this.uploadFile(remotePath, files[i].getName(),
+                                localPath, files[i].getName()) && del) {
+                            deleteFile(localPath + files[i].getName());
                         }
                     }
                 }
             }
             return true;
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             this.disconnect();
         }
 
@@ -148,13 +153,13 @@ public class SFTPUtils {
      * 批量下载文件
      *
      * @param remotPath
-     *            远程下载目录(以路径符号结束)
+     *         远程下载目录(以路径符号结束)
      * @param localPath
-     *            本地保存目录(以路径符号结束)
+     *         本地保存目录(以路径符号结束)
      * @param fileFormat
-     *            下载文件格式(以特定字符开头,为空不做检验)
+     *         下载文件格式(以特定字符开头,为空不做检验)
      * @param del
-     *            下载后是否删除sftp文件
+     *         下载后是否删除sftp文件
      * @return
      */
     @SuppressWarnings("rawtypes")
@@ -199,11 +204,16 @@ public class SFTPUtils {
 
     /**
      * 单个文件下载
+     *
      * @param remotePath
+     *          目标地址
      * @param remoteFileName
+     *          目标文件名
      * @param localPath
+     *          本地文件夹
      * @param localFileName
-     * @return
+     *          本地文件名
+     * @return boolean
      */
     public boolean downloadFile(String remotePath, String remoteFileName,
                                 String localPath, String localFileName) {
@@ -224,6 +234,7 @@ public class SFTPUtils {
 
     /**
      * 删除文件
+     *
      * @param filePath
      * @return
      */
@@ -242,7 +253,7 @@ public class SFTPUtils {
         try {
             if (isDirExist(createpath)) {
                 this.mSftp.cd(createpath);
-                Log.d(TAG,createpath);
+                Log.d(TAG, createpath);
                 return true;
             }
             String pathArry[] = createpath.split("/");
@@ -269,6 +280,7 @@ public class SFTPUtils {
 
     /**
      * 判断目录是否存在
+     *
      * @param directory
      * @return
      */
@@ -298,6 +310,7 @@ public class SFTPUtils {
 
     /**
      * 创建目录
+     *
      * @param path
      */
     public void mkdirs(String path) {
@@ -311,6 +324,7 @@ public class SFTPUtils {
 
     /**
      * 列出目录文件
+     *
      * @param directory
      * @return
      * @throws SftpException
@@ -322,6 +336,27 @@ public class SFTPUtils {
     }
 
 
+    public String getHost() {
+        return host;
+    }
 
+    public void setHost(String host) {
+        this.host = host;
+    }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }

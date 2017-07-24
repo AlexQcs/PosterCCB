@@ -41,7 +41,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
     private static int SCREEN_HEIGHT;
 
     public MarqueeTextView(Context context) {
-        this(context,null);
+        this(context, null);
         initView();
     }
 
@@ -158,6 +158,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
 
     //开始
     public void startScroll() {
+        mMarquanTimes = 1;
         isStarting = true;
         invalidate();
     }
@@ -175,7 +176,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
 //        paint.setTextAlign(Paint.Align.CENTER);
         paint.getTextBounds(getText().toString(), 0, getText().toString().length(), bounds);
 
-        y = (getMeasuredHeight() / 2 + bounds.height() / 2) ;
+        y = (getMeasuredHeight() / 2 + bounds.height() / 2);
 //        + (fm.descent - fm.ascent) / 2 - fm.descent;
         canvas.drawText(text, temp_view_plus_text_length - step, y, paint);
         if (!isStarting) {

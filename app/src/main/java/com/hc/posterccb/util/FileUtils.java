@@ -6,11 +6,14 @@ import com.hc.posterccb.Constant;
 
 import org.apache.http.util.EncodingUtils;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.security.MessageDigest;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,7 +29,7 @@ public class FileUtils {
 
     public static boolean isExist(String path) {
         File file = new File(path);
-        return  (file.isFile() && file.exists());
+        return (file.isFile() && file.exists());
     }
 
     // 读在/mnt/sdcard/目录下面的文件
@@ -317,6 +320,25 @@ public class FileUtils {
 
     }
 
+    //读取txt文件内容
+    public static String getStringFromTxT(String path) {
+        String str = "";
+        File urlFile = new File(path);
+        if (!urlFile.exists()) return str;
+        InputStreamReader isr = null;
+        try {
+            isr = new InputStreamReader(new FileInputStream(urlFile), "UTF-8");
+            BufferedReader br = new BufferedReader(isr);
+            String mimeTypeLine = null;
+            while ((mimeTypeLine = br.readLine()) != null) {
+                str = str + mimeTypeLine;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return str;
+    }
+
     /**
      * 用于获取文件夹下面的子文件列表
      *
@@ -338,5 +360,43 @@ public class FileUtils {
             }
         }
         return pathList;
+    }
+
+    public static String getFileMD5(File file) {
+        if (!file.isFile()) {
+            return null;
+        }
+        MessageDigest digest = null;
+        FileInputStream in = null;
+        byte buffer[] = new byte[1024];
+        int len;
+        try {
+            digest = MessageDigest.getInstance("MD5");
+            in = new FileInputStream(file);
+            while ((len = in.read(buffer, 0, 1024)) != -1) {
+                digest.update(buffer, 0, len);
+            }
+            in.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return bytesToHexString(digest.digest());
+    }
+
+    public static String bytesToHexString(byte[] src) {
+        StringBuilder stringBuilder = new StringBuilder("");
+        if (src == null || src.length <= 0) {
+            return null;
+        }
+        for (int i = 0; i < src.length; i++) {
+            int v = src[i] & 0xFF;
+            String hv = Integer.toHexString(v);
+            if (hv.length() < 2) {
+                stringBuilder.append(0);
+            }
+            stringBuilder.append(hv);
+        }
+        return stringBuilder.toString();
     }
 }
