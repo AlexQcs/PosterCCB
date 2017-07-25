@@ -26,6 +26,18 @@ public class MainContract {
 
         //取消即时消息任务
         void cancleRealtimeTask();
+
+        //暂停播放
+        void pauseVideo();
+
+        //恢复播放
+        void replayVideo();
+
+        //删除播放列表
+        void deleteProgramList();
+
+        //取消插播
+        void cancleInterruptVideo();
     }
 
     public interface MainPresenter {

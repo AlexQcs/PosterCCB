@@ -233,24 +233,35 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
         }
     };
 
+
+
     @Override
-    public void pause(int id) {
+    public void onDestroy() {
+        super.onDestroy();
+        mPLVideoViewOne.stopPlayback();
+    }
+
+    @Override
+    public void pause() {
         mPLVideoViewOne.pause();
         mPLVideoViewTwo.pause();
         mPLVideoViewThree.pause();
     }
 
-
     @Override
-    public void relay(int id) {
+    public void replay() {
         mPLVideoViewOne.start();
         mPLVideoViewTwo.start();
         mPLVideoViewThree.start();
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mPLVideoViewOne.stopPlayback();
+    public void delProgramList() {
+
+    }
+
+    @Override
+    public void interruptCancle() {
+
     }
 }

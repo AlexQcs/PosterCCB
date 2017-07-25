@@ -75,10 +75,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     //区分即时消息类的位置
     private String mRealTimePosition = "top";
 
-    private String topStr;
-    private String bottomStr;
-    private double speed = 3;
-
 
     @Override
     protected MainPresenter loadPresenter() {
@@ -99,10 +95,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     void contoller(View view){
         switch (view.getId()){
             case R.id.btn_pause:
-                mInteraction.pause(1);
+                mInteraction.pause();
                 break;
             case R.id.btn_relay:
-                mInteraction.relay(1);
+                mInteraction.replay();
                 break;
         }
     }
@@ -114,8 +110,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     }
 
     public interface ActivityInteraction{
-        void pause(int id);
-        void relay(int id);
+        void pause();
+        void replay();
+        void delProgramList();
+        void interruptCancle();
     }
 
     @Override
@@ -214,6 +212,26 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     public void cancleRealtimeTask() {
         mStvRealTimeTop.stopScroll();
         mStvRealTimeBottom.stopScroll();
+    }
+
+    @Override
+    public void pauseVideo() {
+
+    }
+
+    @Override
+    public void replayVideo() {
+
+    }
+
+    @Override
+    public void deleteProgramList() {
+
+    }
+
+    @Override
+    public void cancleInterruptVideo() {
+
     }
 
     void setMarqueeTextView(MarqueeTextView view, RealTimeMsgBean bean) {
