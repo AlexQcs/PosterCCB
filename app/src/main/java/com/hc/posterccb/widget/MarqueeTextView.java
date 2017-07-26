@@ -69,14 +69,14 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
         bounds = new Rect();
         mWindowManager = windowManager;
         mCount = count;
-        paint = getPaint();
-        // 邹奇   2016/11/30  这里可以自己设置文字显示的颜色，这里我设置为了蓝色，下载我的apk自己体验
+
+        // 这里可以自己设置文字显示的颜色，这里我设置为了蓝色，下载我的apk自己体验
         // 默认为黑色
         if (color != 0) {
             paint.setColor(color);
         }
         text = getText().toString();
-        textLength = paint.measureText(text);
+
         viewWidth = getWidth();
         if (viewWidth == 0) {
             if (windowManager != null) {
@@ -171,12 +171,13 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
 
     @Override
     public void onDraw(Canvas canvas) {
-
+        paint = getPaint();
         fm = paint.getFontMetrics();
+        textLength = paint.measureText(text);
 //        paint.setTextAlign(Paint.Align.CENTER);
         paint.getTextBounds(getText().toString(), 0, getText().toString().length(), bounds);
 
-        y = (getMeasuredHeight() / 2 + bounds.height() / 2);
+        y = (getMeasuredHeight() + bounds.height() )/2+ (fm.descent - fm.ascent) / 2 - fm.descent;
 //        + (fm.descent - fm.ascent) / 2 - fm.descent;
         canvas.drawText(text, temp_view_plus_text_length - step, y, paint);
         if (!isStarting) {

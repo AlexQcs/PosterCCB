@@ -18,11 +18,11 @@ public class PollResultBean {
         this.taskcount = taskcount;
     }
 
-    public String getProgram() {
+    public String getTasktype() {
         return tasktype;
     }
 
-    public void setProgram(String tasktype) {
+    public void setTasktype(String tasktype) {
         this.tasktype = tasktype;
     }
 

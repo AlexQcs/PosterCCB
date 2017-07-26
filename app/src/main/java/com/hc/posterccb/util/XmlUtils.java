@@ -158,7 +158,17 @@ public class XmlUtils {
     }
 
 
-    public static String getXmlType(String xmlStr) {
+    /**
+     * 此方法用于: 获取轮询响应的任务类型
+     *
+     * @param xmlStr
+     *         xml字符串
+     * @return xml类型
+     * @throws Exception
+     * @author.Alex.on.2017年7月26日08:57:38
+     */
+    public static ArrayList<String> getXmlType(String xmlStr) {
+        ArrayList<String> list=new ArrayList<>();
         String xmlType = "no";
         try {
             // 由android.util.Xml创建一个XmlPullParser实例
@@ -180,7 +190,7 @@ public class XmlUtils {
 
                             eventType = parser.next();
                             xmlType = parser.getText().trim();
-                            return xmlType;
+                            list.add(xmlType);
                             //根据类型返回指定字节
                         }
                         break;
@@ -193,10 +203,21 @@ public class XmlUtils {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return xmlType;
+        return list;
     }
 
 
+    /**
+     * 此方法用于:
+     *
+     * @param tasktype
+     *         任务类型
+     * @param xmlStr
+     *         xml字符串
+     * @return 轮询响应任务
+     * @throws Exception
+     * @author.Alex.on.2017年7月26日09:03:16
+     */
     public static PostResult getTaskBean(String tasktype, String xmlStr) {
 
         PostResult postResult = null;
@@ -227,38 +248,38 @@ public class XmlUtils {
                     break;
                 case Constant.POLLING_CONFIG:
                     LogUtils.e("XmlUtils", "检测到数据类型为终端配置类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class ,Constant.XML_STARTDOM,ConfigBean.class);
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ConfigBean.class);
                     break;
                 case Constant.POLLING_CONTROLPROGRAM:
-                    LogUtils.e("XmlUtils","检测到数据类型为控制类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,ControlProgramBean.class);
+                    LogUtils.e("XmlUtils", "检测到数据类型为控制类任务");
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ControlProgramBean.class);
                     break;
                 case Constant.POLLING_CFGREPORT:
-                    LogUtils.e("XmlUtils","检测到数据类型为终端配置信息日志上报类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,PollResultBean.class);
+                    LogUtils.e("XmlUtils", "检测到数据类型为终端配置信息日志上报类任务");
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
                     break;
                 case Constant.POLLING_WORKSTATUSREPORT:
-                    LogUtils.e("XmlUtils","检测到数据类型为终端工作状态上报类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,PollResultBean.class);
+                    LogUtils.e("XmlUtils", "检测到数据类型为终端工作状态上报类任务");
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
                     break;
                 case Constant.POLLING_MONITORREPORT:
-                    LogUtils.e("XmlUtils","检测到数据类型为终端在播内容上报类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,PollResultBean.class);
+                    LogUtils.e("XmlUtils", "检测到数据类型为终端在播内容上报类任务");
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
                     break;
                 case Constant.POLLING_LOGREPORT:
-                    LogUtils.e("XmlUtils","检测到数据类型为终端日志上报类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,LogReportBean.class);
+                    LogUtils.e("XmlUtils", "检测到数据类型为终端日志上报类任务");
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, LogReportBean.class);
                     break;
                 case Constant.POLLING_DOWNLOADRES:
-                    LogUtils.e("XmlUtils","检测到数据类型为通知终端下载资源文件类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,DownLoadFileBean.class);
+                    LogUtils.e("XmlUtils", "检测到数据类型为通知终端下载资源文件类任务");
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, DownLoadFileBean.class);
                     break;
                 case Constant.POLLING_DOWNLOADSTATUSREPORT:
-                    LogUtils.e("XmlUtils","检测到数据类型为通知终端上报资源下载状态类任务");
-                    postResult=getBeanByParseXml(parser,Constant.XML_LISTTAG,TempBean.class,Constant.XML_STARTDOM,PollResultBean.class);
+                    LogUtils.e("XmlUtils", "检测到数据类型为通知终端上报资源下载状态类任务");
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
                     break;
-        }
-        return postResult;
+            }
+            return postResult;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -266,18 +287,27 @@ public class XmlUtils {
     }
 
 
+    /**
+     * 此方法用于: 获取播放列表
+     *
+     * @param xmlStr
+     *         播放列表xml
+     * @return 播放列表
+     * @author.Alex.on.2017年7月26日09:01:23
+     * @throw XmlPullParserException、IOException
+     */
     public static ArrayList<Program> parseProgramXml(String xmlStr) {
         InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
         XmlPullParser parser = Xml.newPullParser();
         try {
-            parser.setInput(in, "UTF-8") ;
+            parser.setInput(in, "UTF-8");
         } catch (XmlPullParserException e) {
             e.printStackTrace();
         }
 
         ArrayList<Program> programArray = new ArrayList<Program>();
         Program program = null;
-        ArrayList<ProgramRes> programResArrayList=new ArrayList<>();
+        ArrayList<ProgramRes> programResArrayList = new ArrayList<>();
         ProgramRes programRes = null;
 
         try {
@@ -296,7 +326,7 @@ public class XmlUtils {
                         if (tagName.equals("defaultpls") || tagName.equals("pls")) {
 
                             program = new Program();
-                            programResArrayList=new ArrayList<>();
+                            programResArrayList = new ArrayList<>();
                             program.setType(tagName);
                             program.setAreatype(parser.getAttributeValue(null, "areatype"));
                             program.setStdtime(parser.getAttributeValue(null, "stdtime"));
@@ -314,16 +344,16 @@ public class XmlUtils {
                         }
                         break;
                     case XmlPullParser.END_TAG:
-                        if (parser.getName().equalsIgnoreCase("res")){
-                            if (programRes!=null){
+                        if (parser.getName().equalsIgnoreCase("res")) {
+                            if (programRes != null) {
                                 programResArrayList.add(programRes);
                             }
-                            programRes=null;
-                        }else if (parser.getName().equalsIgnoreCase("defaultpls")||parser.getName().equalsIgnoreCase("pls")){
-                            if (program!=null){
+                            programRes = null;
+                        } else if (parser.getName().equalsIgnoreCase("defaultpls") || parser.getName().equalsIgnoreCase("pls")) {
+                            if (program != null) {
                                 program.setList(programResArrayList);
                                 programArray.add(program);
-                                program=null;
+                                program = null;
                             }
                         }
                         break;

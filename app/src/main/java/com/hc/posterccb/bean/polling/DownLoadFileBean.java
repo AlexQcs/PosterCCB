@@ -5,10 +5,38 @@ package com.hc.posterccb.bean.polling;
  */
 
 public class DownLoadFileBean {
+    public String taskcount;//任务数量
+    public String tasktype;//任务类型
+    public String taskid;//任务编号    uuid
     private int csize;//文件大小
     private String link;//下载相对路径
     private String md5;//文件的md5值
     private int playmode;//播放模式
+
+
+    public String getTaskcount() {
+        return taskcount;
+    }
+
+    public void setTaskcount(String taskcount) {
+        this.taskcount = taskcount;
+    }
+
+    public String getTasktype() {
+        return tasktype;
+    }
+
+    public void setTasktype(String tasktype) {
+        this.tasktype = tasktype;
+    }
+
+    public String getTaskid() {
+        return taskid;
+    }
+
+    public void setTaskid(String taskid) {
+        this.taskid = taskid;
+    }
 
     public int getCsize() {
         return csize;

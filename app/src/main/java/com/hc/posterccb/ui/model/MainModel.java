@@ -8,6 +8,7 @@ import com.hc.posterccb.api.Api;
 import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.base.BaseModel;
 import com.hc.posterccb.bean.PostResult;
+import com.hc.posterccb.bean.report.TaskReportBean;
 import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
 import com.hc.posterccb.bean.polling.ControlProgramBean;
@@ -25,7 +26,9 @@ import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.JsonUtils;
 import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.SFTPUtils;
+import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.util.XmlUtils;
+import com.thoughtworks.xstream.XStream;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,6 +53,8 @@ public class MainModel extends BaseModel {
     public SFTPUtils mSFTPUtils = new SFTPUtils();
 
     public volatile int pollingTimer = 10;
+    private TaskReportBean mTaskReport = new TaskReportBean();
+
 
     //轮询任务
     public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint) {
@@ -68,13 +73,16 @@ public class MainModel extends BaseModel {
                                         try {
                                             //获取返回的xml 字符串
                                             resStr = response.string();
-                                            //获取返回的任务类型
-                                            String type = XmlUtils.getXmlType(resStr);
+                                            //获取返回的任务类型集合
+                                            ArrayList<String> typeList = XmlUtils.getXmlType(resStr);
+                                            if (typeList.size() <= 0) return;
                                             //获取任务类型实体类
-                                            PostResult postResult = XmlUtils.getTaskBean(type, resStr);//通过返回的响应xml报文解析出是哪个任务
-                                            Log.e("MainModel", postResult.toString());
-                                            //处理任务类型
-                                            resResult(type, postResult, infoHint);
+                                            for (String type : typeList) {
+                                                PostResult postResult = XmlUtils.getTaskBean(type, resStr);//通过返回的响应xml报文解析出是哪个任务
+                                                Log.e("MainModel", postResult.toString());
+                                                //处理任务类型
+                                                resResult(type, postResult, infoHint);
+                                            }
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         }
@@ -113,81 +121,96 @@ public class MainModel extends BaseModel {
         if (postResult.getBean() == null) {
             return;
         }
+
         switch (taskType) {
             //播放类任务
             case Constant.POLLING_PROGRAM: {
                 ArrayList<ProgramBean> list = postResult.getList();
+                PollResultBean bean = (PollResultBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resProgram(list);
                 break;
             }
             //升级类任务
             case Constant.POLLING_UPGRADE: {
                 UpGradeBean bean = (UpGradeBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resUpgrade(bean);
                 break;
             }
             //控制类任务
             case Constant.POLLING_CONTROL: {
                 ControlBean bean = (ControlBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resControl(bean);
                 break;
             }
             //即时消息类任务
             case Constant.POLLING_REALTIMEMSG: {
                 RealTimeMsgBean bean = (RealTimeMsgBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resRealTimeMsg(bean, infoHint);
                 break;
             }
             //取消即时类任务
             case Constant.POLLING_CANCELREALTIMEMSG: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resCacnleRealTimeMsg(bean, infoHint);
                 break;
             }
             //配置类任务
             case Constant.POLLING_CONFIG: {
                 ConfigBean bean = (ConfigBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resConfig(bean);
                 break;
             }
             //控制类任务
             case Constant.POLLING_CONTROLPROGRAM: {
                 ControlProgramBean bean = (ControlProgramBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resControlProgram(bean, infoHint);
                 break;
             }
             //终端配置信息日志上报任务
             case Constant.POLLING_CFGREPORT: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resCfgReport(bean);
                 break;
             }
             //终端配置信息日志上报任务
             case Constant.POLLING_WORKSTATUSREPORT: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resResWorkStatusReport(bean);
                 break;
             }
             //终端工作状态上报类任务
             case Constant.POLLING_MONITORREPORT: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resMonitorReport(bean);
                 break;
             }
             case Constant.POLLING_LOGREPORT: {
                 LogReportBean bean = (LogReportBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resLogReport(bean);
                 break;
             }
 
             case Constant.POLLING_DOWNLOADRES: {
                 DownLoadFileBean bean = (DownLoadFileBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resReDownLoadFile(bean);
                 break;
             }
 
             case Constant.POLLING_DOWNLOADSTATUSREPORT: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
+                postTaskreport(bean.getTasktype(), bean.getTaskid());
                 resResDownLoadStatusReport(bean);
             }
 
@@ -224,6 +247,7 @@ public class MainModel extends BaseModel {
                                 }
                                 break;
                         }
+
                     }
                 });
     }
@@ -286,7 +310,7 @@ public class MainModel extends BaseModel {
 
     //终端配置信息日志上报
     private void resCfgReport(PollResultBean bean) {
-        
+
     }
 
     //播放类控制类
@@ -345,18 +369,23 @@ public class MainModel extends BaseModel {
     //即时消息类任务
     private void resRealTimeMsg(RealTimeMsgBean bean, final InfoHint infoHint) {
 
-        final String startTime = bean.getStarttime();
-        final String endtime = bean.getEndtime();
+        final String startTimeStr = bean.getStarttime();
+        final String endTimeStr = bean.getEndtime();
+        final Date startTime = DateFormatUtils.string2Date(startTimeStr);
+        final Date endTime = DateFormatUtils.string2Date(endTimeStr);
         infoHint.realTimeMessage(bean);
+
+        Log.e("即时消息", bean.toString() + "---");
         Observable.interval(1, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
                         Date date = new Date();
                         String currentTime = DateFormatUtils.date2String(date);
-                        if (currentTime.equals(startTime)) {
+                        Log.e("现在时间", currentTime + "---");
+                        if (date.getTime() > startTime.getTime()) {
                             infoHint.realtimeStart();
-                        } else if (currentTime.equals(endtime)) {
+                        } else if (date.getTime() > endTime.getTime()) {
                             infoHint.realTimeStop();
                         }
                     }
@@ -378,6 +407,32 @@ public class MainModel extends BaseModel {
             e.printStackTrace();
         }
     }
+
+    void postTaskreport(String tasktype, String taskid) {
+        XStream xStream = new XStream();
+        mTaskReport.setTasktype(tasktype);
+        mTaskReport.setTaskid(taskid);
+        mTaskReport.setStatus("0000");
+        xStream.alias("command", TaskReportBean.class);
+        String postStr = xStream.toXML(mTaskReport);
+        StringUtils.setEncoding(postStr, "UTF-8");
+
+        httpService.report(Constant.TASKREPORT, Constant.getSerialNumber(), postStr)
+                .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
+                    @Override
+                    public void onNext(ResponseBody body) {
+                        String resStr = null;
+                        try {
+                            //获取返回的xml 字符串
+                            resStr = body.string();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+    }
+
+
 
 
     //通过接口产生信息回调

@@ -22,55 +22,66 @@ public class MainPresenter extends BasePresenter<MainActivity>
     public void pollingTask(String command, String mac) {
         if (!getIView().checkPostParamNull()) {
             ((MainModel) getiModelMap().get("polling")).pollingTask(command, mac, new MainModel.InfoHint() {
+                //轮询成功
                 @Override
                 public void successInfo(String str) {
                     getIView().pollingSuccess(str);
                 }
 
+                //轮询成功
                 @Override
                 public void failInfo(String str) {
                     LogUtils.e("MainPresenter.failInfo", str);
                     getIView().pollingFail(str);
                 }
 
+                //设置即时消息内容
                 @Override
                 public void realTimeMessage(RealTimeMsgBean bean) {
                     getIView().setRealTimeText(bean);
                 }
 
+
+                //即时消息开始
                 @Override
                 public void realtimeStart() {
                     getIView().startRealtimeTask();
                 }
 
+                //即时消息停止
                 @Override
                 public void realTimeStop() {
                     getIView().stopRealtimeTask();
                 }
 
+                //即时消息取消
                 @Override
                 public void realTimeCancle() {
                     getIView().cancleRealtimeTask();
                 }
 
+                //暂停播放
                 @Override
                 public void videoPause() {
-
+                    getIView().pauseVideo();
                 }
 
+                //恢复播放
                 @Override
                 public void videoReplay() {
-
+                    getIView().replayVideo();
                 }
 
+                //删除播放列表
                 @Override
                 public void videoDelProgramList() {
-
+                    getIView().deleteProgramList();
                 }
 
+                //取消插播内容
                 @Override
                 public void videoInterruptCancle() {
-
+                    getIView().cancleInterruptVideo();
                 }
             });
         }
@@ -94,6 +105,7 @@ public class MainPresenter extends BasePresenter<MainActivity>
         HashMap<String, IModel> map = new HashMap<>();
         map.put("polling", models[0]);
         map.put("downloadfile", models[0]);
+        map.put("posttaskreport", models[0]);
         return map;
     }
 

@@ -32,9 +32,9 @@ public class Http {
     /**
      * @return retrofit 的底层利用反射的方式，获取所有的api接口的类
      */
-    public static HttpService getHttpService(){
-        if (httpService==null){
-            httpService=getRetrofit().create(HttpService.class);
+    public static HttpService getHttpService() {
+        if (httpService == null) {
+            httpService = getRetrofit().create(HttpService.class);
         }
         return httpService;
     }
@@ -42,17 +42,17 @@ public class Http {
     /**
      * 设置公共参数
      */
-    private static Interceptor addQueryParameterInterceptor(){
-        Interceptor addQueryParameterInterceptor=new Interceptor() {
+    private static Interceptor addQueryParameterInterceptor() {
+        Interceptor addQueryParameterInterceptor = new Interceptor() {
             @Override
             public Response intercept(Chain chain) throws IOException {
-                Request originalRequest=chain.request();
+                Request originalRequest = chain.request();
                 Request request;
-                HttpUrl modifieUrl=originalRequest.url().newBuilder()
+                HttpUrl modifieUrl = originalRequest.url().newBuilder()
 //                        .addQueryParameter("phoneSystem","")
 //                        .addQueryParameter("phoneModel","")
                         .build();
-                request=originalRequest.newBuilder().url(modifieUrl).build();
+                request = originalRequest.newBuilder().url(modifieUrl).build();
                 return chain.proceed(request);
             }
         };
@@ -115,17 +115,17 @@ public class Http {
         return cacheInterceptor;
     }
 
-    public static Retrofit getRetrofit(){
-        if (retrofit==null){
-            synchronized (Http.class){
-                if (retrofit==null){
+    public static Retrofit getRetrofit() {
+        if (retrofit == null) {
+            synchronized (Http.class) {
+                if (retrofit == null) {
                     //添加一个log拦截器,打印所有的log
-                    HttpLoggingInterceptor httpLoggingInterceptor=new HttpLoggingInterceptor();
+                    HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
                     //可以设置请求过滤的水平,body,basic,headers
                     httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
                     //设置请求的缓存的大小跟位置
-                    File cacheFile=new File(ProApplication.getmContext().getCacheDir(),"cache");
-                    Cache cache=new Cache(cacheFile,1024*1024*50);//50M的缓存
+                    File cacheFile = new File(ProApplication.getmContext().getCacheDir(), "cache");
+                    Cache cache = new Cache(cacheFile, 1024 * 1024 * 50);//50M的缓存
 
                     client = new OkHttpClient
                             .Builder()

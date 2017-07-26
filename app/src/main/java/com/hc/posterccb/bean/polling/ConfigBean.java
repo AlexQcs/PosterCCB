@@ -7,6 +7,7 @@ package com.hc.posterccb.bean.polling;
 
 public class ConfigBean {
     public String taskcount;
+    public String tasktype;
     public String taskitem;
     public String taskid;
     public String staruptime;//开机时间 HH:MM:SS
@@ -22,6 +23,14 @@ public class ConfigBean {
     public String logserver;//ftp://user:pwd@serverip:port/logdir
     public String uploadlogtime;//日志定时上传时间 HH:MM:SS
     public String keeplogtime;//日志保留时间 默认7天
+
+    public String getTasktype() {
+        return tasktype;
+    }
+
+    public void setTasktype(String tasktype) {
+        this.tasktype = tasktype;
+    }
 
     public String getTaskcount() {
         return taskcount;

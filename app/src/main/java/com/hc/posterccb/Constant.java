@@ -18,7 +18,6 @@ public class Constant {
 
     public static final String TASKTYPE = "tasktype";
     public static final String TASKREPORT="taskreport";
-
     public static final String XML_STARTDOM = "command";
     public static final String XML_LISTTAG = "content";
     public static final String XML_CONFIG = "config";

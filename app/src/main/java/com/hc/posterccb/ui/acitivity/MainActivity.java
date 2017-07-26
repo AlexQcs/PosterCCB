@@ -185,6 +185,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mRealTimePosition = position;
         if (position.equals("top")) {
             setMarqueeTextView(mStvRealTimeTop, bean);
+
         } else if (position.equals("under")) {
             setMarqueeTextView(mStvRealTimeBottom, bean);
         }
@@ -243,6 +244,12 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         int fontColor = Color.parseColor(bean.getFontcolor());
         //播放速度
         int speed = parseInt(bean.getSpeed());
+        //播放的内容
+        String message = bean.getMessage();
+        view.setText(message);
+        view.setTextSize(fontSize);
+        view.setBackgroundColor(bgColor);
+        view.setTextColor(fontColor);
         //播放时长或者播放时间
         if (!("").equals(bean.getCount())) {
             int count = parseInt(bean.getCount());
@@ -253,13 +260,8 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         } else if (!("").equals(bean.getTimelength())) {
             int timeLength = parseInt(bean.getTimelength());
         }
-        //播放的内容
-        String message = bean.getMessage();
 
-        view.setText(message);
-        view.setTextSize(fontSize);
-        view.setBackgroundColor(bgColor);
-        view.setTextColor(fontColor);
+
         switch (speed) {
             case 0:
                 view.setSpeed(1);

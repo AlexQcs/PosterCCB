@@ -11,12 +11,12 @@ import java.util.Locale;
 
 public class DateFormatUtils {
     public static String date2String(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.CHINA);
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.CHINA);
         return sdf.format(date);
     }
 
     public static Date string2Date(String dateStr) {
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.CHINA);
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.CHINA);
         Date date = new Date();
         try {
             date = sdf.parse(dateStr);
