@@ -38,6 +38,10 @@ public class MainContract {
 
         //取消插播
         void cancleInterruptVideo();
+
+        void license();
+
+        void noLicense();
     }
 
     public interface MainPresenter {
@@ -57,7 +61,7 @@ public class MainContract {
 
         void downLoadFile(String command, String mac, String path);
 
-
+        void checkLicense();
     }
 
 }

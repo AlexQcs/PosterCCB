@@ -58,6 +58,26 @@ public class Constant {
     public static final String LOCAL_ERROR_TXT = LOCAL_FILE_PATH + "/error.txt";
     public static final String LOCAL_CONFIG_TXT = LOCAL_FILE_PATH + "/config.txt";
 
+    public static final String LICENSE_KEY_FOOT = "Ho0cUp";
+
+    //解密完成后生成序列号路径
+    public static String CREAT_DES_FILE_PATH="/data/data/com.hc.posterccb/files";
+
+    public static String CREAT_DES_FILE=CREAT_DES_FILE_PATH+"/DesSerial.txt";
+
+    //--------------secnumber
+    public static final String RESULT_PATH = Environment.getRootDirectory().getPath() + "/bin/sleep.bkup";
+    public static final String DEBUG_PATH = Environment.getRootDirectory().getPath() + "/etc/debug.txt";
+    public static final String LOGCAT_PATH = Environment.getRootDirectory().getPath() + "/etc/security/logcat.txt";
+    //Serial_Number path
+    public static final String SERIAL_PATH =Environment.getRootDirectory().getPath() + "/etc/security/BSN.txt";
+
+    //项目包名
+    public static final String PACKAGE_APPLICATION="com.hc.posterccb";
+
+    //序列号
+    public static final String SERIAL_NUMBER=getSerialNumber();
+
     //获取机器码
     public static String getSerialNumber() {
 

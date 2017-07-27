@@ -399,4 +399,70 @@ public class FileUtils {
         }
         return stringBuilder.toString();
     }
+
+
+    public List<String> DecFile(String path) throws IOException {
+        List<String> strings = new ArrayList<String>();
+        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
+            String[] decStr = line.split("。");
+            if (decStr.length >= 2)
+                strings.add(decStr[1]);
+        }
+
+        br.close();
+        return strings;
+    }
+
+    public static void CreatText() throws IOException{
+
+        File file=new File(Constant.CREAT_DES_FILE_PATH);
+        if (!file.exists()){
+            try{
+                file.mkdirs();
+            }catch (Exception e){
+
+            }
+        }
+        File dir=new File(Constant.CREAT_DES_FILE);
+        Log.e("验证文件目录",dir.getPath()+"");
+        Log.e("在data目录下是否存在文件",dir.exists()+"");
+        if (!dir.exists()){
+            try {
+                boolean iscreat=dir.createNewFile();
+                Log.e("在data目录下新增文件",iscreat+"");
+            }catch (Exception e){
+
+            }
+        }
+    }
+
+    public static void writSerialTxt(String seriaStr){
+        FileWriter fw=null;
+        BufferedWriter bw=null;
+        String datetime="";
+        try{
+            SimpleDateFormat tempDate=new SimpleDateFormat("yyyy-MM-dd"+" "+"hh:mm:ss");
+            datetime=tempDate.format(new Date()).toString();
+            fw=new FileWriter(Constant.CREAT_DES_FILE,true);
+
+            bw=new BufferedWriter(fw);
+
+            String myreadline=seriaStr+"\r\n"+datetime;
+
+            bw.write(myreadline+"\r\n");
+            bw.newLine();
+            bw.flush();
+            bw.close();
+            fw.close();
+        }catch (Exception e){
+            e.printStackTrace();
+            try {
+                bw.close();
+                fw.close();
+            }catch (IOException e1){
+
+            }
+        }
+    }
 }

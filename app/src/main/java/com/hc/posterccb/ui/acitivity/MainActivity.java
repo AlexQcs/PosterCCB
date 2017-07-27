@@ -235,6 +235,16 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     }
 
+    @Override
+    public void license() {
+
+    }
+
+    @Override
+    public void noLicense() {
+
+    }
+
     void setMarqueeTextView(MarqueeTextView view, RealTimeMsgBean bean) {
         //字体大小
         float fontSize = Float.parseFloat(bean.getFontsize());

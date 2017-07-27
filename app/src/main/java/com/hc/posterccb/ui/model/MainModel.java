@@ -8,7 +8,6 @@ import com.hc.posterccb.api.Api;
 import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.base.BaseModel;
 import com.hc.posterccb.bean.PostResult;
-import com.hc.posterccb.bean.report.TaskReportBean;
 import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
 import com.hc.posterccb.bean.polling.ControlProgramBean;
@@ -18,6 +17,7 @@ import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
+import com.hc.posterccb.bean.report.TaskReportBean;
 import com.hc.posterccb.exception.ApiException;
 import com.hc.posterccb.subscriber.CommonSubscriber;
 import com.hc.posterccb.util.ControlUtils;
@@ -26,13 +26,17 @@ import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.JsonUtils;
 import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.SFTPUtils;
+import com.hc.posterccb.util.SpUtils;
 import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.util.XmlUtils;
+import com.hc.posterccb.util.encrypt.DesDecUtils;
 import com.thoughtworks.xstream.XStream;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.ResponseBody;
@@ -50,10 +54,12 @@ public class MainModel extends BaseModel {
 
     private String TAG = "MainModel";
 
-    public SFTPUtils mSFTPUtils = new SFTPUtils();
+    private SFTPUtils mSFTPUtils = new SFTPUtils();
 
     public volatile int pollingTimer = 10;
     private TaskReportBean mTaskReport = new TaskReportBean();
+
+    private boolean mLicensed = false;
 
 
     //轮询任务
@@ -117,7 +123,7 @@ public class MainModel extends BaseModel {
     }
 
 
-    public void resResult(String taskType, PostResult postResult, InfoHint infoHint) {
+    private void resResult(String taskType, PostResult postResult, InfoHint infoHint) {
         if (postResult.getBean() == null) {
             return;
         }
@@ -398,7 +404,7 @@ public class MainModel extends BaseModel {
     }
 
     //终端配置信息类任务
-    public void resConfig(ConfigBean bean) {
+    private void resConfig(ConfigBean bean) {
         String jsonStr = JsonUtils.Bean2JsonStr(bean);
         LogUtils.e("resResConfig", jsonStr);
         try {
@@ -408,7 +414,7 @@ public class MainModel extends BaseModel {
         }
     }
 
-    void postTaskreport(String tasktype, String taskid) {
+    private void postTaskreport(String tasktype, String taskid) {
         XStream xStream = new XStream();
         mTaskReport.setTasktype(tasktype);
         mTaskReport.setTaskid(taskid);
@@ -432,7 +438,59 @@ public class MainModel extends BaseModel {
                 });
     }
 
+    public void CheckLisence(final Config config) {
+        Observable.interval(1000, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.io())
+                .subscribe(new Action1<Long>() {
+                    @Override
+                    public void call(Long aLong) {
+                        File file1 = new File(Constant.RESULT_PATH);
+                        File file2 = new File(Constant.DEBUG_PATH);
+                        File file3 = new File(Constant.LOGCAT_PATH);
+                        File file4 = new File(Constant.SERIAL_PATH);
 
+//                    Log.e("路径：",ConstUtil.RESULT_PATH+"--------"+ConstUtil.DEBUG_PATH+"-------"+ConstUtil.LOGCAT_PATH);
+                        if (!file1.exists() || !file2.exists() || !file3.exists()) {
+                            Log.e("runCheckLicenedTask", "文件不存在");
+                            config.noLicense();
+                        }
+                        if (file4.exists()) {
+                            if (!mLicensed) {
+                                desSerialNumber(config);
+                            }
+                        }
+                    }
+                });
+    }
+
+    private void desSerialNumber(Config config) {
+        FileUtils fileUtils = new FileUtils();
+        try {
+            List<String> listDec = fileUtils.DecFile(Constant.SERIAL_PATH);
+            for (String s : listDec) {
+                if (DesDecUtils.desDec(s.trim()).equals(Constant.SERIAL_NUMBER.trim())) {
+                    mLicensed = true;
+                    Log.e("Licensed", mLicensed + "");
+                    saveData();
+//                    FileUtils.deleteFile(path);
+                    FileUtils.CreatText();
+                    FileUtils.writSerialTxt(Constant.SERIAL_NUMBER);
+                    config.license();
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            Log.e("Licensed", mLicensed + "");
+        }
+    }
+
+    private void saveData() {
+        SpUtils.put("Licensed", mLicensed);
+    }
+
+    private void getData() {
+        mLicensed = (boolean) SpUtils.get("Licensed", false);
+    }
 
 
     //通过接口产生信息回调
@@ -479,5 +537,16 @@ public class MainModel extends BaseModel {
         //取消插播
         void videoInterruptCancle();
 
+
+
     }
+
+    //通过接口产生信息回调
+    public interface Config {
+        //授权
+        void license();
+
+        void noLicense();
+    }
+
 }

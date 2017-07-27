@@ -41,7 +41,6 @@ public class MainPresenter extends BasePresenter<MainActivity>
                     getIView().setRealTimeText(bean);
                 }
 
-
                 //即时消息开始
                 @Override
                 public void realtimeStart() {
@@ -94,6 +93,23 @@ public class MainPresenter extends BasePresenter<MainActivity>
         }
     }
 
+    @Override
+    public void checkLicense() {
+        if (!getIView().checkPostParamNull()) {
+            ((MainModel) getiModelMap().get("checklicense")).CheckLisence(new MainModel.Config() {
+                @Override
+                public void license() {
+                    getIView().license();
+                }
+
+                @Override
+                public void noLicense() {
+                    getIView().noLicense();
+                }
+            });
+        }
+    }
+
 
     @Override
     public HashMap<String, IModel> getiModelMap() {
@@ -106,6 +122,7 @@ public class MainPresenter extends BasePresenter<MainActivity>
         map.put("polling", models[0]);
         map.put("downloadfile", models[0]);
         map.put("posttaskreport", models[0]);
+        map.put("checklicense", models[0]);
         return map;
     }
 
