@@ -1,5 +1,6 @@
 package com.hc.posterccb.ui.acitivity;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.os.Build;
@@ -8,6 +9,7 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.app.FragmentTransaction;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
@@ -37,6 +39,8 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     MarqueeTextView mStvRealTimeTop;
     @BindView(R.id.tv_realtimebottom)
     MarqueeTextView mStvRealTimeBottom;
+    @BindView(R.id.tv_nolicense)
+    TextView mTvNolicense;
 
     private AudioManager am;
 
@@ -85,15 +89,16 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @Override
     protected void initData() {
         FileUtils.checkAppFile();
-        long unused=MemInfo.getAvailableSize();
+        long unused = MemInfo.getAvailableSize();
         VolumeUtils.setVolum(5);
-        LogUtils.e(TAG,"剩余内存"+unused);
+        LogUtils.e(TAG, "剩余内存" + unused);
         mPresenter.pollingTask(mTaskName, mSerialNumber);
+        mPresenter.checkLicense();
     }
 
-    @OnClick({R.id.btn_cancle,R.id.btn_delete,R.id.btn_relay,R.id.btn_pause})
-    void contoller(View view){
-        switch (view.getId()){
+    @OnClick({R.id.btn_cancle, R.id.btn_delete, R.id.btn_relay, R.id.btn_pause})
+    void contoller(View view) {
+        switch (view.getId()) {
             case R.id.btn_pause:
                 mInteraction.pause();
                 break;
@@ -109,34 +114,39 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     }
 
-    public interface ActivityInteraction{
+    //fragment视频播放控制
+    public interface ActivityInteraction {
+        //暂停
         void pause();
+
+        //恢复
         void replay();
+
+        //删除播放列表
         void delProgramList();
+
+        //取消插播
         void interruptCancle();
     }
 
+    //初始化控件
     @Override
     protected void initView() {
 
-
         mFull_H_Fragment = new Full_H_Fragment();
-        mThreeHFragment=new Three_H_Fragment();
+        mThreeHFragment = new Three_H_Fragment();
 
         mFragmentManager = getSupportFragmentManager();
         mFragmentTransaction = mFragmentManager.beginTransaction();
-//
 
-        if (mThreeHFragment instanceof ActivityInteraction){
-            mInteraction=(ActivityInteraction)mThreeHFragment;
-        }else {
+        if (mThreeHFragment instanceof ActivityInteraction) {
+            mInteraction = (ActivityInteraction) mThreeHFragment;
+        } else {
             throw new IllegalArgumentException("activity must implements FragmentInteraction");
         }
 
         mFragmentTransaction.add(R.id.frame_fragment, mThreeHFragment, "Three_H_Fragment");
         mFragmentTransaction.commit();
-
-
 
         localPowerManager = (PowerManager) getSystemService(POWER_SERVICE);
         // 获取PowerManager.WakeLock对象,后面的参数|表示同时传入两个值,最后的是LogCat里用的Tag
@@ -155,6 +165,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     }
 
+    //获取布局
     @Override
     protected int getLayoutId() {
         return R.layout.activity_main;
@@ -165,6 +176,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     }
 
+    //检查轮询
     public boolean checkPostParamNull() {
         boolean isNull = false;
         if (StringUtils.isEmpty(mTaskName)) {
@@ -178,6 +190,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         return isNull;
     }
 
+    //设置即时消息
     @Override
     public void setRealTimeText(RealTimeMsgBean bean) {
 
@@ -191,6 +204,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         }
     }
 
+    //开始即时消息的滚动
     @Override
     public void startRealtimeTask() {
         if (mRealTimePosition.equals("top")) {
@@ -200,6 +214,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         }
     }
 
+    //停止即时消息滚动
     @Override
     public void stopRealtimeTask() {
         if (mRealTimePosition.equals("top")) {
@@ -209,42 +224,50 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         }
     }
 
+    //取消即时消息
     @Override
     public void cancleRealtimeTask() {
         mStvRealTimeTop.stopScroll();
         mStvRealTimeBottom.stopScroll();
     }
 
+    //暂停播放视频
     @Override
     public void pauseVideo() {
-
+        mInteraction.pause();
     }
 
+    //恢复播放视频
     @Override
     public void replayVideo() {
-
+        mInteraction.replay();
     }
 
+    //删除播放列表
     @Override
     public void deleteProgramList() {
-
+        mInteraction.delProgramList();
     }
 
+    //取消视频插播
     @Override
     public void cancleInterruptVideo() {
-
+        mInteraction.interruptCancle();
     }
 
+    //授权操作
     @Override
     public void license() {
-
+        startActivity(new Intent(this, LicenseActivity.class));
     }
 
+    //未授权显示
     @Override
     public void noLicense() {
-
+        mTvNolicense.setVisibility(View.VISIBLE);
     }
 
+    //设置滚动textview样式
     void setMarqueeTextView(MarqueeTextView view, RealTimeMsgBean bean) {
         //字体大小
         float fontSize = Float.parseFloat(bean.getFontsize());
@@ -287,11 +310,13 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     }
 
+    //轮询成功操作
     @Override
     public void pollingSuccess(String msg) {
 
     }
 
+    //轮询失败操作
     @Override
     public void pollingFail(String failStr) {
         toast(failStr);

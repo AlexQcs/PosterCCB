@@ -52,6 +52,7 @@ public class Constant {
 
 
     public static final String LOCAL_FILE_PATH = Environment.getExternalStorageDirectory() + "/PosterCCB";
+    public static final String LOCAL_APK_PATH=LOCAL_FILE_PATH+"/apk";
     public static final String LOCAL_LOG_PATH = LOCAL_FILE_PATH + "/log";
     public static final String LOCAL_PROGRAM_PATH = LOCAL_FILE_PATH + "/media";
     public static final String LOCAL_PROGRAM_TXT = LOCAL_PROGRAM_PATH + "/program.txt";

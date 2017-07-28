@@ -3,6 +3,7 @@ package com.hc.posterccb.ui.model;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.gson.Gson;
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.api.Api;
 import com.hc.posterccb.application.ProApplication;
@@ -28,6 +29,7 @@ import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.SFTPUtils;
 import com.hc.posterccb.util.SpUtils;
 import com.hc.posterccb.util.StringUtils;
+import com.hc.posterccb.util.VolumeUtils;
 import com.hc.posterccb.util.XmlUtils;
 import com.hc.posterccb.util.encrypt.DesDecUtils;
 import com.thoughtworks.xstream.XStream;
@@ -118,7 +120,38 @@ public class MainModel extends BaseModel {
     public void configSystem() {
         String jsonStr = FileUtils.getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
         if (!jsonStr.equals("")) {
+            Gson gson = new Gson();
+            ConfigBean bean = gson.fromJson(jsonStr, ConfigBean.class);
+            Log.e("即时消息", bean.toString() + "---");
+            String powerOnTimeStr = bean.getStaruptime();//开机时间
+            String powerOffTimeStr = bean.getShutdowntime();//关机时间
+            int diskspacealarm = Integer.parseInt(bean.getDiskspacealarm());//硬盘警告阀值
+            String serverip = bean.getServerconfig();//服务器信息
+            SpUtils.put("serverip", serverip);//保存服务器信息
+            int selectinterval = Integer.parseInt(bean.getSelectinterval());//轮询时间
+            SpUtils.put("selectinterval", selectinterval);//保存轮询时间
+            int volume = Integer.parseInt(bean.getVolume());//终端音量 机器最高音量为15
+            VolumeUtils.setVolum(volume);
+            int downloadrate = Integer.parseInt(bean.getVolume());
+            String downloadtime = bean.getDownloadtime();//开机时间
 
+
+            Date powerOnTime = DateFormatUtils.string2Date(powerOnTimeStr, "HH:mm");
+            Date powerOffTime = DateFormatUtils.string2Date(powerOffTimeStr, "HH:mm");
+            Observable.interval(1, TimeUnit.SECONDS)
+                    .subscribe(new Action1<Long>() {
+                        @Override
+                        public void call(Long aLong) {
+                            Date date = new Date(System.currentTimeMillis());
+                            String currentTime = DateFormatUtils.date2String(date);
+                            Log.e("现在时间", currentTime + "---");
+                            if (date.getTime() > startTime.getTime()) {
+                                infoHint.realtimeStart();
+                            } else if (date.getTime() > endTime.getTime()) {
+                                infoHint.realTimeStop();
+                            }
+                        }
+                    });
         }
     }
 
@@ -377,8 +410,8 @@ public class MainModel extends BaseModel {
 
         final String startTimeStr = bean.getStarttime();
         final String endTimeStr = bean.getEndtime();
-        final Date startTime = DateFormatUtils.string2Date(startTimeStr);
-        final Date endTime = DateFormatUtils.string2Date(endTimeStr);
+        final Date startTime = DateFormatUtils.string2Date(startTimeStr, "HH:mm");
+        final Date endTime = DateFormatUtils.string2Date(endTimeStr, "HH:mm");
         infoHint.realTimeMessage(bean);
 
         Log.e("即时消息", bean.toString() + "---");
@@ -386,8 +419,8 @@ public class MainModel extends BaseModel {
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        Date date = new Date();
-                        String currentTime = DateFormatUtils.date2String(date);
+                        Date date = new Date(System.currentTimeMillis());
+                        String currentTime = DateFormatUtils.date2String(date, "HH:mm");
                         Log.e("现在时间", currentTime + "---");
                         if (date.getTime() > startTime.getTime()) {
                             infoHint.realtimeStart();
@@ -439,26 +472,33 @@ public class MainModel extends BaseModel {
     }
 
     public void CheckLisence(final Config config) {
+        getData();
+        if (mLicensed) {
+            Log.e("mLicensed", "已授权");
+        } else {
+            config.noLicense();
+        }
+        File file4 = new File(Constant.SERIAL_PATH);
+        if (file4.exists()) {
+            if (!mLicensed) {
+                desSerialNumber(config);
+            }
+        }
         Observable.interval(1000, TimeUnit.SECONDS)
-                .subscribeOn(Schedulers.io())
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
                         File file1 = new File(Constant.RESULT_PATH);
                         File file2 = new File(Constant.DEBUG_PATH);
                         File file3 = new File(Constant.LOGCAT_PATH);
-                        File file4 = new File(Constant.SERIAL_PATH);
+
 
 //                    Log.e("路径：",ConstUtil.RESULT_PATH+"--------"+ConstUtil.DEBUG_PATH+"-------"+ConstUtil.LOGCAT_PATH);
                         if (!file1.exists() || !file2.exists() || !file3.exists()) {
                             Log.e("runCheckLicenedTask", "文件不存在");
                             config.noLicense();
                         }
-                        if (file4.exists()) {
-                            if (!mLicensed) {
-                                desSerialNumber(config);
-                            }
-                        }
+
                     }
                 });
     }
@@ -468,6 +508,7 @@ public class MainModel extends BaseModel {
         try {
             List<String> listDec = fileUtils.DecFile(Constant.SERIAL_PATH);
             for (String s : listDec) {
+                Log.e("解密结果", DesDecUtils.desDec(s.trim()));
                 if (DesDecUtils.desDec(s.trim()).equals(Constant.SERIAL_NUMBER.trim())) {
                     mLicensed = true;
                     Log.e("Licensed", mLicensed + "");
@@ -479,6 +520,7 @@ public class MainModel extends BaseModel {
                     break;
                 }
             }
+            if (!mLicensed) config.noLicense();
         } catch (IOException e) {
             Log.e("Licensed", mLicensed + "");
         }
@@ -492,6 +534,15 @@ public class MainModel extends BaseModel {
         mLicensed = (boolean) SpUtils.get("Licensed", false);
     }
 
+    //关机
+    private void powerOff(String dateStr) {
+
+    }
+
+    //开机
+    private void powerOn(String dateStr) {
+
+    }
 
     //通过接口产生信息回调
     public interface InfoHint {
@@ -536,7 +587,6 @@ public class MainModel extends BaseModel {
 
         //取消插播
         void videoInterruptCancle();
-
 
 
     }

@@ -10,13 +10,13 @@ import java.util.Locale;
  */
 
 public class DateFormatUtils {
-    public static String date2String(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.CHINA);
+    public static String date2String(Date date,String format) {
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.CHINA);
         return sdf.format(date);
     }
 
-    public static Date string2Date(String dateStr) {
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.CHINA);
+    public static Date string2Date(String dateStr,String format) {
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.CHINA);
         Date date = new Date();
         try {
             date = sdf.parse(dateStr);

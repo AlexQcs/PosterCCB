@@ -5,6 +5,7 @@ import android.util.Xml;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.bean.PostResult;
+import com.hc.posterccb.bean.UpGradeCfgBean;
 import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
 import com.hc.posterccb.bean.polling.ControlProgramBean;
@@ -15,8 +16,6 @@ import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
-import com.hc.posterccb.bean.program.Program;
-import com.hc.posterccb.bean.program.ProgramRes;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -296,7 +295,7 @@ public class XmlUtils {
      * @author.Alex.on.2017年7月26日09:01:23
      * @throw XmlPullParserException、IOException
      */
-    public static ArrayList<Program> parseProgramXml(String xmlStr) {
+    public static ArrayList<UpGradeCfgBean> parseProgramXml(String xmlStr) {
         InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
         XmlPullParser parser = Xml.newPullParser();
         try {
@@ -305,11 +304,8 @@ public class XmlUtils {
             e.printStackTrace();
         }
 
-        ArrayList<Program> programArray = new ArrayList<Program>();
-        Program program = null;
-        ArrayList<ProgramRes> programResArrayList = new ArrayList<>();
-        ProgramRes programRes = null;
-
+        ArrayList<UpGradeCfgBean> resultArray = new ArrayList<UpGradeCfgBean>();
+        UpGradeCfgBean upGradeBean = null;
         try {
             //开始解析事件
             int eventType = parser.getEventType();
@@ -323,38 +319,21 @@ public class XmlUtils {
                     case XmlPullParser.START_TAG:
                         //给当前标签起个名字
                         String tagName = parser.getName();
-                        if (tagName.equals("defaultpls") || tagName.equals("pls")) {
+                         if (tagName.equals("file")) {
 
-                            program = new Program();
-                            programResArrayList = new ArrayList<>();
-                            program.setType(tagName);
-                            program.setAreatype(parser.getAttributeValue(null, "areatype"));
-                            program.setStdtime(parser.getAttributeValue(null, "stdtime"));
-                            program.setEdtime(parser.getAttributeValue(null, "edtime"));
-                        } else if (tagName.equals("res")) {
-
-                            programRes = new ProgramRes();
-                            programRes.setResnam(parser.getAttributeValue(null, "resname"));
-                            programRes.setResid(parser.getAttributeValue(null, "resid"));
-                            programRes.setArea(parser.getAttributeValue(null, "area"));
-                            programRes.setStdtime(parser.getAttributeValue(null, "stdtime"));
-                            programRes.setEdtime(parser.getAttributeValue(null, "edtime"));
-                            programRes.setPriority(parser.getAttributeValue(null, "priority"));
-                            programRes.setPlaycnt(parser.getAttributeValue(null, "playcnt"));
+                             upGradeBean = new UpGradeCfgBean();
+                             upGradeBean.setResid(parser.getAttributeValue(null,"resid"));
+                             upGradeBean.setHref(parser.getAttributeValue(null,"href"));
+                             upGradeBean.setMd5(parser.getAttributeValue(null,"md5"));
+                             upGradeBean.setFilesize(parser.getAttributeValue(null,"filesize"));
                         }
                         break;
                     case XmlPullParser.END_TAG:
-                        if (parser.getName().equalsIgnoreCase("res")) {
-                            if (programRes != null) {
-                                programResArrayList.add(programRes);
+                        if (parser.getName().equalsIgnoreCase("file")) {
+                            if (upGradeBean != null) {
+                                resultArray.add(upGradeBean);
                             }
-                            programRes = null;
-                        } else if (parser.getName().equalsIgnoreCase("defaultpls") || parser.getName().equalsIgnoreCase("pls")) {
-                            if (program != null) {
-                                program.setList(programResArrayList);
-                                programArray.add(program);
-                                program = null;
-                            }
+                            upGradeBean = null;
                         }
                         break;
                     case XmlPullParser.END_DOCUMENT:
@@ -371,8 +350,9 @@ public class XmlUtils {
             e.printStackTrace();
         }
 
-        return programArray;
+        return resultArray;
     }
+
 
 
 }
