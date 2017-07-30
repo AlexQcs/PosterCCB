@@ -1,6 +1,7 @@
 package com.hc.posterccb.ui.presenter;
 
 import com.hc.posterccb.base.BasePresenter;
+import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.mvp.IModel;
 import com.hc.posterccb.ui.contract.ThreeHContract;
 import com.hc.posterccb.ui.fragment.Three_H_Fragment;
@@ -15,9 +16,9 @@ import java.util.HashMap;
 public class ThreeHPresenter extends BasePresenter<Three_H_Fragment> implements ThreeHContract.ThreeHFragmentPresenter{
 
     @Override
-    public void getProgramList(String path) {
+    public void getProgramList(Program program) {
         if (!getIView().checkPostParamNull()) {
-            ((ThreeHModel) getiModelMap().get("postplaylog")).getProgram(path, new ThreeHModel.InfoHint() {
+            ((ThreeHModel) getiModelMap().get("postplaylog")).getProgram(program, new ThreeHModel.InfoHint() {
 
 //                @Override
 //                public void playVideo(ArrayList<ProgramBean> list) {
@@ -28,8 +29,8 @@ public class ThreeHPresenter extends BasePresenter<Three_H_Fragment> implements 
 
 
                 @Override
-                public void playVideo(String path) {
-                    getIView().playProgram(path);
+                public void playVideo(Program program) {
+                    getIView().playProgram(program);
                 }
 
                 @Override

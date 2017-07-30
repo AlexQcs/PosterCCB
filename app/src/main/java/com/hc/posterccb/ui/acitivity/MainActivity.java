@@ -16,6 +16,7 @@ import com.hc.posterccb.R;
 import com.hc.posterccb.base.BaseActivity;
 import com.hc.posterccb.base.BaseFragment;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
+import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.ui.contract.MainContract;
 import com.hc.posterccb.ui.fragment.Full_H_Fragment;
 import com.hc.posterccb.ui.fragment.Three_H_Fragment;
@@ -26,6 +27,8 @@ import com.hc.posterccb.util.MemInfo;
 import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.util.VolumeUtils;
 import com.hc.posterccb.widget.MarqueeTextView;
+
+import java.io.IOException;
 
 import butterknife.BindView;
 import butterknife.OnClick;
@@ -94,6 +97,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         LogUtils.e(TAG, "剩余内存" + unused);
         mPresenter.pollingTask(mTaskName, mSerialNumber);
         mPresenter.checkLicense();
+        mPresenter.initConfig();
     }
 
     @OnClick({R.id.btn_cancle, R.id.btn_delete, R.id.btn_relay, R.id.btn_pause})
@@ -127,6 +131,12 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
         //取消插播
         void interruptCancle();
+
+        //处理正常播放列表
+        void playNormalProgram(Program program);
+
+        //处理插播播放列表
+        void playInterProgram(Program program);
     }
 
     //初始化控件
@@ -208,8 +218,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @Override
     public void startRealtimeTask() {
         if (mRealTimePosition.equals("top")) {
+            mStvRealTimeTop.setVisibility(View.VISIBLE);
             mStvRealTimeTop.startScroll();
         } else if (mRealTimePosition.equals("under")) {
+            mStvRealTimeBottom.setVisibility(View.VISIBLE);
             mStvRealTimeBottom.startScroll();
         }
     }
@@ -219,8 +231,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     public void stopRealtimeTask() {
         if (mRealTimePosition.equals("top")) {
             mStvRealTimeTop.stopScroll();
+            mStvRealTimeTop.setVisibility(View.GONE);
         } else if (mRealTimePosition.equals("under")) {
             mStvRealTimeBottom.stopScroll();
+            mStvRealTimeBottom.setVisibility(View.GONE);
         }
     }
 
@@ -253,6 +267,11 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @Override
     public void cancleInterruptVideo() {
         mInteraction.interruptCancle();
+        try {
+            FileUtils.coverTxtToFile("",Constant.LOCAL_PROGRAM_INTER_TXT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     //授权操作
@@ -265,6 +284,16 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @Override
     public void noLicense() {
         mTvNolicense.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void logicNormalProgram(Program program) {
+        mInteraction.playNormalProgram(program);
+    }
+
+    @Override
+    public void logicInterProgram(Program program) {
+        mInteraction.playNormalProgram(program);
     }
 
     //设置滚动textview样式

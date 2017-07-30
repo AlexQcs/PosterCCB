@@ -3,6 +3,7 @@ package com.hc.posterccb.ui.model;
 import android.support.annotation.NonNull;
 
 import com.hc.posterccb.base.BaseModel;
+import com.hc.posterccb.bean.program.Program;
 
 import rx.Observable;
 import rx.Subscriber;
@@ -14,7 +15,7 @@ import rx.schedulers.Schedulers;
  */
 
 public class ThreeHModel extends BaseModel {
-    public void getProgram(@NonNull String programPath, final InfoHint infoHint) {
+    public void getProgram(@NonNull Program program, final InfoHint infoHint) {
 //        String jsonStr = FileUtils.readFileSdcard(programPath);
 //        ArrayList<ProgramBean> programList = JsonUtils.JsonStr2ArrayList(jsonStr, new TypeToken<ArrayList<ProgramBean>>() {
 //        }.getType());
@@ -34,10 +35,10 @@ public class ThreeHModel extends BaseModel {
 //                infoHint.playVideo(list);
 //            }
 //        });
-        Observable.just(programPath)
+        Observable.just(program)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<String>() {
+                .subscribe(new Subscriber<Program>() {
                     @Override
                     public void onCompleted() {
                         infoHint.playSuccessLog("获取播放列表完成");
@@ -49,9 +50,10 @@ public class ThreeHModel extends BaseModel {
                     }
 
                     @Override
-                    public void onNext(String s) {
-                        infoHint.playVideo(s);
+                    public void onNext(Program program) {
+                        infoHint.playVideo(program);
                     }
+
                 });
 
     }
@@ -59,7 +61,7 @@ public class ThreeHModel extends BaseModel {
     //通过接口产生信息回调
     public interface InfoHint {
         //        void playVideo(ArrayList<ProgramBean> list);
-        void playVideo(String path);
+        void playVideo(Program program);
 
         void playErrorLog(String msg);
 

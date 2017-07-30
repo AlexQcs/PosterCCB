@@ -10,10 +10,10 @@ import java.security.MessageDigest;
  */
 
 public class MD5 {
-    // 计算文件的 MD5 值
-    public static String encode(File file) {
+    // 判断文件的 MD5 值
+    public static boolean encode(File file,String targetMD5) {
         if (file == null || !file.isFile() || !file.exists()) {
-            return "";
+            return false;
         }
         FileInputStream in = null;
         String result = "";
@@ -45,6 +45,6 @@ public class MD5 {
                 }
             }
         }
-        return result;
+        return (result.equals(targetMD5));
     }
 }

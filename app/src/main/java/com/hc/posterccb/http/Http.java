@@ -3,6 +3,7 @@ package com.hc.posterccb.http;
 import com.hc.posterccb.api.Api;
 import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.util.NetworkUtil;
+import com.hc.posterccb.util.SpUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -141,7 +142,7 @@ public class Http {
                     // 获取retrofit的实例
                     retrofit = new Retrofit
                             .Builder()
-                            .baseUrl(Api.BASE_URL)  //自己配置
+                            .baseUrl((String) SpUtils.get("baseurl",Api.BASE_URL))  //自己配置
                             .client(client)
                             .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
 //                            .addConverterFactory(GsonConverterFactory.create()) //这里是用的fastjson的

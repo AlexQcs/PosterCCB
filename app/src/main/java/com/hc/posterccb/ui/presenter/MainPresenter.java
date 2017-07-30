@@ -2,6 +2,7 @@ package com.hc.posterccb.ui.presenter;
 
 import com.hc.posterccb.base.BasePresenter;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
+import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.mvp.IModel;
 import com.hc.posterccb.ui.acitivity.MainActivity;
 import com.hc.posterccb.ui.contract.MainContract;
@@ -59,6 +60,16 @@ public class MainPresenter extends BasePresenter<MainActivity>
                     getIView().cancleRealtimeTask();
                 }
 
+                @Override
+                public void logicNormalProgram(Program program) {
+                    getIView().logicNormalProgram(program);
+                }
+
+                @Override
+                public void logicInterProgram(Program program) {
+                    getIView().logicInterProgram(program);
+                }
+
                 //暂停播放
                 @Override
                 public void videoPause() {
@@ -110,6 +121,13 @@ public class MainPresenter extends BasePresenter<MainActivity>
         }
     }
 
+    @Override
+    public void initConfig() {
+        if (!getIView().checkPostParamNull()) {
+            ((MainModel) getiModelMap().get("initconfig")).init();
+        }
+    }
+
 
     @Override
     public HashMap<String, IModel> getiModelMap() {
@@ -123,6 +141,7 @@ public class MainPresenter extends BasePresenter<MainActivity>
         map.put("downloadfile", models[0]);
         map.put("posttaskreport", models[0]);
         map.put("checklicense", models[0]);
+        map.put("initconfig", models[0]);
         return map;
     }
 

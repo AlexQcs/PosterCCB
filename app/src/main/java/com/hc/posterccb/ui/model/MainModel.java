@@ -1,5 +1,6 @@
 package com.hc.posterccb.ui.model;
 
+import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -9,6 +10,7 @@ import com.hc.posterccb.api.Api;
 import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.base.BaseModel;
 import com.hc.posterccb.bean.PostResult;
+import com.hc.posterccb.bean.UpGradeCfgBean;
 import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
 import com.hc.posterccb.bean.polling.ControlProgramBean;
@@ -18,20 +20,25 @@ import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
+import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.bean.report.TaskReportBean;
 import com.hc.posterccb.exception.ApiException;
+import com.hc.posterccb.http.RequestManager;
 import com.hc.posterccb.subscriber.CommonSubscriber;
+import com.hc.posterccb.util.AppVersionTools;
 import com.hc.posterccb.util.ControlUtils;
 import com.hc.posterccb.util.DateFormatUtils;
 import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.JsonUtils;
 import com.hc.posterccb.util.LogUtils;
+import com.hc.posterccb.util.MD5;
 import com.hc.posterccb.util.SFTPUtils;
 import com.hc.posterccb.util.SpUtils;
 import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.util.VolumeUtils;
 import com.hc.posterccb.util.XmlUtils;
 import com.hc.posterccb.util.encrypt.DesDecUtils;
+import com.hc.posterccb.util.encrypt.SilentInstall;
 import com.thoughtworks.xstream.XStream;
 
 import java.io.File;
@@ -46,7 +53,10 @@ import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action1;
+import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+
+import static com.hc.posterccb.util.FileUtils.getStringFromTxT;
 
 /**
  * Created by alex on 2017/7/10.
@@ -62,6 +72,9 @@ public class MainModel extends BaseModel {
     private TaskReportBean mTaskReport = new TaskReportBean();
 
     private boolean mLicensed = false;
+
+
+    private RequestManager requestManager = RequestManager.getInstance();
 
 
     //轮询任务
@@ -116,39 +129,57 @@ public class MainModel extends BaseModel {
 
     }
 
+    public void init() {
+        configSystem();
+    }
+
     //系统配置
     public void configSystem() {
-        String jsonStr = FileUtils.getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
+        String jsonStr = getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
         if (!jsonStr.equals("")) {
             Gson gson = new Gson();
             ConfigBean bean = gson.fromJson(jsonStr, ConfigBean.class);
-            Log.e("即时消息", bean.toString() + "---");
+            Log.e("系统配置", bean.toString() + "---");
             String powerOnTimeStr = bean.getStaruptime();//开机时间
             String powerOffTimeStr = bean.getShutdowntime();//关机时间
+            Date powerOnTime = DateFormatUtils.string2Date(powerOnTimeStr, "HH:mm");
+            Date powerOffTime = DateFormatUtils.string2Date(powerOffTimeStr, "HH:mm");
             int diskspacealarm = Integer.parseInt(bean.getDiskspacealarm());//硬盘警告阀值
+            SpUtils.put("diskspacealarm", diskspacealarm);
             String serverip = bean.getServerconfig();//服务器信息
             SpUtils.put("serverip", serverip);//保存服务器信息
             int selectinterval = Integer.parseInt(bean.getSelectinterval());//轮询时间
             SpUtils.put("selectinterval", selectinterval);//保存轮询时间
             int volume = Integer.parseInt(bean.getVolume());//终端音量 机器最高音量为15
             VolumeUtils.setVolum(volume);
-            int downloadrate = Integer.parseInt(bean.getVolume());
-            String downloadtime = bean.getDownloadtime();//开机时间
+            int downloadrate = Integer.parseInt(bean.getVolume());//下载速度
+            String downloadtime = bean.getDownloadtime();//下载时间段
+            String logServer = bean.getLogserver();//日志服务器路径:ftp://user:pwd@serverip:port/logdir
+            SpUtils.put("logServer", logServer);
+            String upLoadLogTime = bean.getUploadlogtime();//日志定时上传时间，格式: HH:MM:SS
+            SpUtils.put("upLoadLogTime", upLoadLogTime);
+            String keeplogTime = bean.getKeeplogtime();//日志保留时间，单位：天
+            SpUtils.put("keeplogTime", keeplogTime);
 
-
-            Date powerOnTime = DateFormatUtils.string2Date(powerOnTimeStr, "HH:mm");
-            Date powerOffTime = DateFormatUtils.string2Date(powerOffTimeStr, "HH:mm");
             Observable.interval(1, TimeUnit.SECONDS)
                     .subscribe(new Action1<Long>() {
                         @Override
                         public void call(Long aLong) {
                             Date date = new Date(System.currentTimeMillis());
-                            String currentTime = DateFormatUtils.date2String(date);
-                            Log.e("现在时间", currentTime + "---");
-                            if (date.getTime() > startTime.getTime()) {
-                                infoHint.realtimeStart();
-                            } else if (date.getTime() > endTime.getTime()) {
-                                infoHint.realTimeStop();
+                            String currentTime = DateFormatUtils.date2String(date, "HH:mm");
+//                            Log.e("现在时间", currentTime + "---");
+
+                            try {
+                                //定时关机
+                                if (date.getTime() == powerOffTime.getTime()) {
+                                    ControlUtils.writeFile("0");
+                                }
+                                //定时开机
+                                if (date.getTime() == powerOnTime.getTime()) {
+                                    ControlUtils.writeFile("1");
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
                         }
                     });
@@ -167,7 +198,7 @@ public class MainModel extends BaseModel {
                 ArrayList<ProgramBean> list = postResult.getList();
                 PollResultBean bean = (PollResultBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resProgram(list);
+                resProgram(list,infoHint);
                 break;
             }
             //升级类任务
@@ -338,7 +369,10 @@ public class MainModel extends BaseModel {
 
     //终端在播内容上报
     private void resMonitorReport(PollResultBean bean) {
-        String jsonStr = FileUtils.getStringFromTxT(Constant.LOCAL_PROGRAM_TXT);
+        String jsonStr = getStringFromTxT(Constant.LOCAL_PROGRAM_TXT);
+        if (!jsonStr.equals("")) {
+
+        }
 
     }
 
@@ -388,7 +422,7 @@ public class MainModel extends BaseModel {
     }
 
     //播放类任务
-    private void resProgram(ArrayList<ProgramBean> list) {
+    private void resProgram(ArrayList<ProgramBean> list,InfoHint infoHint) {
 
         String arrayStr = JsonUtils.ArrayList2JsonStr(list);
         LogUtils.e("resProgram", arrayStr);
@@ -397,19 +431,144 @@ public class MainModel extends BaseModel {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        Observable.just(list)
+                .flatMap(new Func1<ArrayList<ProgramBean>, Observable<ProgramBean>>() {
+                    @Override
+                    public Observable<ProgramBean> call(ArrayList<ProgramBean> list) {
+                        return Observable.from(list);
+                    }
+                }).subscribeOn(Schedulers.newThread())
+                .subscribe(new Action1<ProgramBean>() {
+                    @Override
+                    public void call(ProgramBean bean) {
+                        downloadProgram(bean,infoHint);
+                    }
+                });
+
+
+    }
+
+    //下载播放资源
+    private void downloadProgram(ProgramBean bean,InfoHint infoHint) {
+        LogUtils.e("ProgramBean", bean.toString());
+        String url = bean.getLink();
+        String[] array = url.split("/");
+        if (array.length == 0) return;
+        int playmode = Integer.parseInt(bean.getPlaymode());
+        String filename = array[array.length-1];
+        if (playmode == 1) {
+            filename = "normal.txt";
+        } else {
+            filename = "inter.txt";
+        }
+        String finalFilename = filename;
+
+        requestManager.downLoadFile(filename, (String) SpUtils.get("baseurl", Api.BASE_URL) + url, Constant.LOCAL_PROGRAM_PATH, new RequestManager.ReqCallBack<File>() {
+            @Override
+            public void onReqSuccess(File result) {
+                if (MD5.encode(result,bean.md5)){
+                    LogUtils.e("resUpgrade", finalFilename + "下载成功");
+                    logicProgram(infoHint);
+                }else {
+                    LogUtils.e("resUpgrade", finalFilename + "下载失败");
+                }
+
+            }
+
+            @Override
+            public void onReqFailed(String errorMsg) {
+                LogUtils.e("resUpgrade", finalFilename + "下载失败");
+            }
+        });
+    }
+
+    //处理播放任务
+    private void logicProgram(InfoHint infoHint){
+        String jsonNormalStr = getStringFromTxT(Constant.LOCAL_PROGRAM_NORMAL_TXT);
+        String jsonInterStr = getStringFromTxT(Constant.LOCAL_PROGRAM_INTER_TXT);
+        if (!jsonNormalStr.equals("")) {
+            Gson gson = new Gson();
+            Program bean = gson.fromJson(jsonNormalStr, Program.class);
+            infoHint.logicNormalProgram(bean);
+            Log.e("正常播放节目单", bean.toString() + "---");
+        }
+        if (!jsonInterStr.equals("")) {
+            Gson gson = new Gson();
+            Program bean = gson.fromJson(jsonInterStr, Program.class);
+            infoHint.logicInterProgram(bean);
+            Log.e("插播播放节目单", bean.toString() + "---");
+        }
+
     }
 
     //升级任务
     private void resUpgrade(UpGradeBean bean) {
+        String jsonStr = JsonUtils.Bean2JsonStr(bean);
+        SpUtils.put("UpGradeBean", jsonStr);
 
+        requestManager.downLoadFile("upgrade.txt", (String) SpUtils.get("baseurl", Api.BASE_URL) + bean.getLink(), Constant.LOCAL_APK_PATH, new RequestManager.ReqCallBack<File>() {
+            @Override
+            public void onReqSuccess(File result) {
+                LogUtils.e("resUpgrade", "升级配置文件下载成功");
+                String xmlStr = FileUtils.getStringFromTxT(result.getPath());
+                ArrayList<UpGradeCfgBean> list = XmlUtils.parseUpGradeXml(xmlStr);
+                String href = (String) SpUtils.get("baseurl", Api.BASE_URL) + list.get(0).getHref();
+                downloadApk(href);
+            }
+
+            @Override
+            public void onReqFailed(String errorMsg) {
+                LogUtils.e("resUpgrade", "升级配置文件下载失败");
+            }
+        });
         LogUtils.e("resResUpgrade", bean.toString());
+    }
+
+    //下载升级apk文件
+    private void downloadApk(String href) {
+        requestManager.downLoadFile("upgrade.apk", href, Constant.LOCAL_APK_PATH, new RequestManager.ReqCallBack<File>() {
+            @Override
+            public void onReqSuccess(File file) {
+                LogUtils.e("downloadApk", "升级文件下载失败");
+                try {
+                    if (AppVersionTools.needUpdate(ProApplication.getmContext())) {
+                        Log.e("", "需要更新");
+                        boolean result = SilentInstall.install(file.getPath());
+                        Log.d("安装是否成功", result + "");
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onReqFailed(String errorMsg) {
+                LogUtils.e("downloadApk", "升级文件下载失败");
+            }
+        });
     }
 
     //即时消息类任务
     private void resRealTimeMsg(RealTimeMsgBean bean, final InfoHint infoHint) {
+        String jsonStr = JsonUtils.Bean2JsonStr(bean);
+        SpUtils.put("realtime", jsonStr);
+        realTimeTimer(infoHint);
+    }
 
+    private void realTimeTimer(final InfoHint infoHint) {
+        Gson gson = new Gson();
+        String jsonStr = (String) SpUtils.get("realtime", "");
+        if (jsonStr.equals("")) return;
+        RealTimeMsgBean bean = gson.fromJson(jsonStr, RealTimeMsgBean.class);
+        infoHint.realTimeMessage(bean);
         final String startTimeStr = bean.getStarttime();
+        SpUtils.put("StartRealTimeMsg", startTimeStr);
         final String endTimeStr = bean.getEndtime();
+        SpUtils.put("EndRealTimeMsg", endTimeStr);
+
         final Date startTime = DateFormatUtils.string2Date(startTimeStr, "HH:mm");
         final Date endTime = DateFormatUtils.string2Date(endTimeStr, "HH:mm");
         infoHint.realTimeMessage(bean);
@@ -433,6 +592,7 @@ public class MainModel extends BaseModel {
 
     //取消即时消息任务
     private void resCacnleRealTimeMsg(PollResultBean bean, final InfoHint infoHint) {
+
         infoHint.realTimeCancle();
     }
 
@@ -447,6 +607,7 @@ public class MainModel extends BaseModel {
         }
     }
 
+    //上报任务id
     private void postTaskreport(String tasktype, String taskid) {
         XStream xStream = new XStream();
         mTaskReport.setTasktype(tasktype);
@@ -471,6 +632,7 @@ public class MainModel extends BaseModel {
                 });
     }
 
+    //检查授权
     public void CheckLisence(final Config config) {
         getData();
         if (mLicensed) {
@@ -503,6 +665,7 @@ public class MainModel extends BaseModel {
                 });
     }
 
+    //解密
     private void desSerialNumber(Config config) {
         FileUtils fileUtils = new FileUtils();
         try {
@@ -526,12 +689,19 @@ public class MainModel extends BaseModel {
         }
     }
 
+    //保存sp
     private void saveData() {
         SpUtils.put("Licensed", mLicensed);
     }
 
+    //获取sp
     private void getData() {
         mLicensed = (boolean) SpUtils.get("Licensed", false);
+    }
+
+    //上传日志
+    private void uploadLog() {
+
     }
 
     //关机
@@ -575,6 +745,12 @@ public class MainModel extends BaseModel {
          * 此方法用于:取消即时消息任务
          */
         void realTimeCancle();
+
+        //播放类逻辑
+        void logicNormalProgram(Program beans);
+
+        void logicInterProgram(Program beans);
+
 
         //暂停播放
         void videoPause();

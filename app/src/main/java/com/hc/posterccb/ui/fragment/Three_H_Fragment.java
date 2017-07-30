@@ -6,16 +6,31 @@ import android.widget.RelativeLayout;
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
 import com.hc.posterccb.base.BaseFragment;
+import com.hc.posterccb.bean.program.Program;
+import com.hc.posterccb.bean.program.ProgramRes;
 import com.hc.posterccb.ui.acitivity.MainActivity;
 import com.hc.posterccb.ui.contract.ThreeHContract;
 import com.hc.posterccb.ui.presenter.ThreeHPresenter;
+import com.hc.posterccb.util.ControlUtils;
+import com.hc.posterccb.util.DateFormatUtils;
 import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.StringUtils;
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.widget.PLVideoView;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import butterknife.BindView;
+import rx.Observable;
+import rx.Observer;
+import rx.Subscriber;
+import rx.functions.Action1;
+import rx.functions.Func1;
 
 public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements ThreeHContract.ThreeHView, MainActivity.ActivityInteraction {
 
@@ -43,43 +58,146 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
     private String mProgramsPath02 = Constant.VIDEO2_PATH;
     private String mProgramsPath03 = Constant.VIDEO3_PATH;
 
+    /**
+     * @Override public void playProgram(String path) {
+     * mPLVideoViewOne.setAVOptions(options);
+     * mPLVideoViewTwo.setAVOptions(options);
+     * mPLVideoViewThree.setAVOptions(options);
+     * <p>
+     * mPLVideoViewOne.setVideoPath(mProgramsPath01);
+     * mPLVideoViewOne.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
+     * @Override public void onCompletion(PLMediaPlayer player) {
+     * mPLVideoViewOne.seekTo(0);
+     * mPLVideoViewOne.start();
+     * }
+     * });
+     * mPLVideoViewOne.setOnErrorListener(mOnErrorListener);
+     * <p>
+     * mPLVideoViewTwo.setVideoPath(mProgramsPath02);
+     * mPLVideoViewTwo.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
+     * @Override public void onCompletion(PLMediaPlayer player) {
+     * mPLVideoViewTwo.seekTo(0);
+     * mPLVideoViewTwo.start();
+     * }
+     * });
+     * mPLVideoViewTwo.setOnErrorListener(mOnErrorListener);
+     * <p>
+     * mPLVideoViewThree.setVideoPath(mProgramsPath03);
+     * mPLVideoViewThree.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
+     * @Override public void onCompletion(PLMediaPlayer player) {
+     * mPLVideoViewThree.seekTo(0);
+     * mPLVideoViewThree.start();
+     * }
+     * });
+     * mPLVideoViewThree.setOnErrorListener(mOnErrorListener);
+     * }
+     */
+
     @Override
-    public void playProgram(String path) {
-        mPLVideoViewOne.setAVOptions(options);
-        mPLVideoViewTwo.setAVOptions(options);
-        mPLVideoViewThree.setAVOptions(options);
+    public void playProgram(Program program) {
+        final List<ProgramRes> programResList = program.getList();
+        if (programResList == null || programResList.size() == 0) {
+            playError("播放列表为空");
+            return;
+        }
+        //正常播放
+        if (!program.getStdtime().equals("") && !program.getEdtime().equals("")) {
+            Observable.interval(1, TimeUnit.SECONDS)
+                    .subscribe(new Action1<Long>() {
+                        @Override
+                        public void call(Long aLong) {
+                            Date date = new Date(System.currentTimeMillis());
+                            String currentTime = DateFormatUtils.date2String(date, "HH:mm");
+//                            Log.e("现在时间", currentTime + "---");
+                            Date startPlayTime = DateFormatUtils.string2Date(program.getStdtime(), "HH:mm");
+                            Date endPlayTime = DateFormatUtils.string2Date(program.getEdtime(), "HH:mm");
+                            try {
+                                //定时播放
+                                if (startPlayTime.getTime() < date.getTime() && date.getTime() < endPlayTime.getTime()) {
+                                    areaPlay(programResList);
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+        } else {
+            //插播播放
+            areaPlay(programResList);
+        }
 
-        mPLVideoViewOne.setVideoPath(mProgramsPath01);
-        mPLVideoViewOne.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(PLMediaPlayer player) {
-                mPLVideoViewOne.seekTo(0);
-                mPLVideoViewOne.start();
-            }
-        });
-        mPLVideoViewOne.setOnErrorListener(mOnErrorListener);
-
-        mPLVideoViewTwo.setVideoPath(mProgramsPath02);
-        mPLVideoViewTwo.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(PLMediaPlayer player) {
-                mPLVideoViewTwo.seekTo(0);
-                mPLVideoViewTwo.start();
-            }
-        });
-        mPLVideoViewTwo.setOnErrorListener(mOnErrorListener);
-
-        mPLVideoViewThree.setVideoPath(mProgramsPath03);
-        mPLVideoViewThree.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(PLMediaPlayer player) {
-                mPLVideoViewThree.seekTo(0);
-                mPLVideoViewThree.start();
-            }
-        });
-        mPLVideoViewThree.setOnErrorListener(mOnErrorListener);
     }
 
+    //按照位置播放
+    void areaPlay(List<ProgramRes> programResList) {
+        Observable.interval(1, TimeUnit.SECONDS)
+                .subscribe(new Action1<Long>() {
+                    @Override
+                    public void call(Long aLong) {
+                        Observable.just(programResList)
+                                .flatMap(new Func1<List<ProgramRes>, Observable<ProgramRes>>() {
+                                    @Override
+                                    public Observable<ProgramRes> call(List<ProgramRes> programResList) {
+                                        return Observable.from(programResList);
+                                    }
+                                }).subscribe(new Subscriber<ProgramRes>() {
+                            @Override
+                            public void onCompleted() {
+
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                e.printStackTrace();
+                            }
+
+                            @Override
+                            public void onNext(ProgramRes programRes) {
+                                Date date = new Date(System.currentTimeMillis());
+                                switch (programRes.getArea()) {
+                                    case "area1":
+                                        setVideoView(date, programRes, mPLVideoViewOne);
+                                        break;
+                                    case "area2":
+                                        setVideoView(date, programRes, mPLVideoViewTwo);
+                                        break;
+                                    case "area3":
+                                        setVideoView(date, programRes, mPLVideoViewThree);
+                                        break;
+                                    default:
+                                        setVideoView(date, programRes, mPLVideoViewOne);
+                                        break;
+                                }
+                            }
+                        });
+                    }
+                });
+
+    }
+
+    void setVideoView(Date date, ProgramRes bean, PLVideoView view) {
+        String path = Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResnam();
+        File file = new File(path);
+        if (!file.exists()) return;
+        if (bean.getResnam().equals("")) return;
+        if (!bean.getStdtime().equals("") && !bean.getStdtime().equals("")) {
+            if (!view.isPlaying()) {
+                view.setVideoPath(path);
+                view.start();
+            }
+        } else {
+            Date startPlayTime = DateFormatUtils.string2Date(bean.getStdtime(), "HH:mm");
+            Date endPlayTime = DateFormatUtils.string2Date(bean.getEdtime(), "HH:mm");
+            if (startPlayTime.getTime() == date.getTime()) {
+                view.setVideoPath(path);
+                view.start();
+            }
+            if (endPlayTime.getTime() == date.getTime()) {
+                view.pause();
+            }
+        }
+
+    }
 
     @Override
     public void playSuccess(String msg) {
@@ -99,7 +217,7 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
     @Override
     protected void initData() {
         options = new AVOptions();
-        mPresenter.getProgramList(mProgramsPath01);
+
         int codec = AVOptions.MEDIA_CODEC_AUTO;
 // 解码方式:
 // codec＝AVOptions.MEDIA_CODEC_HW_DECODE，硬解
@@ -234,7 +352,6 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
     };
 
 
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -263,5 +380,15 @@ public class Three_H_Fragment extends BaseFragment<ThreeHPresenter> implements T
     @Override
     public void interruptCancle() {
 
+    }
+
+    @Override
+    public void playNormalProgram(Program program) {
+        mPresenter.getProgramList(program);
+    }
+
+    @Override
+    public void playInterProgram(Program program) {
+        mPresenter.getProgramList(program);
     }
 }

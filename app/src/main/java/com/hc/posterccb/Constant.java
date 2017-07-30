@@ -58,6 +58,8 @@ public class Constant {
     public static final String LOCAL_PROGRAM_TXT = LOCAL_PROGRAM_PATH + "/program.txt";
     public static final String LOCAL_ERROR_TXT = LOCAL_FILE_PATH + "/error.txt";
     public static final String LOCAL_CONFIG_TXT = LOCAL_FILE_PATH + "/config.txt";
+    public static final String LOCAL_PROGRAM_NORMAL_TXT = LOCAL_PROGRAM_PATH + "/normal.txt";
+    public static final String LOCAL_PROGRAM_INTER_TXT = LOCAL_PROGRAM_PATH + "/inter.txt";
 
     public static final String LICENSE_KEY_FOOT = "Ho0cUp";
 

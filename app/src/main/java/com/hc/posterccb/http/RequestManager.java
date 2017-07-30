@@ -5,6 +5,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
+import com.hc.posterccb.application.ProApplication;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -58,13 +60,13 @@ public class RequestManager {
      *
      * @return
      */
-    public static RequestManager getInstance(Context context) {
+    public static RequestManager getInstance() {
         RequestManager inst = mInstance;
         if (inst == null) {
             synchronized (RequestManager.class) {
                 inst = mInstance;
                 if (inst == null) {
-                    inst = new RequestManager(context.getApplicationContext());
+                    inst = new RequestManager(ProApplication.getmContext());
                     mInstance = inst;
                 }
             }

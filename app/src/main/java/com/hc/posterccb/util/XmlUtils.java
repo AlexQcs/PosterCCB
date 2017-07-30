@@ -16,6 +16,8 @@ import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
+import com.hc.posterccb.bean.program.Program;
+import com.hc.posterccb.bean.program.ProgramRes;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -167,7 +169,7 @@ public class XmlUtils {
      * @author.Alex.on.2017年7月26日08:57:38
      */
     public static ArrayList<String> getXmlType(String xmlStr) {
-        ArrayList<String> list=new ArrayList<>();
+        ArrayList<String> list = new ArrayList<>();
         String xmlType = "no";
         try {
             // 由android.util.Xml创建一个XmlPullParser实例
@@ -287,15 +289,15 @@ public class XmlUtils {
 
 
     /**
-     * 此方法用于: 获取播放列表
+     * 此方法用于: 解析升级xml
      *
      * @param xmlStr
      *         播放列表xml
-     * @return 播放列表
+     * @return 升级配置
      * @author.Alex.on.2017年7月26日09:01:23
      * @throw XmlPullParserException、IOException
      */
-    public static ArrayList<UpGradeCfgBean> parseProgramXml(String xmlStr) {
+    public static ArrayList<UpGradeCfgBean> parseUpGradeXml(String xmlStr) {
         InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
         XmlPullParser parser = Xml.newPullParser();
         try {
@@ -319,13 +321,13 @@ public class XmlUtils {
                     case XmlPullParser.START_TAG:
                         //给当前标签起个名字
                         String tagName = parser.getName();
-                         if (tagName.equals("file")) {
+                        if (tagName.equals("file")) {
 
-                             upGradeBean = new UpGradeCfgBean();
-                             upGradeBean.setResid(parser.getAttributeValue(null,"resid"));
-                             upGradeBean.setHref(parser.getAttributeValue(null,"href"));
-                             upGradeBean.setMd5(parser.getAttributeValue(null,"md5"));
-                             upGradeBean.setFilesize(parser.getAttributeValue(null,"filesize"));
+                            upGradeBean = new UpGradeCfgBean();
+                            upGradeBean.setResid(parser.getAttributeValue(null, "resid"));
+                            upGradeBean.setHref(parser.getAttributeValue(null, "href"));
+                            upGradeBean.setMd5(parser.getAttributeValue(null, "md5"));
+                            upGradeBean.setFilesize(parser.getAttributeValue(null, "filesize"));
                         }
                         break;
                     case XmlPullParser.END_TAG:
@@ -353,6 +355,173 @@ public class XmlUtils {
         return resultArray;
     }
 
+    /**
+     * 此方法用于: 获取正常播放列表
+     *
+     * @param xmlStr
+     *         播放列表xml
+     * @return 播放列表
+     * @author.Alex.on.2017年7月26日09:01:23
+     * @throw XmlPullParserException、IOException
+     */
+    public static ArrayList<Program> parseNormalProgramXml(String xmlStr) {
+        InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
+        XmlPullParser parser = Xml.newPullParser();
+        try {
+            parser.setInput(in, "UTF-8");
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
+        }
 
+        ArrayList<Program> programArray = new ArrayList<Program>();
+        Program program = null;
+        ArrayList<ProgramRes> programResArrayList = new ArrayList<>();
+        ProgramRes programRes = null;
+
+        try {
+            //开始解析事件
+            int eventType = parser.getEventType();
+
+            //处理事件，不碰到文档结束就一直处理
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                //因为定义了一堆静态常量，所以这里可以用switch
+                switch (eventType) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.START_TAG:
+                        //给当前标签起个名字
+                        String tagName = parser.getName();
+                        if (tagName.equals("defaultpls") || tagName.equals("pls")) {
+
+                            program = new Program();
+                            programResArrayList = new ArrayList<>();
+                            program.setType(tagName);
+                            program.setAreatype(parser.getAttributeValue(null, "areatype"));
+                            program.setStdtime(parser.getAttributeValue(null, "stdtime"));
+                            program.setEdtime(parser.getAttributeValue(null, "edtime"));
+                        } else if (tagName.equals("res")) {
+
+                            programRes = new ProgramRes();
+                            programRes.setResnam(parser.getAttributeValue(null, "resname"));
+                            programRes.setResid(parser.getAttributeValue(null, "resid"));
+                            programRes.setArea(parser.getAttributeValue(null, "area"));
+                            programRes.setStdtime(parser.getAttributeValue(null, "stdtime"));
+                            programRes.setEdtime(parser.getAttributeValue(null, "edtime"));
+                            programRes.setPriority(parser.getAttributeValue(null, "priority"));
+                            programRes.setPlaycnt(parser.getAttributeValue(null, "playcnt"));
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        if (parser.getName().equalsIgnoreCase("res")) {
+                            if (programRes != null) {
+                                programResArrayList.add(programRes);
+                            }
+                            programRes = null;
+                        } else if (parser.getName().equalsIgnoreCase("defaultpls") || parser.getName().equalsIgnoreCase("pls")) {
+                            if (program != null) {
+                                program.setList(programResArrayList);
+                                programArray.add(program);
+                                program = null;
+                            }
+                        }
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        break;
+                }
+                //别忘了用next方法处理下一个事件，忘了的结果就成死循环#_#
+                eventType = parser.next();
+            }
+        } catch (XmlPullParserException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return programArray;
+    }
+    /**
+     * 此方法用于: 获取插播播放列表
+     *
+     * @param xmlStr
+     *         播放列表xml
+     * @return 播放列表
+     * @author.Alex.on.2017年7月26日09:01:23
+     * @throw XmlPullParserException、IOException
+     */
+    public static Program parseInterProgramXml(String xmlStr) {
+        InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
+        XmlPullParser parser = Xml.newPullParser();
+        try {
+            parser.setInput(in, "UTF-8");
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
+        }
+        Program program = null;
+        ArrayList<ProgramRes> programResArrayList = new ArrayList<>();
+        ProgramRes programRes = null;
+
+        try {
+            //开始解析事件
+            int eventType = parser.getEventType();
+
+            //处理事件，不碰到文档结束就一直处理
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                //因为定义了一堆静态常量，所以这里可以用switch
+                switch (eventType) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.START_TAG:
+                        //给当前标签起个名字
+                        String tagName = parser.getName();
+                        if (tagName.equals("defaultpls") || tagName.equals("pls")) {
+
+                            program = new Program();
+                            programResArrayList = new ArrayList<>();
+                            program.setType(tagName);
+                            program.setAreatype(parser.getAttributeValue(null, "areatype"));
+                            program.setStdtime(parser.getAttributeValue(null, "stdtime"));
+                            program.setEdtime(parser.getAttributeValue(null, "edtime"));
+                        } else if (tagName.equals("res")) {
+
+                            programRes = new ProgramRes();
+                            programRes.setResnam(parser.getAttributeValue(null, "resname"));
+                            programRes.setResid(parser.getAttributeValue(null, "resid"));
+                            programRes.setArea(parser.getAttributeValue(null, "area"));
+                            programRes.setStdtime(parser.getAttributeValue(null, "stdtime"));
+                            programRes.setEdtime(parser.getAttributeValue(null, "edtime"));
+                            programRes.setPriority(parser.getAttributeValue(null, "priority"));
+                            programRes.setPlaycnt(parser.getAttributeValue(null, "playcnt"));
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        if (parser.getName().equalsIgnoreCase("res")) {
+                            if (programRes != null) {
+                                programResArrayList.add(programRes);
+                            }
+                            programRes = null;
+                        } else if (parser.getName().equalsIgnoreCase("defaultpls") || parser.getName().equalsIgnoreCase("pls")) {
+                            if (program != null) {
+                                program.setList(programResArrayList);
+                            }
+                        }
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        break;
+                }
+                //别忘了用next方法处理下一个事件，忘了的结果就成死循环#_#
+                eventType = parser.next();
+            }
+        } catch (XmlPullParserException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return program;
+    }
 
 }

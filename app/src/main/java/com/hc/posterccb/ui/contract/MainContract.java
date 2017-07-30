@@ -1,6 +1,7 @@
 package com.hc.posterccb.ui.contract;
 
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
+import com.hc.posterccb.bean.program.Program;
 
 /**
  * Created by alex on 2017/7/8.
@@ -42,6 +43,10 @@ public class MainContract {
         void license();
 
         void noLicense();
+
+        void logicNormalProgram(Program program);
+
+        void logicInterProgram(Program program);
     }
 
     public interface MainPresenter {
@@ -62,6 +67,8 @@ public class MainContract {
         void downLoadFile(String command, String mac, String path);
 
         void checkLicense();
+
+        void initConfig();
     }
 
 }
