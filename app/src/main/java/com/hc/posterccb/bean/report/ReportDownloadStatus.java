@@ -5,6 +5,22 @@ package com.hc.posterccb.bean.report;
  */
 
 public class ReportDownloadStatus  {
-    private String status;
+    public String status;
+    public String errorinfo;
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getErrorinfo() {
+        return errorinfo;
+    }
+
+    public void setErrorinfo(String errorinfo) {
+        this.errorinfo = errorinfo;
+    }
 }

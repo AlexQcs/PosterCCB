@@ -10,4 +10,11 @@ public class DetailBean {
     private String process;
     private String status;
 
+    public String getResid() {
+        return resid;
+    }
+
+    public void setResid(String resid) {
+        this.resid = resid;
+    }
 }

@@ -3,6 +3,7 @@ package com.hc.posterccb.ui.model;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.util.Xml;
 
 import com.google.gson.Gson;
 import com.hc.posterccb.Constant;
@@ -19,8 +20,10 @@ import com.hc.posterccb.bean.polling.LogReportBean;
 import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
+import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.bean.program.Program;
+import com.hc.posterccb.bean.report.ReportDownloadStatus;
 import com.hc.posterccb.bean.report.TaskReportBean;
 import com.hc.posterccb.exception.ApiException;
 import com.hc.posterccb.http.RequestManager;
@@ -41,8 +44,13 @@ import com.hc.posterccb.util.encrypt.DesDecUtils;
 import com.hc.posterccb.util.encrypt.SilentInstall;
 import com.thoughtworks.xstream.XStream;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -71,8 +79,7 @@ public class MainModel extends BaseModel {
     private TaskReportBean mTaskReport = new TaskReportBean();
 
     private boolean mLicensed = false;
-
-
+    private XmlPullParser mParser;
     private RequestManager requestManager = RequestManager.getInstance();
 
 
@@ -85,7 +92,7 @@ public class MainModel extends BaseModel {
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        httpService.polling(command, mac)
+                        httpService.polling((String) SpUtils.get("polling","/xmlserver/revXml"),command, mac)
                                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                                     @Override
                                     public void onNext(ResponseBody response) {
@@ -622,7 +629,7 @@ public class MainModel extends BaseModel {
         String postStr = xStream.toXML(mTaskReport);
         StringUtils.setEncoding(postStr, "UTF-8");
 
-        httpService.report(Constant.TASKREPORT, Constant.getSerialNumber(), postStr)
+        httpService.report((String) SpUtils.get("logurl","/xmlserver/revXml"),Constant.TASKREPORT, Constant.getSerialNumber(), postStr)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody body) {
@@ -630,6 +637,15 @@ public class MainModel extends BaseModel {
                         try {
                             //获取返回的xml 字符串
                             resStr = body.string();
+                            mParser=getXmlPullParser(resStr);
+                           PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
+                            ReportDownloadStatus mStatus= (ReportDownloadStatus) postResult.getBean();
+                            int status=Integer.getInteger(mStatus.getStatus());
+                            if (status==0){
+                                LogUtils.e("上报ID响应","响应成功");
+                            }else {
+                                LogUtils.e("上报ID响应",mStatus.getErrorinfo());
+                            }
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -717,6 +733,13 @@ public class MainModel extends BaseModel {
     //开机
     private void powerOn(String dateStr) {
 
+    }
+
+    private XmlPullParser getXmlPullParser(String xmlStr) throws XmlPullParserException {
+        InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
+        XmlPullParser parser = Xml.newPullParser();
+        parser.setInput(in, "UTF-8");
+        return parser;
     }
 
     //通过接口产生信息回调

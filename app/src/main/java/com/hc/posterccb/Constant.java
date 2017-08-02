@@ -49,6 +49,7 @@ public class Constant {
     public static final String POLLING_DOWNLOADRES="downloadres";
     //通知终端上报资源下载状态
     public static final String POLLING_DOWNLOADSTATUSREPORT="downloadstatusreport";
+    //
 
 
     public static final String LOCAL_FILE_PATH = Environment.getExternalStorageDirectory() + "/PosterCCB";

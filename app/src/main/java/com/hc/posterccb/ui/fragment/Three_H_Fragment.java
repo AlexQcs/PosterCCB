@@ -39,41 +39,6 @@ public class Three_H_Fragment extends BaseFragment<BaseFrgmPresenter> implements
     @BindView(R.id.relative_three_h)
     RelativeLayout mRootView;
 
-    /**
-     * @Override public void playProgram(String path) {
-     * mPLVideoViewOne.setAVOptions(options);
-     * mPLVideoViewTwo.setAVOptions(options);
-     * mPLVideoViewThree.setAVOptions(options);
-     * <p>
-     * mPLVideoViewOne.setVideoPath(mProgramsPath01);
-     * mPLVideoViewOne.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
-     * @Override public void onCompletion(PLMediaPlayer player) {
-     * mPLVideoViewOne.seekTo(0);
-     * mPLVideoViewOne.start();
-     * }
-     * });
-     * mPLVideoViewOne.setOnErrorListener(mOnErrorListener);
-     * <p>
-     * mPLVideoViewTwo.setVideoPath(mProgramsPath02);
-     * mPLVideoViewTwo.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
-     * @Override public void onCompletion(PLMediaPlayer player) {
-     * mPLVideoViewTwo.seekTo(0);
-     * mPLVideoViewTwo.start();
-     * }
-     * });
-     * mPLVideoViewTwo.setOnErrorListener(mOnErrorListener);
-     * <p>
-     * mPLVideoViewThree.setVideoPath(mProgramsPath03);
-     * mPLVideoViewThree.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
-     * @Override public void onCompletion(PLMediaPlayer player) {
-     * mPLVideoViewThree.seekTo(0);
-     * mPLVideoViewThree.start();
-     * }
-     * });
-     * mPLVideoViewThree.setOnErrorListener(mOnErrorListener);
-     * }
-     */
-
     @Override
     public void playSuccess(String msg) {
 
