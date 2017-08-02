@@ -4,11 +4,17 @@
                 android:layout_height="1080dp"
                 tools:context="com.hc.posterccb.ui.fragment.Full_H_Fragment">
 
+    <RelativeLayout
+        android:id="@+id/rel_one"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.pili.pldroid.player.widget.PLVideoView
+            android:id="@+id/videoview_one"
+            android:layout_width="1920dp"
+            android:layout_height="1080dp">
+        </com.pili.pldroid.player.widget.PLVideoView>
+    </RelativeLayout>
 
-    <com.pili.pldroid.player.widget.PLVideoView
-        android:id="@+id/videoview_one"
-        android:layout_width="1920dp"
-        android:layout_height="1080dp">
-    </com.pili.pldroid.player.widget.PLVideoView>
 
 </RelativeLayout>

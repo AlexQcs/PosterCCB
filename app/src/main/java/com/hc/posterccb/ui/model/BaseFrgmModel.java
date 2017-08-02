@@ -11,30 +11,11 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 /**
- * Created by alex on 2017/7/20.
+ * Created by alex on 2017/8/2.
  */
 
-public class ThreeHModel extends BaseModel {
+public class BaseFrgmModel extends BaseModel {
     public void getProgram(@NonNull Program program, final InfoHint infoHint) {
-//        String jsonStr = FileUtils.readFileSdcard(programPath);
-//        ArrayList<ProgramBean> programList = JsonUtils.JsonStr2ArrayList(jsonStr, new TypeToken<ArrayList<ProgramBean>>() {
-//        }.getType());
-//        Observable.just(programList).subscribe(new Subscriber<ArrayList<ProgramBean>>() {
-//            @Override
-//            public void onCompleted() {
-//                infoHint.playSuccessLog("获取播放列表完成");
-//            }
-//
-//            @Override
-//            public void onError(Throwable e) {
-//                infoHint.playErrorLog(e.getMessage());
-//            }
-//
-//            @Override
-//            public void onNext(ArrayList<ProgramBean> list) {
-//                infoHint.playVideo(list);
-//            }
-//        });
         Observable.just(program)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -67,5 +48,4 @@ public class ThreeHModel extends BaseModel {
 
         void playSuccessLog(String msg);
     }
-
 }

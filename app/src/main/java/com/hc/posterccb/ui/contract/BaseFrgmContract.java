@@ -3,11 +3,11 @@ package com.hc.posterccb.ui.contract;
 import com.hc.posterccb.bean.program.Program;
 
 /**
- * Created by alex on 2017/7/20.
+ * Created by alex on 2017/8/2.
  */
 
-public class ThreeHContract {
-    public interface ThreeHView {
+public class BaseFrgmContract {
+    public interface FrgmView {
         //        void playProgram(ArrayList<ProgramBean> list);
         void playProgram(Program program);
 
@@ -16,7 +16,7 @@ public class ThreeHContract {
         void playError(String msg);
     }
 
-    public interface ThreeHFragmentPresenter {
+    public interface FrgmPresenter {
         void getProgramList(Program program);
     }
 }

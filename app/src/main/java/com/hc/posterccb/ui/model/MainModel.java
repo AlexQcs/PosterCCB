@@ -61,14 +61,13 @@ import static com.hc.posterccb.util.FileUtils.getStringFromTxT;
 /**
  * Created by alex on 2017/7/10.
  */
-
 public class MainModel extends BaseModel {
 
     private String TAG = "MainModel";
 
     private SFTPUtils mSFTPUtils = new SFTPUtils();
 
-    public volatile int pollingTimer = 10;
+    public volatile int pollingTimer;
     private TaskReportBean mTaskReport = new TaskReportBean();
 
     private boolean mLicensed = false;
@@ -81,6 +80,7 @@ public class MainModel extends BaseModel {
     public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint) {
         if (infoHint == null)
             throw new RuntimeException("InfoHint不能为空");
+        pollingTimer = (int) SpUtils.get("selectinterval", 10);//从sp获取轮询时间，默认10秒
         Observable.interval(pollingTimer, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
@@ -149,6 +149,7 @@ public class MainModel extends BaseModel {
             String serverip = bean.getServerconfig();//服务器信息
             SpUtils.put("serverip", serverip);//保存服务器信息
             int selectinterval = Integer.parseInt(bean.getSelectinterval());//轮询时间
+            pollingTimer = selectinterval;
             SpUtils.put("selectinterval", selectinterval);//保存轮询时间
             int volume = Integer.parseInt(bean.getVolume());//终端音量 机器最高音量为15
             VolumeUtils.setVolum(volume);
@@ -198,7 +199,7 @@ public class MainModel extends BaseModel {
                 ArrayList<ProgramBean> list = postResult.getList();
                 PollResultBean bean = (PollResultBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resProgram(list,infoHint);
+                resProgram(list, infoHint);
                 break;
             }
             //升级类任务
@@ -264,6 +265,8 @@ public class MainModel extends BaseModel {
                 resMonitorReport(bean);
                 break;
             }
+
+            //通知终端上报日志
             case Constant.POLLING_LOGREPORT: {
                 LogReportBean bean = (LogReportBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
@@ -271,6 +274,7 @@ public class MainModel extends BaseModel {
                 break;
             }
 
+            //通知终端下载资源
             case Constant.POLLING_DOWNLOADRES: {
                 DownLoadFileBean bean = (DownLoadFileBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
@@ -278,6 +282,7 @@ public class MainModel extends BaseModel {
                 break;
             }
 
+            //通知终端上报下载状态
             case Constant.POLLING_DOWNLOADSTATUSREPORT: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
@@ -422,7 +427,7 @@ public class MainModel extends BaseModel {
     }
 
     //播放类任务
-    private void resProgram(ArrayList<ProgramBean> list,InfoHint infoHint) {
+    private void resProgram(ArrayList<ProgramBean> list, InfoHint infoHint) {
 
         String arrayStr = JsonUtils.ArrayList2JsonStr(list);
         LogUtils.e("resProgram", arrayStr);
@@ -442,7 +447,7 @@ public class MainModel extends BaseModel {
                 .subscribe(new Action1<ProgramBean>() {
                     @Override
                     public void call(ProgramBean bean) {
-                        downloadProgram(bean,infoHint);
+                        downloadProgram(bean, infoHint);
                     }
                 });
 
@@ -450,13 +455,13 @@ public class MainModel extends BaseModel {
     }
 
     //下载播放资源
-    private void downloadProgram(ProgramBean bean,InfoHint infoHint) {
+    private void downloadProgram(ProgramBean bean, InfoHint infoHint) {
         LogUtils.e("ProgramBean", bean.toString());
         String url = bean.getLink();
         String[] array = url.split("/");
         if (array.length == 0) return;
         int playmode = Integer.parseInt(bean.getPlaymode());
-        String filename = array[array.length-1];
+        String filename = array[array.length - 1];
         if (playmode == 1) {
             filename = "normal.txt";
         } else {
@@ -467,10 +472,10 @@ public class MainModel extends BaseModel {
         requestManager.downLoadFile(filename, (String) SpUtils.get("baseurl", Api.BASE_URL) + url, Constant.LOCAL_PROGRAM_PATH, new RequestManager.ReqCallBack<File>() {
             @Override
             public void onReqSuccess(File result) {
-                if (MD5.encode(result,bean.md5)){
+                if (MD5.encode(result, bean.md5)) {
                     LogUtils.e("resUpgrade", finalFilename + "下载成功");
                     logicProgram(infoHint);
-                }else {
+                } else {
                     LogUtils.e("resUpgrade", finalFilename + "下载失败");
                 }
 
@@ -484,7 +489,7 @@ public class MainModel extends BaseModel {
     }
 
     //处理播放任务
-    private void logicProgram(InfoHint infoHint){
+    private void logicProgram(InfoHint infoHint) {
         String jsonNormalStr = getStringFromTxT(Constant.LOCAL_PROGRAM_NORMAL_TXT);
         String jsonInterStr = getStringFromTxT(Constant.LOCAL_PROGRAM_INTER_TXT);
         if (!jsonNormalStr.equals("")) {

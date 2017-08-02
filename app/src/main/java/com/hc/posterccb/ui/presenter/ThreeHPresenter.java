@@ -3,7 +3,7 @@ package com.hc.posterccb.ui.presenter;
 import com.hc.posterccb.base.BasePresenter;
 import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.mvp.IModel;
-import com.hc.posterccb.ui.contract.ThreeHContract;
+import com.hc.posterccb.ui.contract.BaseFrgmContract;
 import com.hc.posterccb.ui.fragment.Three_H_Fragment;
 import com.hc.posterccb.ui.model.ThreeHModel;
 
@@ -13,7 +13,7 @@ import java.util.HashMap;
  * Created by alex on 2017/7/20.
  */
 
-public class ThreeHPresenter extends BasePresenter<Three_H_Fragment> implements ThreeHContract.ThreeHFragmentPresenter{
+public class ThreeHPresenter extends BasePresenter<Three_H_Fragment> implements BaseFrgmContract.FrgmPresenter{
 
     @Override
     public void getProgramList(Program program) {

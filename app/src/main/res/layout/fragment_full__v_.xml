@@ -5,11 +5,17 @@
              tools:context="com.hc.posterccb.ui.fragment.Full_V_Fragment">
 
     <!-- TODO: Update blank fragment layout -->
+    <RelativeLayout
+        android:id="@+id/rel_one"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
         <com.pili.pldroid.player.widget.PLVideoView
             android:id="@+id/videoview_one"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
         </com.pili.pldroid.player.widget.PLVideoView>
+    </RelativeLayout>
+
 
 </RelativeLayout>

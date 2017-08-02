@@ -1,34 +1,26 @@
 package com.hc.posterccb.ui.presenter;
 
+import com.hc.posterccb.base.BaseFragment;
 import com.hc.posterccb.base.BasePresenter;
+import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.mvp.IModel;
-import com.hc.posterccb.ui.contract.SecondVContract;
-import com.hc.posterccb.ui.fragment.Second_V_Fragment;
-import com.hc.posterccb.ui.model.SecondVModel;
+import com.hc.posterccb.ui.contract.BaseFrgmContract;
+import com.hc.posterccb.ui.model.BaseFrgmModel;
 
 import java.util.HashMap;
 
 /**
- * Created by alex on 2017/7/20.
+ * Created by alex on 2017/8/2.
  */
 
-public class SecondVPresenter  extends BasePresenter<Second_V_Fragment> implements SecondVContract.SecondVFragmentPresenter{
+public class BaseFrgmPresenter extends BasePresenter<BaseFragment> implements BaseFrgmContract.FrgmPresenter {
     @Override
-    public void getProgramList(String path) {
+    public void getProgramList(Program program) {
         if (!getIView().checkPostParamNull()) {
-            ((SecondVModel) getiModelMap().get("postplaylog")).getProgram(path, new SecondVModel.InfoHint() {
-
-//                @Override
-//                public void playVideo(ArrayList<ProgramBean> list) {
-//                    getIView().playProgram(list);
-//                }
-
-                //                @Override
-
-
+            ((BaseFrgmModel) getiModelMap().get("postplaylog")).getProgram(program, new BaseFrgmModel.InfoHint() {
                 @Override
-                public void playVideo(String path) {
-                    getIView().playProgram(path);
+                public void playVideo(Program program) {
+                    getIView().playProgram(program);
                 }
 
                 @Override
@@ -44,10 +36,9 @@ public class SecondVPresenter  extends BasePresenter<Second_V_Fragment> implemen
         }
     }
 
-
     @Override
     public HashMap<String, IModel> getiModelMap() {
-        return loadModelMap(new SecondVModel());
+        return loadModelMap(new BaseFrgmModel());
     }
 
     @Override

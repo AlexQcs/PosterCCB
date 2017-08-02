@@ -5,19 +5,31 @@
               android:orientation="horizontal"
               tools:context="com.hc.posterccb.ui.fragment.Second_H_Fragment">
 
+    <RelativeLayout
+        android:id="@+id/rel_one"
+        android:layout_width="960dp"
+        android:layout_height="match_parent">
+        <com.pili.pldroid.player.widget.PLVideoView
+            android:id="@+id/videoview_one"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        </com.pili.pldroid.player.widget.PLVideoView>
+    </RelativeLayout>
     <!-- TODO: Update blank fragment layout -->
-    <com.pili.pldroid.player.widget.PLVideoView
-        android:id="@+id/videoview_one"
+
+    <RelativeLayout
+        android:id="@+id/rel_two"
         android:layout_width="960dp"
         android:layout_height="match_parent">
+        <com.pili.pldroid.player.widget.PLVideoView
+            android:id="@+id/videoview_two"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-    </com.pili.pldroid.player.widget.PLVideoView>
+        </com.pili.pldroid.player.widget.PLVideoView>
+    </RelativeLayout>
 
-    <com.pili.pldroid.player.widget.PLVideoView
-        android:id="@+id/videoview_two"
-        android:layout_width="960dp"
-        android:layout_height="match_parent">
 
-    </com.pili.pldroid.player.widget.PLVideoView>
 
 </LinearLayout>
