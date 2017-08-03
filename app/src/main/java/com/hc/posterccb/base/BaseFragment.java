@@ -58,7 +58,7 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
         setOptions();
         initPresenter();
         initView();
-        
+
         return rootView;
     }
 
@@ -292,7 +292,7 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
         File file = new File(path);
         if (!file.exists()) return;
         if (bean.getResnam().equals("")) return;
-        if (!bean.getStdtime().equals("") && !bean.getStdtime().equals("")) {
+        if (bean.getStdtime().equals("") && bean.getEdtime().equals("")) {
             if (!view.isPlaying()) {
                 view.setVideoPath(path);
                 view.start();

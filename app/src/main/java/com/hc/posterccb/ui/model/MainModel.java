@@ -92,7 +92,7 @@ public class MainModel extends BaseModel {
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        httpService.polling((String) SpUtils.get("polling","/xmlserver/revXml"),command, mac)
+                        httpService.polling((String) SpUtils.get("polling", "/xmlserver/revXml"), command, mac)
                                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                                     @Override
                                     public void onNext(ResponseBody response) {
@@ -153,15 +153,21 @@ public class MainModel extends BaseModel {
             Date powerOffTime = DateFormatUtils.string2Date(powerOffTimeStr, "HH:mm");
             int diskspacealarm = Integer.parseInt(bean.getDiskspacealarm());//硬盘警告阀值
             SpUtils.put("diskspacealarm", diskspacealarm);
-            String serverip = bean.getServerconfig();//服务器信息
+            String serverip = bean.getServerconfig();//服务器信息  http://ip:port/appname
             SpUtils.put("serverip", serverip);//保存服务器信息
+            String sftpServer = bean.getFtpserver();//sftp下载服务器地址列表
+            SpUtils.put("sftpserver", sftpServer);
+            String httpServer = bean.getHttpserver();//http下载服务器地址列表
+            SpUtils.put("httpserver", httpServer);
             int selectinterval = Integer.parseInt(bean.getSelectinterval());//轮询时间
             pollingTimer = selectinterval;
             SpUtils.put("selectinterval", selectinterval);//保存轮询时间
             int volume = Integer.parseInt(bean.getVolume());//终端音量 机器最高音量为15
             VolumeUtils.setVolum(volume);
             int downloadrate = Integer.parseInt(bean.getVolume());//下载速度
-            String downloadtime = bean.getDownloadtime();//下载时间段
+            String[] downloadtime = bean.getDownloadtime().split(",");//下载时间段
+            SpUtils.put("downloadtime", downloadtime);
+
             String logServer = bean.getLogserver();//日志服务器路径:ftp://user:pwd@serverip:port/logdir
             SpUtils.put("logServer", logServer);
             String upLoadLogTime = bean.getUploadlogtime();//日志定时上传时间，格式: HH:MM:SS
@@ -341,7 +347,8 @@ public class MainModel extends BaseModel {
 
     //通知终端下载资源文件
     private void resReDownLoadFile(DownLoadFileBean bean) {
-        mSFTPUtils.setHost(Api.SFTP_PATH + bean.getClass());
+        String url = (String) SpUtils.get("baseurl", Api.BASE_URL) + bean.getLink();
+        mSFTPUtils.setHost(url);
         mSFTPUtils.setPassword("123456");
         mSFTPUtils.setUsername("Alex");
         Observable.just(mSFTPUtils)
@@ -480,10 +487,14 @@ public class MainModel extends BaseModel {
             @Override
             public void onReqSuccess(File result) {
                 if (MD5.encode(result, bean.md5)) {
-                    LogUtils.e("resUpgrade", finalFilename + "下载成功");
-                    logicProgram(infoHint);
+                    LogUtils.e("下载播放列表", finalFilename + "下载成功");
+                    if (playmode == 1) {
+                        logicNomalProgram(infoHint);
+                    } else {
+                        logicInterProgram(infoHint);
+                    }
                 } else {
-                    LogUtils.e("resUpgrade", finalFilename + "下载失败");
+                    LogUtils.e("下载播放列表", finalFilename + "下载失败");
                 }
 
             }
@@ -495,23 +506,75 @@ public class MainModel extends BaseModel {
         });
     }
 
-    //处理播放任务
-    private void logicProgram(InfoHint infoHint) {
-        String jsonNormalStr = getStringFromTxT(Constant.LOCAL_PROGRAM_NORMAL_TXT);
-        String jsonInterStr = getStringFromTxT(Constant.LOCAL_PROGRAM_INTER_TXT);
-        if (!jsonNormalStr.equals("")) {
-            Gson gson = new Gson();
-            Program bean = gson.fromJson(jsonNormalStr, Program.class);
-            infoHint.logicNormalProgram(bean);
-            Log.e("正常播放节目单", bean.toString() + "---");
-        }
-        if (!jsonInterStr.equals("")) {
-            Gson gson = new Gson();
-            Program bean = gson.fromJson(jsonInterStr, Program.class);
-            infoHint.logicInterProgram(bean);
-            Log.e("插播播放节目单", bean.toString() + "---");
-        }
+    //处理正常播放任务
+    private void logicNomalProgram(InfoHint infoHint) {
 
+        String xmlNormalStr = getStringFromTxT(Constant.LOCAL_PROGRAM_NORMAL_TXT);
+        if (xmlNormalStr.equals("")) return;
+        List<Program> list = new ArrayList<>();
+        list = XmlUtils.parseNormalProgramXml(xmlNormalStr);
+
+        Observable.interval(1, TimeUnit.SECONDS)
+                .just(list)
+                .flatMap(new Func1<List<Program>, Observable<Program>>() {
+                    @Override
+                    public Observable<Program> call(List<Program> programs) {
+                        return Observable.from(programs);
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .subscribe(new Subscriber<Program>() {
+                               @Override
+                               public void onCompleted() {
+
+                               }
+
+                               @Override
+                               public void onError(Throwable e) {
+
+                               }
+
+                               @Override
+                               public void onNext(Program program) {
+                                   Date date = new Date(System.currentTimeMillis());
+                                   Date stdtime = DateFormatUtils.string2Date(program.getStdtime(), "HH:ss");
+                                   Date edtime = DateFormatUtils.string2Date(program.getEdtime(), "HH:ss");
+                                   if (date.getTime() >= stdtime.getTime() && date.getTime() <= edtime.getTime()) {
+                                       infoHint.logicNormalProgram(program);
+                                       Log.e("正常播放节目单", program.toString() + "---");
+                                   }
+                               }
+                           }
+                );
+    }
+
+    //处理插播播放任务
+    private void logicInterProgram(InfoHint infoHint) {
+        String xmlInterStr = getStringFromTxT(Constant.LOCAL_PROGRAM_INTER_TXT);
+        if (xmlInterStr.equals("")) return;
+
+        Program program = XmlUtils.parseInterProgramXml(xmlInterStr);
+
+        Observable.just(program)
+                .subscribeOn(Schedulers.io())
+                .subscribe(new Subscriber<Program>() {
+                               @Override
+                               public void onCompleted() {
+
+                               }
+
+                               @Override
+                               public void onError(Throwable e) {
+
+                               }
+
+                               @Override
+                               public void onNext(Program program) {
+                                   infoHint.logicNormalProgram(program);
+                                   Log.e("插播播放节目单", program.toString() + "---");
+                               }
+                           }
+                );
     }
 
     //升级任务
@@ -629,7 +692,7 @@ public class MainModel extends BaseModel {
         String postStr = xStream.toXML(mTaskReport);
         StringUtils.setEncoding(postStr, "UTF-8");
 
-        httpService.report((String) SpUtils.get("logurl","/xmlserver/revXml"),Constant.TASKREPORT, Constant.getSerialNumber(), postStr)
+        httpService.report((String) SpUtils.get("logurl", "/xmlserver/revXml"), Constant.TASKREPORT, Constant.getSerialNumber(), postStr)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody body) {
@@ -637,14 +700,14 @@ public class MainModel extends BaseModel {
                         try {
                             //获取返回的xml 字符串
                             resStr = body.string();
-                            mParser=getXmlPullParser(resStr);
-                           PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
-                            ReportDownloadStatus mStatus= (ReportDownloadStatus) postResult.getBean();
-                            int status=Integer.getInteger(mStatus.getStatus());
-                            if (status==0){
-                                LogUtils.e("上报ID响应","响应成功");
-                            }else {
-                                LogUtils.e("上报ID响应",mStatus.getErrorinfo());
+                            mParser = getXmlPullParser(resStr);
+                            PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
+                            ReportDownloadStatus mStatus = (ReportDownloadStatus) postResult.getBean();
+                            int status = Integer.getInteger(mStatus.getStatus());
+                            if (status == 0) {
+                                LogUtils.e("上报ID响应", "响应成功");
+                            } else {
+                                LogUtils.e("上报ID响应", mStatus.getErrorinfo());
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -775,9 +838,9 @@ public class MainModel extends BaseModel {
         void realTimeCancle();
 
         //播放类逻辑
-        void logicNormalProgram(Program beans);
+        void logicNormalProgram(Program bean);
 
-        void logicInterProgram(Program beans);
+        void logicInterProgram(Program bean);
 
 
         //暂停播放

@@ -268,7 +268,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     public void cancleInterruptVideo() {
         mInteraction.interruptCancle();
         try {
-            FileUtils.coverTxtToFile("",Constant.LOCAL_PROGRAM_INTER_TXT);
+            FileUtils.coverTxtToFile("", Constant.LOCAL_PROGRAM_INTER_TXT);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -293,7 +293,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     @Override
     public void logicInterProgram(Program program) {
-        mInteraction.playNormalProgram(program);
+        mInteraction.playInterProgram(program);
     }
 
     //设置滚动textview样式

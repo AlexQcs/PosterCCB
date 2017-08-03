@@ -15,6 +15,7 @@ import java.io.StreamCorruptedException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by alex on 2017/7/8.
@@ -24,7 +25,7 @@ public class SpUtils {
     /**
      * 保存在手机里面的文件名
      */
-    public static final String FILE_NAME ="123";
+    public static final String FILE_NAME = "123";
     static Context context = ProApplication.getmContext();
 
     /**
@@ -81,6 +82,21 @@ public class SpUtils {
         }
         return null;
     }
+
+    public static void put(String key, Set<String> set) {
+        SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
+                Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putStringSet(key, set);
+        SharedPreferencesCompat.apply(editor);
+    }
+
+    public static Object get(String key, Set<String> defaultObject) {
+        SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
+                Context.MODE_PRIVATE);
+        return sp.getStringSet(key, defaultObject);
+    }
+
 
     /**
      * 移除某个key值已经对应的值
@@ -228,10 +244,10 @@ public class SpUtils {
     }
 
     //返回String值
-    public static String getString(Context context, String key, String defaultStr){
+    public static String getString(Context context, String key, String defaultStr) {
         SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
                 Context.MODE_PRIVATE);
-        return sp.getString(key,defaultStr);
+        return sp.getString(key, defaultStr);
     }
 
 }

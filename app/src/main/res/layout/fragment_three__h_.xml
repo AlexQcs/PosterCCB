@@ -43,7 +43,6 @@
         android:layout_height="540dp"
         android:layout_below="@id/rel_two"
         android:layout_toRightOf="@id/rel_two">
-
         <com.pili.pldroid.player.widget.PLVideoView
             android:id="@+id/videoview_three"
             android:layout_width="1310dp"
