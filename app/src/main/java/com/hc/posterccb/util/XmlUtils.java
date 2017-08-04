@@ -273,7 +273,7 @@ public class XmlUtils {
                     break;
                 case Constant.POLLING_DOWNLOADRES:
                     LogUtils.e("XmlUtils", "检测到数据类型为通知终端下载资源文件类任务");
-                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, DownLoadFileBean.class);
+                    postResult = getBeanByParseXml(parser, Constant.XML_LISTTAG, DownLoadFileBean.class, Constant.XML_STARTDOM, PollResultBean.class);
                     break;
                 case Constant.POLLING_DOWNLOADSTATUSREPORT:
                     LogUtils.e("XmlUtils", "检测到数据类型为通知终端上报资源下载状态类任务");

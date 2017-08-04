@@ -3,6 +3,7 @@ package com.hc.posterccb.application;
 import android.app.Application;
 import android.content.Context;
 
+import com.hc.posterccb.bean.program.Program;
 import com.squareup.leakcanary.LeakCanary;
 
 /**
@@ -10,8 +11,9 @@ import com.squareup.leakcanary.LeakCanary;
  */
 
 public class ProApplication extends Application {
-    protected static ProApplication instance;
+    private static ProApplication instance;
     private static Context mContext;
+    private Program mProgram;
 
     @Override
     public void onCreate() {
@@ -33,5 +35,15 @@ public class ProApplication extends Application {
     }
 
 
+    public static ProApplication getInstance() {
+        return instance;
+    }
 
+    public Program getProgram() {
+        return mProgram;
+    }
+
+    public void setProgram(Program program) {
+        mProgram = program;
+    }
 }

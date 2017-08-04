@@ -16,6 +16,8 @@ public class Constant {
     public static final String UDP_TESTPATH = Environment.getExternalStorageDirectory() + "/Misc/test/";
 
 
+
+
     public static final String TASKTYPE = "tasktype";
     public static final String TASKREPORT="taskreport";
     public static final String XML_STARTDOM = "command";
@@ -61,6 +63,11 @@ public class Constant {
     public static final String LOCAL_CONFIG_TXT = LOCAL_FILE_PATH + "/config.txt";
     public static final String LOCAL_PROGRAM_NORMAL_TXT = LOCAL_PROGRAM_PATH + "/normal.txt";
     public static final String LOCAL_PROGRAM_INTER_TXT = LOCAL_PROGRAM_PATH + "/inter.txt";
+
+    public static final String LOCAL_PROGRAM_LIST_PATH=LOCAL_PROGRAM_PATH+"/program.xml";
+    public static final String LOCAL_INSERT_PROGRAM_LIST_PATH=LOCAL_PROGRAM_PATH+"/insert_program.xml";
+    public static final String LOCAL_RESOURCE_LIST_PATH=LOCAL_PROGRAM_PATH+"/resource.xml";
+    public static final String LOCAL_INSERT_RESOURCE_LIST_PATH=LOCAL_PROGRAM_PATH+"/insert_resource.xml";
 
     public static final String LICENSE_KEY_FOOT = "Ho0cUp";
 

@@ -54,11 +54,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.ResponseBody;
 import rx.Observable;
-import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action1;
 import rx.functions.Func1;
@@ -289,9 +289,10 @@ public class MainModel extends BaseModel {
 
             //通知终端下载资源
             case Constant.POLLING_DOWNLOADRES: {
-                DownLoadFileBean bean = (DownLoadFileBean) postResult.getBean();
+                PollResultBean bean = (PollResultBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resReDownLoadFile(bean);
+                ArrayList<DownLoadFileBean> list = postResult.getList();
+                resReDownLoadFile(list);
                 break;
             }
 
@@ -346,14 +347,20 @@ public class MainModel extends BaseModel {
     }
 
     //通知终端下载资源文件
-    private void resReDownLoadFile(DownLoadFileBean bean) {
-        String url = (String) SpUtils.get("baseurl", Api.BASE_URL) + bean.getLink();
-        mSFTPUtils.setHost(url);
+    private void resReDownLoadFile(List<DownLoadFileBean> list) {
+
         mSFTPUtils.setPassword("123456");
         mSFTPUtils.setUsername("Alex");
-        Observable.just(mSFTPUtils)
-                .subscribeOn(Schedulers.io())
-                .subscribe(new Observer<SFTPUtils>() {
+
+        Observable.interval(1, TimeUnit.SECONDS)
+                .just(list)
+                .flatMap(new Func1<List<DownLoadFileBean>, Observable<DownLoadFileBean>>() {
+                    @Override
+                    public Observable<DownLoadFileBean> call(List<DownLoadFileBean> list) {
+                        return Observable.from(list);
+                    }
+                }).subscribeOn(Schedulers.io())
+                .subscribe(new Subscriber<DownLoadFileBean>() {
                     @Override
                     public void onCompleted() {
                         Log.e(TAG, "下载成功");
@@ -370,13 +377,20 @@ public class MainModel extends BaseModel {
                     }
 
                     @Override
-                    public void onNext(SFTPUtils utils) {
-                        Log.e(TAG, "下载文件");
-                        String localPath = Constant.UDP_TESTPATH;
-                        String remotePath = "test1/";
-                        mSFTPUtils.connect();
-                        Log.e(TAG, "连接成功");
-                        mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");
+                    public void onNext(DownLoadFileBean bean) {
+                        Date date = new Date(System.currentTimeMillis());
+                        String[] tempSet=new String[]{};
+                        String dateStr=DateFormatUtils.date2String(date,"HH:ss");
+                        if (DateFormatUtils.checkTimer(dateStr,(Set<String>) SpUtils.get("downloadtime",tempSet))){
+                            String url = (String) SpUtils.get("baseurl", Api.BASE_URL) + bean.getLink();
+                            mSFTPUtils.setHost(url);
+                            Log.e(TAG, "下载文件");
+                            String localPath = Constant.UDP_TESTPATH;
+                            String remotePath = "test1/";
+                            mSFTPUtils.connect();
+                            Log.e(TAG, "连接成功");
+                            mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");
+                        }
                     }
                 });
     }
@@ -440,7 +454,7 @@ public class MainModel extends BaseModel {
                 });
     }
 
-    //播放类任务
+    //播放节目单类任务
     private void resProgram(ArrayList<ProgramBean> list, InfoHint infoHint) {
 
         String arrayStr = JsonUtils.ArrayList2JsonStr(list);
@@ -464,11 +478,9 @@ public class MainModel extends BaseModel {
                         downloadProgram(bean, infoHint);
                     }
                 });
-
-
     }
 
-    //下载播放资源
+    //下载播放节目单
     private void downloadProgram(ProgramBean bean, InfoHint infoHint) {
         LogUtils.e("ProgramBean", bean.toString());
         String url = bean.getLink();
@@ -477,9 +489,9 @@ public class MainModel extends BaseModel {
         int playmode = Integer.parseInt(bean.getPlaymode());
         String filename = array[array.length - 1];
         if (playmode == 1) {
-            filename = "normal.txt";
+            filename = "program.txt";
         } else {
-            filename = "inter.txt";
+            filename = "insert_program.txt";
         }
         String finalFilename = filename;
 
@@ -539,7 +551,7 @@ public class MainModel extends BaseModel {
                                    Date date = new Date(System.currentTimeMillis());
                                    Date stdtime = DateFormatUtils.string2Date(program.getStdtime(), "HH:ss");
                                    Date edtime = DateFormatUtils.string2Date(program.getEdtime(), "HH:ss");
-                                   if (date.getTime() >= stdtime.getTime() && date.getTime() <= edtime.getTime()) {
+                                   if (date.after(stdtime) && date.before(edtime)) {
                                        infoHint.logicNormalProgram(program);
                                        Log.e("正常播放节目单", program.toString() + "---");
                                    }
@@ -633,6 +645,7 @@ public class MainModel extends BaseModel {
         realTimeTimer(infoHint);
     }
 
+    //即时消息类
     private void realTimeTimer(final InfoHint infoHint) {
         Gson gson = new Gson();
         String jsonStr = (String) SpUtils.get("realtime", "");
@@ -656,9 +669,10 @@ public class MainModel extends BaseModel {
                         Date date = new Date(System.currentTimeMillis());
                         String currentTime = DateFormatUtils.date2String(date, "HH:mm");
                         Log.e("现在时间", currentTime + "---");
-                        if (date.getTime() > startTime.getTime()) {
+                        if (date.getTime() == startTime.getTime()) {
                             infoHint.realtimeStart();
-                        } else if (date.getTime() > endTime.getTime()) {
+                        }
+                        if (date.getTime() == endTime.getTime()) {
                             infoHint.realTimeStop();
                         }
                     }

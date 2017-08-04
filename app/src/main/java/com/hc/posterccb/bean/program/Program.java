@@ -54,6 +54,35 @@ public class Program {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Program)) return false;
+
+        Program program = (Program) o;
+
+        if (getType() != null ? !getType().equals(program.getType()) : program.getType() != null)
+            return false;
+        if (getAreatype() != null ? !getAreatype().equals(program.getAreatype()) : program.getAreatype() != null)
+            return false;
+        if (getStdtime() != null ? !getStdtime().equals(program.getStdtime()) : program.getStdtime() != null)
+            return false;
+        if (getEdtime() != null ? !getEdtime().equals(program.getEdtime()) : program.getEdtime() != null)
+            return false;
+        return getList() != null ? getList().equals(program.getList()) : program.getList() == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getType() != null ? getType().hashCode() : 0;
+        result = 31 * result + (getAreatype() != null ? getAreatype().hashCode() : 0);
+        result = 31 * result + (getStdtime() != null ? getStdtime().hashCode() : 0);
+        result = 31 * result + (getEdtime() != null ? getEdtime().hashCode() : 0);
+        result = 31 * result + (getList() != null ? getList().hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "Program{" +
                 "type='" + type + '\'' +

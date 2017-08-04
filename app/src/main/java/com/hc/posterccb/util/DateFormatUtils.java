@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Created by alex on 2017/7/19.
@@ -29,7 +30,8 @@ public class DateFormatUtils {
     }
 
     //检查是否在指定的时间范围内
-    public static boolean checkTimeer(String data, String[] timers) {
+    public static boolean checkTimer(String data, Set<String> timers) {
+        if (timers==null&&timers.size()<=0)return true;
         boolean result = false;
         Date targetData = string2Date(data, "HH:ss");
         List<Date> list = new ArrayList<>();
@@ -42,7 +44,7 @@ public class DateFormatUtils {
         }
         if (list.size() == 0 || list.size() % 2 != 0) return true;
         for (int i = 1; i < list.size(); i = i + 2) {
-            if (targetData.getTime() > list.get(i - 1).getTime() && targetData.getTime() < list.get(i).getTime()) {
+            if (targetData.after(list.get(i - 1)) && targetData.before(list.get(i))) {
                 result = true;
             }
         }
