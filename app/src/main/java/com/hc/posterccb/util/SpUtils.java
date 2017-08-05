@@ -91,7 +91,7 @@ public class SpUtils {
         SharedPreferencesCompat.apply(editor);
     }
 
-    public static Object get(String key, Set<String> defaultObject) {
+    public static Set<String> get(String key, Set<String> defaultObject) {
         SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
                 Context.MODE_PRIVATE);
         return sp.getStringSet(key, defaultObject);

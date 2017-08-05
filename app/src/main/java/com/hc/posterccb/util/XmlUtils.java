@@ -18,6 +18,7 @@ import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.bean.program.ProgramRes;
+import com.hc.posterccb.bean.resource.ResourceBean;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -158,7 +159,6 @@ public class XmlUtils {
 
     }
 
-
     /**
      * 此方法用于: 获取轮询响应的任务类型
      *
@@ -206,7 +206,6 @@ public class XmlUtils {
         }
         return list;
     }
-
 
     /**
      * 此方法用于:
@@ -286,7 +285,6 @@ public class XmlUtils {
         }
         return postResult;
     }
-
 
     /**
      * 此方法用于: 解析升级xml
@@ -441,6 +439,7 @@ public class XmlUtils {
 
         return programArray;
     }
+
     /**
      * 此方法用于: 获取插播播放列表
      *
@@ -522,6 +521,62 @@ public class XmlUtils {
         }
 
         return program;
+    }
+
+    public static ArrayList<ResourceBean> parseResource(String xmlStr) {
+        InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
+        XmlPullParser parser = Xml.newPullParser();
+        try {
+            parser.setInput(in, "UTF-8");
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
+        }
+
+        ArrayList<ResourceBean> programResArrayList = new ArrayList<>();
+
+        try {
+            //开始解析事件
+            int eventType = parser.getEventType();
+
+            //处理事件，不碰到文档结束就一直处理
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                //因为定义了一堆静态常量，所以这里可以用switch
+                switch (eventType) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.START_TAG:
+                        //给当前标签起个名字
+                        String tagName = parser.getName();
+                        if (tagName.equals("model") || tagName.equals("bgimg") || tagName.equals("file")) {
+                            ResourceBean resource = new ResourceBean();
+                            resource.setType(tagName);
+                            resource.setFilesize(parser.getAttributeValue(null, "filesize"));
+                            resource.setMd5(parser.getAttributeValue(null, "md5"));
+                            resource.setFtpAdd(parser.getAttributeValue(null, "ftpAdd"));
+                            resource.setHref(parser.getAttributeValue(null, "href"));
+                            resource.setResid(parser.getAttributeValue(null, "resid"));
+                            resource.setResname(parser.getAttributeValue(null, "resname"));
+                            programResArrayList.add(resource);
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        break;
+
+                    case XmlPullParser.END_DOCUMENT:
+                        break;
+                }
+                //别忘了用next方法处理下一个事件，忘了的结果就成死循环#_#
+                eventType = parser.next();
+            }
+        } catch (XmlPullParserException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return programResArrayList;
     }
 
 }

@@ -11,7 +11,7 @@ import java.security.MessageDigest;
 
 public class MD5 {
     // 判断文件的 MD5 值
-    public static boolean encode(File file,String targetMD5) {
+    public static boolean decode(File file,String targetMD5) {
         if (file == null || !file.isFile() || !file.exists()) {
             return false;
         }
