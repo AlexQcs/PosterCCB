@@ -318,7 +318,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
             if (mStvRealTimeTop.getMarquanTimes() == count) {
                 mStvRealTimeTop.stopScroll();
             }
-
         } else if (!("").equals(bean.getTimelength())) {
             int timeLength = parseInt(bean.getTimelength());
         }

@@ -73,15 +73,15 @@ public class Constant {
     //********
     public static final String LOCAL_PROGRAM_INTER_TXT = LOCAL_PROGRAM_PATH + "/inter.txt";
     //播放资源配置文件夹
-    public static final String LOCAL_PROGRAM_MEDIACFG_PATH=LOCAL_FILE_PATH+"/";
+    public static final String LOCAL_PROGRAM_MEDIACFG_PATH=LOCAL_FILE_PATH+"/mediacfg";
     //正常播放机节目单
-    public static final String LOCAL_PROGRAM_LIST_PATH=LOCAL_PROGRAM_PATH+"/program.xml";
+    public static final String LOCAL_PROGRAM_LIST_PATH=LOCAL_PROGRAM_MEDIACFG_PATH+"/program.xml";
     //插播播放节目单
-    public static final String LOCAL_INSERT_PROGRAM_LIST_PATH=LOCAL_PROGRAM_PATH+"/insert_program.xml";
+    public static final String LOCAL_INSERT_PROGRAM_LIST_PATH=LOCAL_PROGRAM_MEDIACFG_PATH+"/insert_program.xml";
     //正常播放 播放资源下载列表
-    public static final String LOCAL_RESOURCE_LIST_PATH=LOCAL_PROGRAM_PATH+"/resource.xml";
+    public static final String LOCAL_RESOURCE_LIST_PATH=LOCAL_PROGRAM_MEDIACFG_PATH+"/resource.xml";
     //插播播放 播放资源下载列表
-    public static final String LOCAL_INSERT_RESOURCE_LIST_PATH=LOCAL_PROGRAM_PATH+"/insert_resource.xml";
+    public static final String LOCAL_INSERT_RESOURCE_LIST_PATH=LOCAL_PROGRAM_MEDIACFG_PATH+"/insert_resource.xml";
 
     public static final String LICENSE_KEY_FOOT = "Ho0cUp";
 

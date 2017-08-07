@@ -28,29 +28,31 @@ import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import rx.Observable;
 import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by alex on 2017/7/8.
  */
 
-public abstract class BaseFragment<P extends BasePresenter> extends Fragment implements IView,BaseFrgmContract.FrgmView{
+public abstract class BaseFragment<P extends BasePresenter> extends Fragment implements IView, BaseFrgmContract.FrgmView {
     protected AVOptions options;
     protected View rootView;
     protected P mPresenter;
     protected Unbinder mUnbinder;
     protected Context mContext;
-    protected String TAG="Fragment";
+    protected String TAG = "Fragment";
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        if (rootView==null)
-            rootView=inflater.inflate(getLayoutResource(),container,false);
-        mContext=getActivity();
-        mUnbinder=ButterKnife.bind(this,rootView);
-        mPresenter= loadPresenter();
+        if (rootView == null)
+            rootView = inflater.inflate(getLayoutResource(), container, false);
+        mContext = getActivity();
+        mUnbinder = ButterKnife.bind(this, rootView);
+        mPresenter = loadPresenter();
         initCommonData();
         initView();
         initListener();
@@ -67,11 +69,11 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     protected abstract void initData();
 
     private void initCommonData() {
-        if (mPresenter!=null)
+        if (mPresenter != null)
             mPresenter.attachView(this);
     }
 
-    protected void setOptions(){
+    protected void setOptions() {
         options = new AVOptions();
 
         int codec = AVOptions.MEDIA_CODEC_AUTO;
@@ -140,11 +142,12 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     public void onDestroy() {
         super.onDestroy();
         mUnbinder.unbind();
-        if (mPresenter!=null){
+        if (mPresenter != null) {
             mPresenter.detachView();
         }
     }
 
+    //视频播放控件的错误监听器
     protected PLMediaPlayer.OnErrorListener mOnErrorListener = new PLMediaPlayer.OnErrorListener() {
         @Override
         public boolean onError(PLMediaPlayer mp, int errorCode) {
@@ -202,8 +205,7 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
         }
     };
 
-
-
+    //检查提交参数是否为空
     public boolean checkPostParamNull() {
         boolean isNull = false;
 //        if (StringUtils.isEmpty(mProgramsPath01)) {
@@ -254,6 +256,34 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
 
     //按照位置播放
     void areaPlay(List<ProgramRes> programResList) {
+
+        Observable.interval(1, TimeUnit.SECONDS)
+                .just(programResList)
+                .flatMap(new Func1<List<ProgramRes>, Observable<ProgramRes>>() {
+                    @Override
+                    public Observable<ProgramRes> call(List<ProgramRes> res) {
+                        return Observable.from(res);
+                    }
+
+                }).subscribeOn(Schedulers.io())
+                .subscribe(new Subscriber<ProgramRes>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(ProgramRes res) {
+
+                    }
+                });
+
+
         Observable.interval(1, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
@@ -264,38 +294,45 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
                                     public Observable<ProgramRes> call(List<ProgramRes> programResList) {
                                         return Observable.from(programResList);
                                     }
-                                }).subscribe(new Subscriber<ProgramRes>() {
-                            @Override
-                            public void onCompleted() {
+                                })
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(new Subscriber<ProgramRes>() {
+                                    @Override
+                                    public void onCompleted() {
 
-                            }
+                                    }
 
-                            @Override
-                            public void onError(Throwable e) {
-                                e.printStackTrace();
-                            }
+                                    @Override
+                                    public void onError(Throwable e) {
+                                        e.printStackTrace();
+                                    }
 
-                            @Override
-                            public void onNext(ProgramRes programRes) {
-                                Date date = new Date(System.currentTimeMillis());
-                                setAreaView(date,programRes);
-                            }
-                        });
+                                    @Override
+                                    public void onNext(ProgramRes programRes) {
+                                        Date date = new Date(System.currentTimeMillis());
+                                        setAreaView(date, programRes);
+                                    }
+                                });
                     }
                 });
     }
 
-    protected abstract void setAreaView(Date date,ProgramRes programRes);
+    //设置播放节目单中的资源播放位置接口
+    protected abstract void setAreaView(Date date, ProgramRes programRes);
 
     protected void setVideoView(Date date, ProgramRes bean, PLVideoView view) {
         String path = Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResnam();
         File file = new File(path);
         if (!file.exists()) return;
         if (bean.getResnam().equals("")) return;
+
         if (bean.getStdtime().equals("") && bean.getEdtime().equals("")) {
             if (!view.isPlaying()) {
-                view.setVideoPath(path);
-                view.start();
+                int playtimes=Integer.parseInt(bean.getPriority());
+                nomalResPlay(view,path,playtimes);
+//                view.setVideoPath(path);
+//                view.start();
             }
         } else {
             Date startPlayTime = DateFormatUtils.string2Date(bean.getStdtime(), "HH:mm");
@@ -308,7 +345,44 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
                 view.pause();
             }
         }
+    }
 
+    /**
+     * @param view
+     *         播放控件
+     * @param playTimes
+     *         播放次数
+     * @param path
+     *         资源路径
+     */
+    protected void nomalResPlay(PLVideoView view, String path, int playTimes) {
+        final int[] tempTimes = {0};
+        view.setVideoPath(path);
+        view.setOnPreparedListener(new PLMediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(PLMediaPlayer player, int i) {
+                view.seekTo(0);
+                view.start();
+            }
+        });
+        view.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(PLMediaPlayer player, int i) {
+                return false;
+            }
+        });
+        view.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(PLMediaPlayer player) {
+                view.stopPlayback();
+                tempTimes[0]++;
+                if (tempTimes[0] < playTimes) {
+                    view.setVideoPath(path);
+                    view.seekTo(0);
+                    view.start();
+                }
+            }
+        });
     }
 
 

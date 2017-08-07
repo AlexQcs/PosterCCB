@@ -82,4 +82,28 @@ public class ProgramRes {
                 ", priority='" + priority + '\'' +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ProgramRes)) return false;
+
+        ProgramRes res = (ProgramRes) o;
+
+        if (getResnam() != null ? !getResnam().equals(res.getResnam()) : res.getResnam() != null)
+            return false;
+        if (getResid() != null ? !getResid().equals(res.getResid()) : res.getResid() != null)
+            return false;
+        if (getArea() != null ? !getArea().equals(res.getArea()) : res.getArea() != null)
+            return false;
+        if (getStdtime() != null ? !getStdtime().equals(res.getStdtime()) : res.getStdtime() != null)
+            return false;
+        if (getEdtime() != null ? !getEdtime().equals(res.getEdtime()) : res.getEdtime() != null)
+            return false;
+        if (getPlaycnt() != null ? !getPlaycnt().equals(res.getPlaycnt()) : res.getPlaycnt() != null)
+            return false;
+        return getPriority() != null ? getPriority().equals(res.getPriority()) : res.getPriority() == null;
+
+    }
+
 }

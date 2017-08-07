@@ -62,6 +62,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.ResponseBody;
 import rx.Observable;
 import rx.Subscriber;
+import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
@@ -83,6 +84,7 @@ public class MainModel extends BaseModel {
     private boolean mLicensed = false;
     private XmlPullParser mParser;
     private RequestManager requestManager = RequestManager.getInstance();
+    private ProApplication mApplication = new ProApplication();
 
 
     //轮询任务
@@ -360,6 +362,13 @@ public class MainModel extends BaseModel {
         String tempFileName = "";
 
         Observable.just(list)
+                .doAfterTerminate(new Action0() {
+                    @Override
+                    public void call() {
+                        mSFTPUtils.disconnect();
+                        Log.e(TAG, "下载资源文件断开连接");
+                    }
+                })
                 .flatMap(new Func1<List<DownLoadFileBean>, Observable<DownLoadFileBean>>() {
                     @Override
                     public Observable<DownLoadFileBean> call(List<DownLoadFileBean> list) {
@@ -369,15 +378,13 @@ public class MainModel extends BaseModel {
                 .subscribe(new Subscriber<DownLoadFileBean>() {
                     @Override
                     public void onCompleted() {
-
+                        Log.e(TAG, "下载资源文件成功");
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        Log.e(TAG, "下载失败");
+                        Log.e(TAG, "下载资源文件失败");
                         Log.e(TAG, e.getMessage());
-                        mSFTPUtils.disconnect();
-                        Log.e(TAG, "断开连接");
                     }
 
                     @Override
@@ -385,9 +392,9 @@ public class MainModel extends BaseModel {
 
                         String url = (String) SpUtils.get("baseurl", Api.BASE_URL);
                         mSFTPUtils.setHost(url);
-                        Log.e(TAG, "下载文件");
+                        Log.e(TAG, "下载资源文件列表");
                         String localPath = Constant.UDP_TESTPATH;//测试
-//                            String localPath=Constant.LOCAL_PROGRAM_PATH;//
+//                            String localPath=Constant.LOCAL_PROGRAM_MEDIACFG_PATH;//本地存储
                         String remotePath = "test1/";//测试
 //                            String remotePath= Protocol.getLinkRemotePath(bean.getLink());
 //                            String fileName=Protocol.getLinkFileName(bean.getLink());
@@ -395,16 +402,14 @@ public class MainModel extends BaseModel {
                         Log.e(TAG, "连接成功");
                         mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");//测试
 //                            mSFTPUtils.downloadFile(remotePath,fileName,localPath,fileName);
-                        mSFTPUtils.disconnect();
-                        Log.e(TAG, "下载资源文件列表已断开连接");
                         File file = new File(localPath + "/test.mp4");//测试
 
 //                        File file = new File(localPath+"/"+fileName);
                         if (MD5.decode(file, bean.getMd5())) {
-                            Log.e(TAG, "下载成功");
+                            Log.e(TAG, "下载资源文件列表成功");
                             downLoadResource(file.getPath());
                         } else {
-                            Log.e(TAG, "文件非法");
+                            Log.e(TAG, "资源文件列表文件非法");
                         }
                     }
                 });
@@ -418,12 +423,20 @@ public class MainModel extends BaseModel {
         ArrayList<ResourceBean> resourceList = new ArrayList<>();
         resourceList = XmlUtils.parseResource(xmlStr);
         if (resourceList.size() == 0) return;
+        SFTPUtils sFTPUtils = new SFTPUtils();
         Observable.interval(1, TimeUnit.SECONDS)
                 .just(resourceList)
                 .flatMap(new Func1<List<ResourceBean>, Observable<ResourceBean>>() {
                     @Override
                     public Observable<ResourceBean> call(List<ResourceBean> been) {
                         return Observable.from(been);
+                    }
+                })
+                //结束时操作
+                .doAfterTerminate(new Action0() {
+                    @Override
+                    public void call() {
+                        sFTPUtils.disconnect();
                     }
                 })
                 .subscribeOn(Schedulers.io())
@@ -444,12 +457,25 @@ public class MainModel extends BaseModel {
                         String dateStr = DateFormatUtils.date2String(date, "HH:mm");
                         Set<String> tempSet = new HashSet<>();
                         if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
-                            SFTPUtils sFTPUtils=new SFTPUtils();
                             sFTPUtils.setUsername("");
                             sFTPUtils.setPassword("");
                             String url = (String) SpUtils.get("baseurl", Api.BASE_URL);
                             sFTPUtils.setHost(url);
-                            
+                            Log.e(TAG, "下载资源文件列表");
+                            String localPath = Constant.UDP_TESTPATH;//测试
+//                            String localPath=Constant.LOCAL_PROGRAM_PATH;//
+                            String remotePath = "test1/";//测试
+//                            String remotePath= Protocol.getLinkRemotePath(bean.getFtpAdd());
+//                            String fileName=Protocol.getLinkFileName(bean.getFtpAdd());
+                            mSFTPUtils.connect();
+                            Log.e(TAG, "连接成功");
+                            mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");//测试
+                            File file = new File(localPath + "/test.mp4");//测试
+                            if (MD5.decode(file, bean.getMd5())) {
+                                Log.e(TAG, "下载资源文件" + file.getName() + "成功");
+                            } else {
+                                Log.e(TAG, "资源文件" + file.getName() + "非法");
+                            }
                         }
                     }
                 });
@@ -590,7 +616,12 @@ public class MainModel extends BaseModel {
         }
         List<Program> list = new ArrayList<>();
         list = XmlUtils.parseNormalProgramXml(xmlNormalStr);
-
+        for (Program program : list) {
+            if (program.getType().equals("defaultpls")) {
+                mApplication.setDefProgram(program);
+                SpUtils.put("defaultpls", program);
+            }
+        }
         Observable.interval(1, TimeUnit.SECONDS)
                 .just(list)
                 .flatMap(new Func1<List<Program>, Observable<Program>>() {
@@ -613,17 +644,33 @@ public class MainModel extends BaseModel {
 
                                @Override
                                public void onNext(Program program) {
+                                   if (program.getType().equals("defaultpls")) return;
                                    Date date = new Date(System.currentTimeMillis());
                                    Date stdtime = DateFormatUtils.string2Date(program.getStdtime(), "HH:ss");
                                    Date edtime = DateFormatUtils.string2Date(program.getEdtime(), "HH:ss");
+                                   Program curProgram = mApplication.getProgram();
+                                   //
                                    if (date.after(stdtime) && date.before(edtime)) {
-                                       infoHint.logicNormalProgram(program);
+                                       if (mApplication.isPlay() && curProgram.equals(program)) {
+                                           return;
+                                       } else {
+                                           infoHint.logicNormalProgram(program);
+                                       }
                                        Log.e("正常播放节目单", program.toString() + "---");
+                                   } else if (program.getStdtime().equals("") && program.getEdtime().equals("")) {
+                                       if (mApplication.isPlay() && curProgram.equals(program)) {
+                                           return;
+                                       } else {
+                                           infoHint.logicNormalProgram(program);
+                                       }
+                                   } else {
+                                       infoHint.logicNormalProgram(mApplication.getDefProgram());
                                    }
                                }
                            }
                 );
     }
+
 
     //插播播放任务逻辑
     private void logicInterProgram(InfoHint infoHint) {

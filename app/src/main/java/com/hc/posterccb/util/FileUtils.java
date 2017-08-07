@@ -258,7 +258,7 @@ public class FileUtils {
             folderCreate(Constant.LOCAL_FILE_PATH);
             folderCreate(Constant.LOCAL_LOG_PATH);
             folderCreate(Constant.LOCAL_PROGRAM_PATH);
-            fileCreate(Constant.LOCAL_PROGRAM_TXT);
+            folderCreate(Constant.LOCAL_PROGRAM_MEDIACFG_PATH);
             fileCreate(Constant.LOCAL_ERROR_TXT);
             fileCreate(Constant.LOCAL_CONFIG_TXT);
         } catch (Exception e) {
