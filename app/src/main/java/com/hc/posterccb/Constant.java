@@ -2,6 +2,8 @@ package com.hc.posterccb;
 
 import android.os.Environment;
 
+import com.hc.posterccb.util.NetworkUtil;
+
 import java.lang.reflect.Method;
 
 /**
@@ -102,6 +104,8 @@ public class Constant {
 
     //序列号
     public static final String SERIAL_NUMBER=getSerialNumber();
+
+    public static final String MAC= NetworkUtil.getLocalMacAddressFromIp();
 
     //获取机器码
     public static String getSerialNumber() {

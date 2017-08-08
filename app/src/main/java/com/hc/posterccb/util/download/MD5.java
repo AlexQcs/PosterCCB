@@ -1,4 +1,4 @@
-package com.hc.posterccb.util;
+package com.hc.posterccb.util.download;
 
 import java.io.File;
 import java.io.FileInputStream;

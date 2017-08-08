@@ -4,6 +4,7 @@ package com.hc.posterccb.bean.report;
  * Created by alex on 2017/7/26.
  */
 
+//下载详细信息
 public class DetailBean {
     private String resid;
     private String filename;
@@ -17,4 +18,5 @@ public class DetailBean {
     public void setResid(String resid) {
         this.resid = resid;
     }
+
 }

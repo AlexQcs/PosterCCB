@@ -23,7 +23,7 @@ import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.bean.program.Program;
-import com.hc.posterccb.bean.report.ReportDownloadStatus;
+import com.hc.posterccb.bean.report.ReportIdReqBean;
 import com.hc.posterccb.bean.report.TaskReportBean;
 import com.hc.posterccb.bean.resource.ResourceBean;
 import com.hc.posterccb.exception.ApiException;
@@ -35,12 +35,12 @@ import com.hc.posterccb.util.DateFormatUtils;
 import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.JsonUtils;
 import com.hc.posterccb.util.LogUtils;
-import com.hc.posterccb.util.MD5;
-import com.hc.posterccb.util.SFTPUtils;
 import com.hc.posterccb.util.SpUtils;
 import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.util.VolumeUtils;
 import com.hc.posterccb.util.XmlUtils;
+import com.hc.posterccb.util.download.MD5;
+import com.hc.posterccb.util.download.SFTPUtils;
 import com.hc.posterccb.util.encrypt.DesDecUtils;
 import com.hc.posterccb.util.encrypt.SilentInstall;
 import com.thoughtworks.xstream.XStream;
@@ -821,7 +821,7 @@ public class MainModel extends BaseModel {
         String postStr = xStream.toXML(mTaskReport);
         StringUtils.setEncoding(postStr, "UTF-8");
 
-        httpService.report((String) SpUtils.get("logurl", "/xmlserver/revXml"), Constant.TASKREPORT, Constant.getSerialNumber(), postStr)
+        httpService.report((String) SpUtils.get("logurl", "/xmlserver/revXml"), Constant.TASKREPORT, Constant.MAC, postStr)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody body) {
@@ -830,13 +830,13 @@ public class MainModel extends BaseModel {
                             //获取返回的xml 字符串
                             resStr = body.string();
                             mParser = getXmlPullParser(resStr);
-                            PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, PollResultBean.class);
-                            ReportDownloadStatus mStatus = (ReportDownloadStatus) postResult.getBean();
-                            int status = Integer.getInteger(mStatus.getStatus());
+                            PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ReportIdReqBean.class);
+                            ReportIdReqBean mStatus = (ReportIdReqBean) postResult.getBean();
+                            int status = Integer.getInteger(mStatus.getResult());
                             if (status == 0) {
                                 LogUtils.e("上报ID响应", "响应成功");
                             } else {
-                                LogUtils.e("上报ID响应", mStatus.getErrorinfo());
+                                LogUtils.e("上报ID响应", mStatus.getResult());
                             }
                         } catch (Exception e) {
                             e.printStackTrace();

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -41,27 +42,25 @@ public class NetworkUtil {
         return  !(null == info || !info.isAvailable());
     }
 
-    /**
-     * 得到ip地址
-     *
-     * @return
-     */
+    //获取本地IP
     public static String getLocalIpAddress() {
-        String ret = "";
         try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+            for (Enumeration<NetworkInterface> en = NetworkInterface
+                    .getNetworkInterfaces(); en.hasMoreElements();) {
                 NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+                for (Enumeration<InetAddress> enumIpAddr = intf
+                        .getInetAddresses(); enumIpAddr.hasMoreElements();) {
                     InetAddress inetAddress = enumIpAddr.nextElement();
                     if (!inetAddress.isLoopbackAddress()) {
-                        ret = inetAddress.getHostAddress().toString();
+                        return inetAddress.getHostAddress().toString();
                     }
                 }
             }
         } catch (SocketException ex) {
-            ex.printStackTrace();
+            Log.e("getLocalIpAddress", ex.toString());
         }
-        return ret;
+
+        return null;
     }
 
     /**
@@ -182,4 +181,38 @@ public class NetworkUtil {
         // Todo: Please ask your app server, is the live streaming still available
         return true;
     }
+
+    public static String getLocalMacAddressFromIp() {
+        String mac_s= "";
+        try {
+            byte[] mac;
+            NetworkInterface ne=NetworkInterface.getByInetAddress(InetAddress.getByName(getLocalIpAddress()));
+            mac = ne.getHardwareAddress();
+            mac_s = byte2hex(mac);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return mac_s.toUpperCase();
+    }
+
+    public static  String byte2hex(byte[] b) {
+        StringBuffer hs = new StringBuffer(b.length);
+        String stmp = "";
+        int len = b.length;
+        for (int n = 0; n < len; n++) {
+            stmp = Integer.toHexString(b[n] & 0xFF);
+            if (stmp.length() == 1)
+                hs = hs.append("0").append(stmp);
+            else {
+                hs = hs.append(stmp);
+            }
+            if (n!=len-1){
+                hs.append("-");
+            }
+        }
+        return String.valueOf(hs);
+    }
+
+
 }

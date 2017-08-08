@@ -79,6 +79,8 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     private String mTaskName = "getTask";
     //机器码
     private String mSerialNumber = Constant.getSerialNumber();
+    //mac地址
+    private String mMac = Constant.MAC;
     //区分即时消息类的位置
     private String mRealTimePosition = "top";
 
@@ -95,7 +97,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         long unused = MemInfo.getAvailableSize();
         VolumeUtils.setVolum(5);
         LogUtils.e(TAG, "剩余内存" + unused);
-        mPresenter.pollingTask(mTaskName, mSerialNumber);
+        mPresenter.pollingTask(mTaskName, mMac);
         mPresenter.checkLicense();
         mPresenter.initConfig();
     }

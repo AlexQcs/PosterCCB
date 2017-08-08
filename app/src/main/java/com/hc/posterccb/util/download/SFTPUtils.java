@@ -1,8 +1,9 @@
-package com.hc.posterccb.util;
+package com.hc.posterccb.util.download;
 
 import android.annotation.SuppressLint;
 import android.util.Log;
 
+import com.hc.posterccb.util.LogUtils;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
@@ -13,9 +14,9 @@ import com.jcraft.jsch.SftpException;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Vector;
@@ -223,14 +224,30 @@ public class SFTPUtils {
             mSftp.cd(remotePath);
             File file = new File(localPath + localFileName);
             mkdirs(localPath + localFileName);
-            mSftp.get(remoteFileName, new FileOutputStream(file));
+            FileOutputStream os=new FileOutputStream(file);
+            //添加回调函数监控进度
+            InputStream is=mSftp.get(remotePath + "/" + remoteFileName, new MyProgressMonitor());
+            byte[] buff=new byte[1024*2];
+            int read;
+            if (is!=null){
+                Log.e("Sftp下载文件","开始读取input stream");
+                do {
+                    read=is.read(buff,0,buff.length);
+                    if (read>0){
+                        os.write(buff,0,read);
+                    }
+                    os.flush();
+                }while (read>=0);
+                LogUtils.e("Sftp下载文件","完成读取input stream");
+            }
+//            mSftp.get(remoteFileName, new FileOutputStream(file));
             return true;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (SftpException e) {
-            e.printStackTrace();
+        }finally {
+            mSftp.quit();
+            sshSession.disconnect();
         }
-
         return false;
     }
 
