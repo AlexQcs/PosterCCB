@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.Context;
 
 import com.hc.posterccb.bean.program.Program;
+import com.hc.posterccb.bean.resource.ResourceBean;
 import com.squareup.leakcanary.LeakCanary;
 
 /**
@@ -16,6 +17,7 @@ public class ProApplication extends Application {
     private Program mProgram; //当前节目单
     private boolean mIsPlay;  //是否有节目单正在播放
     private Program mDefProgram;
+    private ResourceBean mResourceBean;
 
     @Override
     public void onCreate() {
@@ -63,5 +65,13 @@ public class ProApplication extends Application {
 
     public void setDefProgram(Program defProgram) {
         mDefProgram = defProgram;
+    }
+
+    public ResourceBean getResourceBean() {
+        return mResourceBean;
+    }
+
+    public void setResourceBean(ResourceBean resourceBean) {
+        mResourceBean = resourceBean;
     }
 }

@@ -251,7 +251,6 @@ public class FileUtils {
         return fileSizeLong;
     }
 
-
     public static void checkAppFile() {
 
         try {
@@ -266,7 +265,6 @@ public class FileUtils {
         }
 
     }
-
 
     // 将字符串追加写入到文本文件中
     public static void additionTxtToFile(String strcontent, String filePath) throws IOException {
@@ -399,7 +397,6 @@ public class FileUtils {
         }
         return stringBuilder.toString();
     }
-
 
     public List<String> DecFile(String path) throws IOException {
         List<String> strings = new ArrayList<String>();

@@ -23,6 +23,7 @@ import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.bean.program.Program;
+import com.hc.posterccb.bean.report.ReportDownloadStatus;
 import com.hc.posterccb.bean.report.ReportIdReqBean;
 import com.hc.posterccb.bean.report.TaskReportBean;
 import com.hc.posterccb.bean.resource.ResourceBean;
@@ -78,7 +79,8 @@ public class MainModel extends BaseModel {
 
     private SFTPUtils mSFTPUtils = new SFTPUtils();
 
-    public volatile int pollingTimer;
+    public volatile int pollingTimer; //轮询时间
+    public volatile String resourceName;
     private TaskReportBean mTaskReport = new TaskReportBean();
 
     private boolean mLicensed = false;
@@ -352,7 +354,51 @@ public class MainModel extends BaseModel {
     //通知终端上报资源下载状态
     private void resResDownLoadStatusReport(PollResultBean bean) {
 
+        Observable.just(Constant.LOCAL_RESOURCE_LIST_PATH, Constant.LOCAL_INSERT_RESOURCE_LIST_PATH)
+                .observeOn(Schedulers.io())
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        File file = new File(s);
+                        if (file.exists()) {
+                            String xmlStr = getStringFromTxT(s);
+                            if (xmlStr.equals("")) return;
+                            ArrayList<ResourceBean> resourceList = new ArrayList<>();
+                            resourceList = XmlUtils.parseResource(xmlStr);
+                            if (resourceList.size() == 0) return;
+                            reportDownLoadStatus(resourceList);
+                        }
+                    }
+
+
+                });
+
     }
+
+    private void reportDownLoadStatus(ArrayList<ResourceBean> list) {
+        ReportDownloadStatus status=new ReportDownloadStatus();
+
+        Observable.just(list)
+                .flatMap(new Func1<ArrayList<ResourceBean>, Observable<ResourceBean>>() {
+                    @Override
+                    public Observable<ResourceBean> call(ArrayList<ResourceBean> been) {
+                        return Observable.from(been);
+                    }
+                })
+                .observeOn(Schedulers.io())
+                .subscribe(new Action1<ResourceBean>() {
+                    @Override
+                    public void call(ResourceBean bean) {
+                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" +bean.getResname());//测试
+                        boolean md5 = MD5.decode(file, bean.getMd5());
+                        if (file.exists() && md5) {
+                            status.setStatus("0100");
+                            return;
+                        }
+                    }
+                });
+    }
+
 
     //通知终端下载资源文件列表
     private void resReDownLoadFile(List<DownLoadFileBean> list) {
@@ -383,7 +429,8 @@ public class MainModel extends BaseModel {
 
                     @Override
                     public void onError(Throwable e) {
-                        Log.e(TAG, "下载资源文件失败");
+                        Log.e(TAG, "下载资源文件列表失败");
+
                         Log.e(TAG, e.getMessage());
                     }
 
@@ -453,6 +500,16 @@ public class MainModel extends BaseModel {
 
                     @Override
                     public void onNext(ResourceBean bean) {
+                        String localPath = Constant.UDP_TESTPATH;//测试
+
+//                            String localPath=Constant.LOCAL_PROGRAM_PATH;//
+                        File file = new File(localPath + "/test.mp4");//测试
+//                        double fileSize=FileUtils.getFileOrFilesSize(file.getPath(),SIZETYPE_KB);
+                        boolean md5 = MD5.decode(file, bean.getMd5());
+                        if (file.exists() && md5) {
+                            return;
+                        }
+
                         Date date = new Date(System.currentTimeMillis());
                         String dateStr = DateFormatUtils.date2String(date, "HH:mm");
                         Set<String> tempSet = new HashSet<>();
@@ -461,16 +518,13 @@ public class MainModel extends BaseModel {
                             sFTPUtils.setPassword("");
                             String url = (String) SpUtils.get("baseurl", Api.BASE_URL);
                             sFTPUtils.setHost(url);
-                            Log.e(TAG, "下载资源文件列表");
-                            String localPath = Constant.UDP_TESTPATH;//测试
-//                            String localPath=Constant.LOCAL_PROGRAM_PATH;//
+                            Log.e(TAG, "下载资源文件");
                             String remotePath = "test1/";//测试
 //                            String remotePath= Protocol.getLinkRemotePath(bean.getFtpAdd());
 //                            String fileName=Protocol.getLinkFileName(bean.getFtpAdd());
                             mSFTPUtils.connect();
                             Log.e(TAG, "连接成功");
                             mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");//测试
-                            File file = new File(localPath + "/test.mp4");//测试
                             if (MD5.decode(file, bean.getMd5())) {
                                 Log.e(TAG, "下载资源文件" + file.getName() + "成功");
                             } else {
