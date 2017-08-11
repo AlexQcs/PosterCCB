@@ -8,6 +8,7 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -213,6 +214,49 @@ public class NetworkUtil {
         }
         return String.valueOf(hs);
     }
+
+    /**
+     * 得到有限网关的IP地址
+     *
+     * @return
+     */
+    public static String getLocalIp() {
+
+        try {
+            // 获取本地设备的所有网络接口
+            Enumeration<NetworkInterface> enumerationNi = NetworkInterface
+                    .getNetworkInterfaces();
+            while (enumerationNi.hasMoreElements()) {
+                NetworkInterface networkInterface = enumerationNi.nextElement();
+                String interfaceName = networkInterface.getDisplayName();
+//                Log.e("tag", "网络名字" + interfaceName);
+
+                // 如果是有限网卡
+                if (interfaceName.equals("eth0")) {
+                    Enumeration<InetAddress> enumIpAddr = networkInterface
+                            .getInetAddresses();
+
+                    while (enumIpAddr.hasMoreElements()) {
+                        // 返回枚举集合中的下一个IP地址信息
+                        InetAddress inetAddress = enumIpAddr.nextElement();
+                        // 不是回环地址，并且是ipv4的地址
+                        if (!inetAddress.isLoopbackAddress()
+                                && inetAddress instanceof Inet4Address) {
+                            Log.e("tag", inetAddress.getHostAddress() + "   ");
+
+                            return inetAddress.getHostAddress();
+                        }
+                    }
+                }
+            }
+
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return "";
+
+    }
+
 
 
 }

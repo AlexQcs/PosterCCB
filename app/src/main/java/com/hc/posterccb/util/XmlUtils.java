@@ -579,4 +579,11 @@ public class XmlUtils {
         return programResArrayList;
     }
 
+    public static XmlPullParser getXmlPullParser(String xmlStr) throws XmlPullParserException {
+        InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
+        XmlPullParser parser = Xml.newPullParser();
+        parser.setInput(in, "UTF-8");
+        return parser;
+    }
+
 }

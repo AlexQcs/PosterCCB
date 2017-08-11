@@ -35,4 +35,12 @@ public class MyProgressMonitor implements com.jcraft.jsch.SftpProgressMonitor {
     public void end() {
         LogUtils.e("下载状态","结束");
     }
+
+    public long getTransfered() {
+        return transfered;
+    }
+
+    public void setTransfered(long transfered) {
+        this.transfered = transfered;
+    }
 }

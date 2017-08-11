@@ -219,7 +219,7 @@ public class SFTPUtils {
      * @return boolean
      */
     public boolean downloadFile(String remotePath, String remoteFileName,
-                                String localPath, String localFileName) {
+                                String localPath, String localFileName){
         try {
             mSftp.cd(remotePath);
             File file = new File(localPath + localFileName);

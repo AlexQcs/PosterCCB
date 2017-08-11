@@ -3,7 +3,6 @@ package com.hc.posterccb.ui.model;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
-import android.util.Xml;
 
 import com.google.gson.Gson;
 import com.hc.posterccb.Constant;
@@ -23,6 +22,7 @@ import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.bean.program.Program;
+import com.hc.posterccb.bean.report.CfgReportBean;
 import com.hc.posterccb.bean.report.ReportDownloadStatus;
 import com.hc.posterccb.bean.report.ReportIdReqBean;
 import com.hc.posterccb.bean.report.TaskReportBean;
@@ -36,6 +36,7 @@ import com.hc.posterccb.util.DateFormatUtils;
 import com.hc.posterccb.util.FileUtils;
 import com.hc.posterccb.util.JsonUtils;
 import com.hc.posterccb.util.LogUtils;
+import com.hc.posterccb.util.NetworkUtil;
 import com.hc.posterccb.util.SpUtils;
 import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.util.VolumeUtils;
@@ -47,12 +48,9 @@ import com.hc.posterccb.util.encrypt.SilentInstall;
 import com.thoughtworks.xstream.XStream;
 
 import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -209,7 +207,6 @@ public class MainModel extends BaseModel {
                     });
         }
     }
-
 
     private void resResult(String taskType, PostResult postResult, InfoHint infoHint) {
         if (postResult.getBean() == null) {
@@ -376,7 +373,7 @@ public class MainModel extends BaseModel {
     }
 
     private void reportDownLoadStatus(ArrayList<ResourceBean> list) {
-        ReportDownloadStatus status=new ReportDownloadStatus();
+        ReportDownloadStatus status = new ReportDownloadStatus();
 
         Observable.just(list)
                 .flatMap(new Func1<ArrayList<ResourceBean>, Observable<ResourceBean>>() {
@@ -389,7 +386,7 @@ public class MainModel extends BaseModel {
                 .subscribe(new Action1<ResourceBean>() {
                     @Override
                     public void call(ResourceBean bean) {
-                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" +bean.getResname());//测试
+                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResname());//测试
                         boolean md5 = MD5.decode(file, bean.getMd5());
                         if (file.exists() && md5) {
                             status.setStatus("0100");
@@ -398,7 +395,6 @@ public class MainModel extends BaseModel {
                     }
                 });
     }
-
 
     //通知终端下载资源文件列表
     private void resReDownLoadFile(List<DownLoadFileBean> list) {
@@ -469,7 +465,9 @@ public class MainModel extends BaseModel {
         if (xmlStr.equals("")) return;
         ArrayList<ResourceBean> resourceList = new ArrayList<>();
         resourceList = XmlUtils.parseResource(xmlStr);
-        if (resourceList.size() == 0) return;
+        if (resourceList == null || resourceList.size() == 0) return;
+        mApplication.setResourceBeanList(resourceList);
+        mApplication.initDetailBeanList(resourceList);
         SFTPUtils sFTPUtils = new SFTPUtils();
         Observable.interval(1, TimeUnit.SECONDS)
                 .just(resourceList)
@@ -490,18 +488,26 @@ public class MainModel extends BaseModel {
                 .subscribe(new Subscriber<ResourceBean>() {
                     @Override
                     public void onCompleted() {
+                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + mApplication.getResourceBean().getResname());//测试
+                        boolean md5 = MD5.decode(file, mApplication.getResourceBean().getMd5());
+                        if (md5) {
+                            setDownloadStatus("0001");//设置状态下载成功
+                        } else {
+                            setDownloadStatus("0104");
+                        }
 
                     }
 
                     @Override
                     public void onError(Throwable e) {
-
+                        setDownloadStatus("0");//设置状态下载出错
                     }
 
                     @Override
                     public void onNext(ResourceBean bean) {
+                        mApplication.setResourceBean(bean);
+                        setDownloadStatus("0002");//设置状态下载中
                         String localPath = Constant.UDP_TESTPATH;//测试
-
 //                            String localPath=Constant.LOCAL_PROGRAM_PATH;//
                         File file = new File(localPath + "/test.mp4");//测试
 //                        double fileSize=FileUtils.getFileOrFilesSize(file.getPath(),SIZETYPE_KB);
@@ -509,7 +515,6 @@ public class MainModel extends BaseModel {
                         if (file.exists() && md5) {
                             return;
                         }
-
                         Date date = new Date(System.currentTimeMillis());
                         String dateStr = DateFormatUtils.date2String(date, "HH:mm");
                         Set<String> tempSet = new HashSet<>();
@@ -524,6 +529,10 @@ public class MainModel extends BaseModel {
 //                            String fileName=Protocol.getLinkFileName(bean.getFtpAdd());
                             mSFTPUtils.connect();
                             Log.e(TAG, "连接成功");
+
+//                            if (mSFTPUtils.isDirExist(remotePath + "/" + fileName))
+//                                setDownloadStatus("0101");
+
                             mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");//测试
                             if (MD5.decode(file, bean.getMd5())) {
                                 Log.e(TAG, "下载资源文件" + file.getName() + "成功");
@@ -533,8 +542,17 @@ public class MainModel extends BaseModel {
                         }
                     }
                 });
+    }
 
-
+    //设置单个资源文件的下载状态
+    private void setDownloadStatus(String errorType) {
+        for (int i = 0; i < mApplication.getDetailBeanList().size(); i++) {
+            String resName = mApplication.getResourceBean().getResname();
+            String tarName = mApplication.getDetailBeanList().get(i).getFilename();
+            if (tarName.equals(resName)) {
+                mApplication.getDetailBeanList().get(i).setStatus(errorType);
+            }
+        }
     }
 
     //终端日志上报任务
@@ -558,7 +576,44 @@ public class MainModel extends BaseModel {
 
     //终端配置信息日志上报
     private void resCfgReport(PollResultBean bean) {
-
+        String jsonStr = getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
+        if (!jsonStr.equals("")) {
+            Gson gson = new Gson();
+            ConfigBean configbean = gson.fromJson(jsonStr, ConfigBean.class);
+            CfgReportBean postBean=new CfgReportBean();
+            String ip= NetworkUtil.getLocalIp();
+            postBean.setIp(ip);
+            String mac=Constant.MAC;
+            postBean.setMac(mac);
+            String appversion=AppVersionTools.getApkVersionName(mApplication.getApplicationContext());
+            postBean.setAppversion(appversion);
+            String startuptime=configbean.getStaruptime();
+            postBean.setStartuptime(startuptime);
+            String shutdowntime=configbean.getShutdowntime();
+            postBean.setShutdowntime(shutdowntime);
+            String diskspacealarm= configbean.getDiskspacealarm();
+            postBean.setDiskspacealarm(diskspacealarm);
+            String serverconfig=configbean.getServerconfig();
+            postBean.setServerconfig(serverconfig);
+            String selectinterval=configbean.getSelectinterval();
+            postBean.setSelectinterval(selectinterval);
+            String volume=configbean.getVolume();
+            postBean.setVolume(volume);
+            String ftpserver=configbean.getFtpserver();
+            postBean.setFtpserver(ftpserver);
+            String httpserver=configbean.getHttpserver();
+            postBean.setHttpserver(httpserver);
+            String downloadrate=configbean.getDownloadrate();
+            postBean.setDownloadrate(downloadrate);
+            String downloadtime=configbean.getDownloadtime();
+            postBean.setDownloadtime(downloadtime);
+            String logserver=configbean.getLogserver();
+            postBean.setLogserver(logserver);
+            String uploadlogtime=configbean.getUploadlogtime();
+            postBean.setUploadlogtime(uploadlogtime);
+            String keeplogtime=configbean.getKeeplogtime();
+            postBean.setKeeplogtime(keeplogtime);
+        }
     }
 
     //播放类控制类
@@ -725,7 +780,6 @@ public class MainModel extends BaseModel {
                 );
     }
 
-
     //插播播放任务逻辑
     private void logicInterProgram(InfoHint infoHint) {
         String xmlInterStr = getStringFromTxT(Constant.LOCAL_PROGRAM_INTER_TXT);
@@ -883,7 +937,7 @@ public class MainModel extends BaseModel {
                         try {
                             //获取返回的xml 字符串
                             resStr = body.string();
-                            mParser = getXmlPullParser(resStr);
+                            mParser = XmlUtils.getXmlPullParser(resStr);
                             PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ReportIdReqBean.class);
                             ReportIdReqBean mStatus = (ReportIdReqBean) postResult.getBean();
                             int status = Integer.getInteger(mStatus.getResult());
@@ -981,12 +1035,6 @@ public class MainModel extends BaseModel {
 
     }
 
-    private XmlPullParser getXmlPullParser(String xmlStr) throws XmlPullParserException {
-        InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
-        XmlPullParser parser = Xml.newPullParser();
-        parser.setInput(in, "UTF-8");
-        return parser;
-    }
 
     //通过接口产生信息回调
     public interface InfoHint {

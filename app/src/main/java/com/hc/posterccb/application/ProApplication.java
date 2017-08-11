@@ -4,8 +4,12 @@ import android.app.Application;
 import android.content.Context;
 
 import com.hc.posterccb.bean.program.Program;
+import com.hc.posterccb.bean.report.DetailBean;
 import com.hc.posterccb.bean.resource.ResourceBean;
 import com.squareup.leakcanary.LeakCanary;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by alex on 2017/7/8.
@@ -18,6 +22,8 @@ public class ProApplication extends Application {
     private boolean mIsPlay;  //是否有节目单正在播放
     private Program mDefProgram;
     private ResourceBean mResourceBean;
+    private List<ResourceBean> mResourceBeanList;
+    private List<DetailBean> mDetailBeanList;
 
     @Override
     public void onCreate() {
@@ -28,6 +34,10 @@ public class ProApplication extends Application {
         LeakCanary.install(this);
         instance = this;
         mContext=this;
+        mDefProgram=new Program();
+        mResourceBean=new ResourceBean();
+        mResourceBeanList=new ArrayList<>();
+        mDetailBeanList=new ArrayList<>();
     }
 
     /**
@@ -73,5 +83,33 @@ public class ProApplication extends Application {
 
     public void setResourceBean(ResourceBean resourceBean) {
         mResourceBean = resourceBean;
+    }
+
+    public List<ResourceBean> getResourceBeanList() {
+        return mResourceBeanList;
+    }
+
+    public void setResourceBeanList(List<ResourceBean> resourceBeanList) {
+        mResourceBeanList = resourceBeanList;
+    }
+
+    public List<DetailBean> getDetailBeanList() {
+        return mDetailBeanList;
+    }
+
+    public void setDetailBeanList(List<DetailBean> detailBeanList) {
+        mDetailBeanList = detailBeanList;
+    }
+
+    public void initDetailBeanList(List<ResourceBean> resourceBeanList){
+        if (resourceBeanList==null||resourceBeanList.isEmpty())return;
+        mDetailBeanList=new ArrayList<>();
+        for (int i = 0; i < resourceBeanList.size(); i++) {
+            ResourceBean res=resourceBeanList.get(i);
+            DetailBean bean=new DetailBean();
+            bean.setFilename(res.getResname());
+            bean.setResid(res.getResid());
+            mDetailBeanList.add(bean);
+        }
     }
 }
