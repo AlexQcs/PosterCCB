@@ -1,9 +1,10 @@
-package com.hc.posterccb.util;
+package com.hc.posterccb.util.system;
 
 import android.content.Context;
 import android.media.AudioManager;
 
 import com.hc.posterccb.application.ProApplication;
+import com.hc.posterccb.util.LogUtils;
 
 /**
  * Created by alex on 2017/7/22.

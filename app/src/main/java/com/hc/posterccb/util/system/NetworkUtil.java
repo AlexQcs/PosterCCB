@@ -1,4 +1,4 @@
-package com.hc.posterccb.util;
+package com.hc.posterccb.util.system;
 
 import android.content.Context;
 import android.net.ConnectivityManager;

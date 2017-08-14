@@ -1,4 +1,4 @@
-package com.hc.posterccb.util;
+package com.hc.posterccb.util.ccbutils;
 
 
 import android.util.Xml;
@@ -19,6 +19,7 @@ import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.bean.program.ProgramRes;
 import com.hc.posterccb.bean.resource.ResourceBean;
+import com.hc.posterccb.util.LogUtils;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;

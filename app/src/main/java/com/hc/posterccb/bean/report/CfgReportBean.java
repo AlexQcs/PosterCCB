@@ -1,9 +1,11 @@
 package com.hc.posterccb.bean.report;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+
 /**
  * Created by alex on 2017/8/11.
  */
-
+@XStreamAlias("command")
 public class CfgReportBean {
     public String ip;
     public String mac;

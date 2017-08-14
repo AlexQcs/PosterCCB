@@ -5,7 +5,7 @@ import android.content.Context;
 import com.hc.posterccb.base.BaseSubcriber;
 import com.hc.posterccb.exception.ApiException;
 import com.hc.posterccb.util.LogUtils;
-import com.hc.posterccb.util.NetworkUtil;
+import com.hc.posterccb.util.system.NetworkUtil;
 
 /**
  * Created by alex on 2017/7/8.

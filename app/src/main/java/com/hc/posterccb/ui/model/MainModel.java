@@ -1,11 +1,16 @@
 package com.hc.posterccb.ui.model;
 
+import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
+import android.os.PowerManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.gson.Gson;
 import com.hc.posterccb.Constant;
+import com.hc.posterccb.R;
 import com.hc.posterccb.api.Api;
 import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.base.BaseModel;
@@ -25,22 +30,23 @@ import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.bean.report.CfgReportBean;
 import com.hc.posterccb.bean.report.ReportDownloadStatus;
 import com.hc.posterccb.bean.report.ReportIdReqBean;
+import com.hc.posterccb.bean.report.ReportWorkStatusBean;
 import com.hc.posterccb.bean.report.TaskReportBean;
 import com.hc.posterccb.bean.resource.ResourceBean;
 import com.hc.posterccb.exception.ApiException;
 import com.hc.posterccb.http.RequestManager;
 import com.hc.posterccb.subscriber.CommonSubscriber;
-import com.hc.posterccb.util.AppVersionTools;
-import com.hc.posterccb.util.ControlUtils;
+import com.hc.posterccb.util.system.AppVersionTools;
+import com.hc.posterccb.util.system.ControlUtils;
 import com.hc.posterccb.util.DateFormatUtils;
-import com.hc.posterccb.util.FileUtils;
+import com.hc.posterccb.util.file.FileUtils;
 import com.hc.posterccb.util.JsonUtils;
 import com.hc.posterccb.util.LogUtils;
-import com.hc.posterccb.util.NetworkUtil;
+import com.hc.posterccb.util.system.NetworkUtil;
 import com.hc.posterccb.util.SpUtils;
 import com.hc.posterccb.util.StringUtils;
-import com.hc.posterccb.util.VolumeUtils;
-import com.hc.posterccb.util.XmlUtils;
+import com.hc.posterccb.util.system.VolumeUtils;
+import com.hc.posterccb.util.ccbutils.XmlUtils;
 import com.hc.posterccb.util.download.MD5;
 import com.hc.posterccb.util.download.SFTPUtils;
 import com.hc.posterccb.util.encrypt.DesDecUtils;
@@ -66,7 +72,7 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-import static com.hc.posterccb.util.FileUtils.getStringFromTxT;
+import static com.hc.posterccb.util.file.FileUtils.getStringFromTxT;
 
 /**
  * Created by alex on 2017/7/10.
@@ -77,8 +83,7 @@ public class MainModel extends BaseModel {
 
     private SFTPUtils mSFTPUtils = new SFTPUtils();
 
-    public volatile int pollingTimer; //轮询时间
-    public volatile String resourceName;
+    private volatile int mPollingTimer; //轮询时间
     private TaskReportBean mTaskReport = new TaskReportBean();
 
     private boolean mLicensed = false;
@@ -91,8 +96,8 @@ public class MainModel extends BaseModel {
     public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint) {
         if (infoHint == null)
             throw new RuntimeException("InfoHint不能为空");
-        pollingTimer = (int) SpUtils.get("selectinterval", 10);//从sp获取轮询时间，默认10秒
-        Observable.interval(pollingTimer, TimeUnit.SECONDS)
+        mPollingTimer = (int) SpUtils.get("selectinterval", 10);//从sp获取轮询时间，默认10秒
+        Observable.interval(mPollingTimer, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
@@ -156,16 +161,16 @@ public class MainModel extends BaseModel {
             Date powerOnTime = DateFormatUtils.string2Date(powerOnTimeStr, "HH:mm");
             Date powerOffTime = DateFormatUtils.string2Date(powerOffTimeStr, "HH:mm");
             int diskspacealarm = Integer.parseInt(bean.getDiskspacealarm());//硬盘警告阀值
-            SpUtils.put("diskspacealarm", diskspacealarm);
+            SpUtils.put(mApplication.getString(R.string.diskspacealarm), diskspacealarm);
             String serverip = bean.getServerconfig();//服务器信息  http://ip:port/appname
-            SpUtils.put("serverip", serverip);//保存服务器信息
+            SpUtils.put(mApplication.getString(R.string.serverip), serverip);//保存服务器信息
             String sftpServer = bean.getFtpserver();//sftp下载服务器地址列表
-            SpUtils.put("sftpserver", sftpServer);
+            SpUtils.put(mApplication.getString(R.string.sftpserver), sftpServer);
             String httpServer = bean.getHttpserver();//http下载服务器地址列表
-            SpUtils.put("httpserver", httpServer);
+            SpUtils.put(mApplication.getString(R.string.httpserver), httpServer);
             int selectinterval = Integer.parseInt(bean.getSelectinterval());//轮询时间
-            pollingTimer = selectinterval;
-            SpUtils.put("selectinterval", selectinterval);//保存轮询时间
+            mPollingTimer = selectinterval;
+            SpUtils.put(mApplication.getString(R.string.selectinterval), selectinterval);//保存轮询时间
             int volume = Integer.parseInt(bean.getVolume());//终端音量 机器最高音量为15
             VolumeUtils.setVolum(volume);
             int downloadrate = Integer.parseInt(bean.getVolume());//下载速度
@@ -174,14 +179,14 @@ public class MainModel extends BaseModel {
             for (String time : downloadtimeArray) {
                 downloadtime.add(time);
             }
-            SpUtils.put("downloadtime", downloadtime);
+            SpUtils.put(mApplication.getString(R.string.downloadtime), downloadtime);
 
             String logServer = bean.getLogserver();//日志服务器路径:ftp://user:pwd@serverip:port/logdir
-            SpUtils.put("logServer", logServer);
+            SpUtils.put(mApplication.getString(R.string.logServer), logServer);
             String upLoadLogTime = bean.getUploadlogtime();//日志定时上传时间，格式: HH:MM:SS
-            SpUtils.put("upLoadLogTime", upLoadLogTime);
+            SpUtils.put(mApplication.getString(R.string.upLoadLogTime), upLoadLogTime);
             String keeplogTime = bean.getKeeplogtime();//日志保留时间，单位：天
-            SpUtils.put("keeplogTime", keeplogTime);
+            SpUtils.put(mApplication.getString(R.string.keeplogTime), keeplogTime);
 
             Observable.interval(1, TimeUnit.SECONDS)
                     .subscribe(new Action1<Long>() {
@@ -208,6 +213,7 @@ public class MainModel extends BaseModel {
         }
     }
 
+    //处理轮询任务返回
     private void resResult(String taskType, PostResult postResult, InfoHint infoHint) {
         if (postResult.getBean() == null) {
             return;
@@ -268,21 +274,21 @@ public class MainModel extends BaseModel {
             case Constant.POLLING_CFGREPORT: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resCfgReport(bean);
+                reportCfg(bean);
                 break;
             }
             //终端配置信息日志上报任务
             case Constant.POLLING_WORKSTATUSREPORT: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resWorkStatusReport(bean);
+                reportWorkStatus(bean);
                 break;
             }
             //终端工作状态上报类任务
             case Constant.POLLING_MONITORREPORT: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resMonitorReport(bean);
+                reportMonitor(bean);
                 break;
             }
 
@@ -290,7 +296,7 @@ public class MainModel extends BaseModel {
             case Constant.POLLING_LOGREPORT: {
                 LogReportBean bean = (LogReportBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resLogReport(bean);
+                reportLog(bean);
                 break;
             }
 
@@ -299,7 +305,7 @@ public class MainModel extends BaseModel {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
                 ArrayList<DownLoadFileBean> list = postResult.getList();
-                resReDownLoadFile(list);
+                resDownLoadFile(list);
                 break;
             }
 
@@ -307,9 +313,124 @@ public class MainModel extends BaseModel {
             case Constant.POLLING_DOWNLOADSTATUSREPORT: {
                 PollResultBean bean = (PollResultBean) postResult.getBean();
                 postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resResDownLoadStatusReport(bean);
+                resDownLoadStatusReport(bean);
             }
+        }
+    }
 
+    //终端日志上报任务
+    private void reportLog(LogReportBean bean) {
+
+    }
+
+    //终端在播内容上报
+    private void reportMonitor(PollResultBean bean) {
+        String jsonStr = getStringFromTxT(Constant.LOCAL_PROGRAM_TXT);
+        if (!jsonStr.equals("")) {
+
+        }
+
+    }
+
+    //终端工作状态上报
+    @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
+    private void reportWorkStatus(PollResultBean bean) {
+
+        PowerManager pm = (PowerManager) mApplication.getSystemService(Context.POWER_SERVICE);
+        boolean screen = pm.isInteractive();
+        ReportWorkStatusBean postBean = new ReportWorkStatusBean();
+        postBean.setTaskid("001");
+        if (screen) {
+            postBean.setPlayerstatus("wakeup");
+        } else {
+            postBean.setPlayerstatus("sleep");
+        }
+
+        XStream xStream = new XStream();
+        String postStr = xStream.toXML(postBean);
+        StringUtils.setEncoding(postStr, "UTF-8");
+        httpService.report((String) SpUtils.get(mApplication.getString(R.string.serverip), Api.LOCALHOST), Constant.REPORT_CONFIG, Constant.MAC, postStr)
+                .subscribeOn(Schedulers.io())
+                .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
+                    @Override
+                    public void onNext(ResponseBody body) {
+                        reportRequest(body, "工作状态");
+                    }
+                });
+    }
+
+    //终端配置信息日志上报
+    private void reportCfg(PollResultBean bean) {
+        String jsonStr = getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
+        if (!jsonStr.equals("")) {
+            Gson gson = new Gson();
+            ConfigBean configbean = gson.fromJson(jsonStr, ConfigBean.class);
+            CfgReportBean postBean = new CfgReportBean();
+            String ip = NetworkUtil.getLocalIp();
+            postBean.setIp(ip);
+            String mac = Constant.MAC;
+            postBean.setMac(mac);
+            String appversion = AppVersionTools.getApkVersionName(mApplication.getApplicationContext());
+            postBean.setAppversion(appversion);
+            String startuptime = configbean.getStaruptime();
+            postBean.setStartuptime(startuptime);
+            String shutdowntime = configbean.getShutdowntime();
+            postBean.setShutdowntime(shutdowntime);
+            String diskspacealarm = configbean.getDiskspacealarm();
+            postBean.setDiskspacealarm(diskspacealarm);
+            String serverconfig = configbean.getServerconfig();
+            postBean.setServerconfig(serverconfig);
+            String selectinterval = configbean.getSelectinterval();
+            postBean.setSelectinterval(selectinterval);
+            String volume = configbean.getVolume();
+            postBean.setVolume(volume);
+            String ftpserver = configbean.getFtpserver();
+            postBean.setFtpserver(ftpserver);
+            String httpserver = configbean.getHttpserver();
+            postBean.setHttpserver(httpserver);
+            String downloadrate = configbean.getDownloadrate();
+            postBean.setDownloadrate(downloadrate);
+            String downloadtime = configbean.getDownloadtime();
+            postBean.setDownloadtime(downloadtime);
+            String logserver = configbean.getLogserver();
+            postBean.setLogserver(logserver);
+            String uploadlogtime = configbean.getUploadlogtime();
+            postBean.setUploadlogtime(uploadlogtime);
+            String keeplogtime = configbean.getKeeplogtime();
+            postBean.setKeeplogtime(keeplogtime);
+
+            XStream xStream = new XStream();
+            String postStr = xStream.toXML(postBean);
+            StringUtils.setEncoding(postStr, "UTF-8");
+            httpService.report((String) SpUtils
+                    .get(mApplication.getString(R.string.serverip), Api.LOCALHOST), Constant.REPORT_CONFIG, Constant.MAC, postStr)
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
+                        @Override
+                        public void onNext(ResponseBody body) {
+                            reportRequest(body, "配置信息");
+                        }
+                    });
+        }
+    }
+
+    //上报任务通用返回处理
+    private void reportRequest(ResponseBody body, String task) {
+        String resStr = null;
+        try {
+            //获取返回的xml 字符串
+            resStr = body.string();
+            mParser = XmlUtils.getXmlPullParser(resStr);
+            PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ReportIdReqBean.class);
+            ReportIdReqBean mStatus = (ReportIdReqBean) postResult.getBean();
+            int status = Integer.getInteger(mStatus.getResult());
+            if (status == 0) {
+                LogUtils.e("上报响应", "上报" + task + "响应成功");
+            } else {
+                LogUtils.e("上报响应", "上报" + task + "错误:" + mStatus.getResult());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -343,13 +464,12 @@ public class MainModel extends BaseModel {
                                 }
                                 break;
                         }
-
                     }
                 });
     }
 
     //通知终端上报资源下载状态
-    private void resResDownLoadStatusReport(PollResultBean bean) {
+    private void resDownLoadStatusReport(PollResultBean bean) {
 
         Observable.just(Constant.LOCAL_RESOURCE_LIST_PATH, Constant.LOCAL_INSERT_RESOURCE_LIST_PATH)
                 .observeOn(Schedulers.io())
@@ -397,7 +517,7 @@ public class MainModel extends BaseModel {
     }
 
     //通知终端下载资源文件列表
-    private void resReDownLoadFile(List<DownLoadFileBean> list) {
+    private void resDownLoadFile(List<DownLoadFileBean> list) {
 
         mSFTPUtils.setPassword("123456");
         mSFTPUtils.setUsername("Alex");
@@ -552,67 +672,6 @@ public class MainModel extends BaseModel {
             if (tarName.equals(resName)) {
                 mApplication.getDetailBeanList().get(i).setStatus(errorType);
             }
-        }
-    }
-
-    //终端日志上报任务
-    private void resLogReport(LogReportBean bean) {
-
-    }
-
-    //终端在播内容上报
-    private void resMonitorReport(PollResultBean bean) {
-        String jsonStr = getStringFromTxT(Constant.LOCAL_PROGRAM_TXT);
-        if (!jsonStr.equals("")) {
-
-        }
-
-    }
-
-    //终端工作状态上报
-    private void resWorkStatusReport(PollResultBean bean) {
-
-    }
-
-    //终端配置信息日志上报
-    private void resCfgReport(PollResultBean bean) {
-        String jsonStr = getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
-        if (!jsonStr.equals("")) {
-            Gson gson = new Gson();
-            ConfigBean configbean = gson.fromJson(jsonStr, ConfigBean.class);
-            CfgReportBean postBean=new CfgReportBean();
-            String ip= NetworkUtil.getLocalIp();
-            postBean.setIp(ip);
-            String mac=Constant.MAC;
-            postBean.setMac(mac);
-            String appversion=AppVersionTools.getApkVersionName(mApplication.getApplicationContext());
-            postBean.setAppversion(appversion);
-            String startuptime=configbean.getStaruptime();
-            postBean.setStartuptime(startuptime);
-            String shutdowntime=configbean.getShutdowntime();
-            postBean.setShutdowntime(shutdowntime);
-            String diskspacealarm= configbean.getDiskspacealarm();
-            postBean.setDiskspacealarm(diskspacealarm);
-            String serverconfig=configbean.getServerconfig();
-            postBean.setServerconfig(serverconfig);
-            String selectinterval=configbean.getSelectinterval();
-            postBean.setSelectinterval(selectinterval);
-            String volume=configbean.getVolume();
-            postBean.setVolume(volume);
-            String ftpserver=configbean.getFtpserver();
-            postBean.setFtpserver(ftpserver);
-            String httpserver=configbean.getHttpserver();
-            postBean.setHttpserver(httpserver);
-            String downloadrate=configbean.getDownloadrate();
-            postBean.setDownloadrate(downloadrate);
-            String downloadtime=configbean.getDownloadtime();
-            postBean.setDownloadtime(downloadtime);
-            String logserver=configbean.getLogserver();
-            postBean.setLogserver(logserver);
-            String uploadlogtime=configbean.getUploadlogtime();
-            postBean.setUploadlogtime(uploadlogtime);
-            String keeplogtime=configbean.getKeeplogtime();
-            postBean.setKeeplogtime(keeplogtime);
         }
     }
 
@@ -904,7 +963,6 @@ public class MainModel extends BaseModel {
 
     //取消即时消息任务
     private void resCacnleRealTimeMsg(PollResultBean bean, final InfoHint infoHint) {
-
         infoHint.realTimeCancle();
     }
 
@@ -933,28 +991,13 @@ public class MainModel extends BaseModel {
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody body) {
-                        String resStr = null;
-                        try {
-                            //获取返回的xml 字符串
-                            resStr = body.string();
-                            mParser = XmlUtils.getXmlPullParser(resStr);
-                            PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ReportIdReqBean.class);
-                            ReportIdReqBean mStatus = (ReportIdReqBean) postResult.getBean();
-                            int status = Integer.getInteger(mStatus.getResult());
-                            if (status == 0) {
-                                LogUtils.e("上报ID响应", "响应成功");
-                            } else {
-                                LogUtils.e("上报ID响应", mStatus.getResult());
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        reportRequest(body, "任务id");
                     }
                 });
     }
 
     //检查授权
-    public void CheckLisence(final Config config) {
+    public void checkLisence(final Config config) {
         getData();
         if (mLicensed) {
             Log.e("mLicensed", "已授权");

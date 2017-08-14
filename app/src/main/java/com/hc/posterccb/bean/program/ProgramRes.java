@@ -1,10 +1,12 @@
 package com.hc.posterccb.bean.program;
 
+import android.support.annotation.NonNull;
+
 /**
  * Created by alex on 2017/7/25.
  */
 
-public class ProgramRes {
+public class ProgramRes implements Comparable<ProgramRes> {
 
     public String resnam;
     public String resid;
@@ -106,4 +108,12 @@ public class ProgramRes {
 
     }
 
+    @Override
+    public int compareTo(@NonNull ProgramRes o) {
+        int i = Integer.parseInt(this.getPriority()) - Integer.parseInt(o.getPriority());
+        if (i == 0) {
+            return Integer.parseInt(this.getPlaycnt()) - Integer.parseInt(o.getPlaycnt());
+        }
+        return i;
+    }
 }

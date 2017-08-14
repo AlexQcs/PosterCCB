@@ -1,4 +1,4 @@
-package com.hc.posterccb.util;
+package com.hc.posterccb.util.system;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -8,6 +8,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.util.Log;
 
 import com.hc.posterccb.Constant;
+import com.hc.posterccb.util.file.FileUtils;
 
 import java.util.ArrayList;
 import java.util.List;

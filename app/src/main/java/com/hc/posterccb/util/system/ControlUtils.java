@@ -1,10 +1,11 @@
-package com.hc.posterccb.util;
+package com.hc.posterccb.util.system;
 
 import java.io.File;
 import java.io.IOException;
 
 /**
  * Created by alex on 2017/7/24.
+ * 控制屏幕熄灭和点亮
  */
 
 public class ControlUtils {

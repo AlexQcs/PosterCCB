@@ -19,13 +19,16 @@ import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.ui.contract.MainContract;
 import com.hc.posterccb.ui.fragment.Full_H_Fragment;
+import com.hc.posterccb.ui.fragment.Full_V_Fragment;
+import com.hc.posterccb.ui.fragment.Second_H_Fragment;
+import com.hc.posterccb.ui.fragment.Second_V_Fragment;
 import com.hc.posterccb.ui.fragment.Three_H_Fragment;
 import com.hc.posterccb.ui.presenter.MainPresenter;
-import com.hc.posterccb.util.FileUtils;
+import com.hc.posterccb.util.file.FileUtils;
 import com.hc.posterccb.util.LogUtils;
-import com.hc.posterccb.util.MemInfo;
+import com.hc.posterccb.util.system.MemInfo;
 import com.hc.posterccb.util.StringUtils;
-import com.hc.posterccb.util.VolumeUtils;
+import com.hc.posterccb.util.system.VolumeUtils;
 import com.hc.posterccb.widget.MarqueeTextView;
 
 import java.io.IOException;
@@ -61,8 +64,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     private BaseFragment mBaseFragment;
 
     private Full_H_Fragment mFull_H_Fragment;
-
-    private Three_H_Fragment mThreeHFragment;
+    private Full_V_Fragment mFull_V_fragment;
+    private Second_H_Fragment mSecond_H_fragment;
+    private Second_V_Fragment mSecond_V_fragment;
+    private Three_H_Fragment mThree_H_Fragment;
 
     private android.support.v4.app.FragmentManager mFragmentManager;
     private FragmentTransaction mFragmentTransaction;
@@ -145,37 +150,52 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @Override
     protected void initView() {
 
-        mFull_H_Fragment = new Full_H_Fragment();
-        mThreeHFragment = new Three_H_Fragment();
+//        mFull_H_Fragment = new Full_H_Fragment();
+//        mThreeHFragment = new Three_H_Fragment();
+//        if (mThreeHFragment instanceof ActivityInteraction) {
+//            mInteraction = (ActivityInteraction) mThreeHFragment;
+//        } else {
+//            throw new IllegalArgumentException("activity must implements FragmentInteraction");
+//        }
 
         mFragmentManager = getSupportFragmentManager();
         mFragmentTransaction = mFragmentManager.beginTransaction();
 
-        if (mThreeHFragment instanceof ActivityInteraction) {
-            mInteraction = (ActivityInteraction) mThreeHFragment;
-        } else {
-            throw new IllegalArgumentException("activity must implements FragmentInteraction");
-        }
-
-        mFragmentTransaction.add(R.id.frame_fragment, mThreeHFragment, "Three_H_Fragment");
-        mFragmentTransaction.commit();
-
-        localPowerManager = (PowerManager) getSystemService(POWER_SERVICE);
-        // 获取PowerManager.WakeLock对象,后面的参数|表示同时传入两个值,最后的是LogCat里用的Tag
-        localWakeLock = this.localPowerManager.newWakeLock(32, "hahaha");// 第一个参数为电源锁级别，第二个是日志tag
-        localWakeLock.acquire();// 申请设备电源锁
-        if (localWakeLock.isHeld()) {
-            return;
-        } else {
-            localWakeLock.setReferenceCounted(false);
-            localWakeLock.release(); // 释放设备电源锁
-        }
-//        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-//做我们的工作，在这个阶段，我们的屏幕会持续点亮
-//释放锁，屏幕熄灭。
-
     }
+
+    //播放模板替换
+    private void replaceModel(String modelStr) {
+
+        switch (modelStr) {
+
+            case "model_full_h":
+                mFull_H_Fragment = new Full_H_Fragment();
+                mFragmentTransaction.replace(R.id.frame_fragment, mFull_H_Fragment, "model_full_h");
+                mFragmentTransaction.commit();
+                break;
+            case "model_full_v":
+                mFull_V_fragment = new Full_V_Fragment();
+                mFragmentTransaction.replace(R.id.frame_fragment, mFull_V_fragment, "model_full_v");
+                mFragmentTransaction.commit();
+                break;
+            case "model_second_h":
+                mSecond_H_fragment = new Second_H_Fragment();
+                mFragmentTransaction.replace(R.id.frame_fragment, mSecond_H_fragment, "model_second_h");
+                mFragmentTransaction.commit();
+                break;
+            case "model_second_v":
+                mSecond_V_fragment = new Second_V_Fragment();
+                mFragmentTransaction.replace(R.id.frame_fragment, mSecond_V_fragment, "model_second_v");
+                mFragmentTransaction.commit();
+                break;
+            case "model_three_h":
+                mThree_H_Fragment = new Three_H_Fragment();
+                mFragmentTransaction.replace(R.id.frame_fragment, mThree_H_Fragment, "model_three_h");
+                mFragmentTransaction.commit();
+                break;
+        }
+    }
+
 
     //获取布局
     @Override
@@ -280,6 +300,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @Override
     public void license() {
         startActivity(new Intent(this, LicenseActivity.class));
+
     }
 
     //未授权显示
@@ -290,11 +311,13 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     @Override
     public void logicNormalProgram(Program program) {
+        replaceModel(program.areatype);
         mInteraction.playNormalProgram(program);
     }
 
     @Override
     public void logicInterProgram(Program program) {
+        replaceModel(program.areatype);
         mInteraction.playInterProgram(program);
     }
 

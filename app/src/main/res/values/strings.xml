@@ -3,4 +3,13 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="diskspacealarm">diskspacealarm</string>
+    <string name="serverip">serverip</string>
+    <string name="sftpserver">sftpserver</string>
+    <string name="httpserver">httpserver</string>
+    <string name="selectinterval">selectinterval</string>
+    <string name="downloadtime">downloadtime</string>
+    <string name="logServer">logServer</string>
+    <string name="upLoadLogTime">upLoadLogTime</string>
+    <string name="keeplogTime">keeplogTime</string>
 </resources>

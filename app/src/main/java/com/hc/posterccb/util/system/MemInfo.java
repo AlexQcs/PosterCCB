@@ -1,4 +1,4 @@
-package com.hc.posterccb.util;
+package com.hc.posterccb.util.system;
 
 import android.app.ActivityManager;
 import android.content.Context;

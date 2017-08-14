@@ -2,7 +2,7 @@ package com.hc.posterccb;
 
 import android.os.Environment;
 
-import com.hc.posterccb.util.NetworkUtil;
+import com.hc.posterccb.util.system.NetworkUtil;
 
 import java.lang.reflect.Method;
 
@@ -25,6 +25,7 @@ public class Constant {
     public static final String XML_STARTDOM = "command";
     public static final String XML_LISTTAG = "content";
     public static final String XML_CONFIG = "config";
+    public static final String REPORT_CONFIG = "configReport";
 
     //轮询返回响应类型
     //播放任务

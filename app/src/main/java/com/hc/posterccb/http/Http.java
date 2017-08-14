@@ -2,7 +2,7 @@ package com.hc.posterccb.http;
 
 import com.hc.posterccb.api.Api;
 import com.hc.posterccb.application.ProApplication;
-import com.hc.posterccb.util.NetworkUtil;
+import com.hc.posterccb.util.system.NetworkUtil;
 import com.hc.posterccb.util.SpUtils;
 
 import java.io.File;

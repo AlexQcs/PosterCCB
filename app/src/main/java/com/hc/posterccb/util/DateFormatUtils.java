@@ -1,5 +1,7 @@
 package com.hc.posterccb.util;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ public class DateFormatUtils {
 
     //检查是否在指定的时间范围内
     public static boolean checkTimer(String data, Set<String> timers) {
-        if (timers==null&&timers.size()<=0)return true;
+        if (timers == null && timers.size() <= 0) return true;
         boolean result = false;
         Date targetData = string2Date(data, "HH:ss");
         List<Date> list = new ArrayList<>();
@@ -49,5 +51,25 @@ public class DateFormatUtils {
             }
         }
         return result;
+    }
+
+
+
+    public void syncTime(String date) {
+        try {
+            Process process = Runtime.getRuntime().exec("su");
+            Date resDate = DateFormatUtils.string2Date(date, "yyyy-M-dd HH:mm:ss");
+            String formatStr = DateFormatUtils.date2String(resDate, "yyyyMMdd.HHmmss");
+//            String datetime = "20160323.103020"; //测试的设置的时间【时间格式 yyyyMMdd.HHmmss】
+
+            DataOutputStream os = new DataOutputStream(process.getOutputStream());
+            os.writeBytes("setprop persist.sys.timezone GMT-8\n");
+            os.writeBytes("/system/bin/date -s " + formatStr + "\n");
+            os.writeBytes("clock -w\n");
+            os.writeBytes("exit\n");
+            os.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -329,8 +329,8 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
 
         if (bean.getStdtime().equals("") && bean.getEdtime().equals("")) {
             if (!view.isPlaying()) {
-                int playtimes=Integer.parseInt(bean.getPriority());
-                nomalResPlay(view,path,playtimes);
+                int playtimes = Integer.parseInt(bean.getPriority());
+                nomalResPlay(view, path, playtimes);
 //                view.setVideoPath(path);
 //                view.start();
             }
