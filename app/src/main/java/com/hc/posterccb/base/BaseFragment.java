@@ -7,8 +7,10 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 
 import com.hc.posterccb.Constant;
+import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.bean.program.ProgramRes;
 import com.hc.posterccb.mvp.IView;
@@ -20,6 +22,8 @@ import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.widget.PLVideoView;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +48,7 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     protected Unbinder mUnbinder;
     protected Context mContext;
     protected String TAG = "Fragment";
+    protected boolean isOverTime;//是否在定时播放内
 
     @Nullable
     @Override
@@ -229,6 +234,7 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
         //正常播放
         if (!program.getStdtime().equals("") && !program.getEdtime().equals("")) {
             Observable.interval(1, TimeUnit.SECONDS)
+                    .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(new Action1<Long>() {
                         @Override
                         public void call(Long aLong) {
@@ -256,34 +262,16 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
 
     //按照位置播放
     void areaPlay(List<ProgramRes> programResList) {
-
-        Observable.interval(1, TimeUnit.SECONDS)
-                .just(programResList)
-                .flatMap(new Func1<List<ProgramRes>, Observable<ProgramRes>>() {
-                    @Override
-                    public Observable<ProgramRes> call(List<ProgramRes> res) {
-                        return Observable.from(res);
-                    }
-
-                }).subscribeOn(Schedulers.io())
-                .subscribe(new Subscriber<ProgramRes>() {
-                    @Override
-                    public void onCompleted() {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onNext(ProgramRes res) {
-
-                    }
-                });
-
-
+        Collections.sort(programResList);
+        List<Date> limitTime = new ArrayList<>();
+        for (ProgramRes res : programResList) {
+            if (!res.getStdtime().equals("") && !res.getEdtime().equals("")) {
+                Date sttime = DateFormatUtils.string2Date(res.getStdtime(), "HH:mm");
+                Date edtime = DateFormatUtils.string2Date(res.getEdtime(), "HH:mm");
+                limitTime.add(sttime);
+                limitTime.add(edtime);
+            }
+        }
         Observable.interval(1, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
@@ -311,7 +299,17 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
                                     @Override
                                     public void onNext(ProgramRes programRes) {
                                         Date date = new Date(System.currentTimeMillis());
-                                        setAreaView(date, programRes);
+                                        if (limitTime.size() > 0 && limitTime.size() % 2 == 0) {
+                                            for (int i = 0; i < limitTime.size(); i = i + 2) {
+                                                if (limitTime.get(i).getTime() < date.getTime()
+                                                        && date.getTime() < limitTime.get(i + 1).getTime()) {
+                                                    isOverTime = true;
+                                                }
+
+                                            }
+                                        }
+
+                                        setAreaView(date, programRes, isOverTime);
                                     }
                                 });
                     }
@@ -319,30 +317,35 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     }
 
     //设置播放节目单中的资源播放位置接口
-    protected abstract void setAreaView(Date date, ProgramRes programRes);
+    protected abstract void setAreaView(Date date, ProgramRes programRes, boolean isovertime);
 
-    protected void setVideoView(Date date, ProgramRes bean, PLVideoView view) {
+    protected void setVideoView(RelativeLayout layout, PLVideoView view, ProgramRes bean, Date date, boolean isovertime) {
+        ProgramRes appRes = ProApplication.getInstance().getProgramRes();
         String path = Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResnam();
         File file = new File(path);
         if (!file.exists()) return;
         if (bean.getResnam().equals("")) return;
 
-        if (bean.getStdtime().equals("") && bean.getEdtime().equals("")) {
-            if (!view.isPlaying()) {
-                int playtimes = Integer.parseInt(bean.getPriority());
-                nomalResPlay(view, path, playtimes);
+        if (bean.getStdtime().equals("") && bean.getEdtime().equals("") && !isOverTime) {
+            int priority = bean.getPriority().equals("") ? 0 : Integer.parseInt(bean.getPriority());
+            int appPriority = appRes.getPriority().equals("") ? 0 : Integer.parseInt(appRes.getPriority());
+            if (!view.isPlaying() && !bean.equals(appRes) && priority >= appPriority) {
+                ProApplication.getInstance().setProgramRes(bean);
+                int playtimes = Integer.parseInt(bean.getPlaycnt());
+                nomalResPlay(layout,view, path, playtimes);
 //                view.setVideoPath(path);
 //                view.start();
             }
-        } else {
+        } else if (isovertime) {
             Date startPlayTime = DateFormatUtils.string2Date(bean.getStdtime(), "HH:mm");
             Date endPlayTime = DateFormatUtils.string2Date(bean.getEdtime(), "HH:mm");
-            if (startPlayTime.getTime() == date.getTime()) {
-                view.setVideoPath(path);
-                view.start();
-            }
-            if (endPlayTime.getTime() == date.getTime()) {
-                view.pause();
+            if (startPlayTime.getTime() < date.getTime() && date.getTime() < endPlayTime.getTime()) {
+                if (!appRes.equals(bean)) {
+                    nomalResPlay(layout,view, path, 0);
+                } else {
+                    if (!view.isPlaying()) view.start();
+                }
+
             }
         }
     }
@@ -355,7 +358,7 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
      * @param path
      *         资源路径
      */
-    protected void nomalResPlay(PLVideoView view, String path, int playTimes) {
+    protected void nomalResPlay(RelativeLayout layout,PLVideoView view, String path, int playTimes) {
         final int[] tempTimes = {0};
         view.setVideoPath(path);
         view.setOnPreparedListener(new PLMediaPlayer.OnPreparedListener() {
@@ -376,7 +379,7 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
             public void onCompletion(PLMediaPlayer player) {
                 view.stopPlayback();
                 tempTimes[0]++;
-                if (tempTimes[0] < playTimes) {
+                if (tempTimes[0] < playTimes || playTimes == 0) {
                     view.setVideoPath(path);
                     view.seekTo(0);
                     view.start();
@@ -384,6 +387,4 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
             }
         });
     }
-
-
 }

@@ -111,9 +111,6 @@ public class ProgramRes implements Comparable<ProgramRes> {
     @Override
     public int compareTo(@NonNull ProgramRes o) {
         int i = Integer.parseInt(this.getPriority()) - Integer.parseInt(o.getPriority());
-        if (i == 0) {
-            return Integer.parseInt(this.getPlaycnt()) - Integer.parseInt(o.getPlaycnt());
-        }
         return i;
     }
 }

@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.Context;
 
 import com.hc.posterccb.bean.program.Program;
+import com.hc.posterccb.bean.program.ProgramRes;
 import com.hc.posterccb.bean.report.DetailBean;
 import com.hc.posterccb.bean.resource.ResourceBean;
 import com.squareup.leakcanary.LeakCanary;
@@ -22,6 +23,7 @@ public class ProApplication extends Application {
     private boolean mIsPlay;  //是否有节目单正在播放
     private Program mDefProgram;
     private ResourceBean mResourceBean;
+    private ProgramRes mProgramRes;
     private List<ResourceBean> mResourceBeanList;
     private List<DetailBean> mDetailBeanList;
 
@@ -38,6 +40,7 @@ public class ProApplication extends Application {
         mResourceBean=new ResourceBean();
         mResourceBeanList=new ArrayList<>();
         mDetailBeanList=new ArrayList<>();
+        mProgramRes=new ProgramRes();
     }
 
     /**
@@ -99,6 +102,14 @@ public class ProApplication extends Application {
 
     public void setDetailBeanList(List<DetailBean> detailBeanList) {
         mDetailBeanList = detailBeanList;
+    }
+
+    public ProgramRes getProgramRes() {
+        return mProgramRes;
+    }
+
+    public void setProgramRes(ProgramRes programRes) {
+        mProgramRes = programRes;
     }
 
     public void initDetailBeanList(List<ResourceBean> resourceBeanList){

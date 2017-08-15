@@ -36,8 +36,19 @@ public class Three_H_Fragment extends BaseFragment<BaseFrgmPresenter> implements
     @BindView(R.id.videoview_three)
     PLVideoView mPLVideoViewThree;
 
+    @BindView(R.id.rel_one)
+    RelativeLayout mRelOne;
+
+    @BindView(R.id.rel_two)
+    RelativeLayout mRelTwo;
+
+    @BindView(R.id.rel_three)
+    RelativeLayout mRelThree;
+
     @BindView(R.id.relative_three_h)
     RelativeLayout mRootView;
+
+
 
     @Override
     public void playSuccess(String msg) {
@@ -81,22 +92,23 @@ public class Three_H_Fragment extends BaseFragment<BaseFrgmPresenter> implements
     }
 
     @Override
-    protected void setAreaView(Date date, ProgramRes programRes) {
+    protected void setAreaView(Date date, ProgramRes programRes, boolean isovertime) {
         switch (programRes.getArea()) {
             case "area1":
-                setVideoView(date, programRes, mPLVideoViewOne);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
                 break;
             case "area2":
-                setVideoView(date, programRes, mPLVideoViewTwo);
+                setVideoView(mRelTwo, mPLVideoViewTwo, programRes, date, isovertime);
                 break;
             case "area3":
-                setVideoView(date, programRes, mPLVideoViewThree);
+                setVideoView(mRelThree, mPLVideoViewTwo, programRes, date, isovertime);
                 break;
             default:
-                setVideoView(date, programRes, mPLVideoViewOne);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
                 break;
         }
     }
+
 
     @Override
     public void pause() {

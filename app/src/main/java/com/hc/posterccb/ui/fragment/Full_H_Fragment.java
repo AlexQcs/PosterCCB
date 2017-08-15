@@ -1,5 +1,7 @@
 package com.hc.posterccb.ui.fragment;
 
+import android.widget.RelativeLayout;
+
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
 import com.hc.posterccb.base.BaseFragment;
@@ -23,6 +25,8 @@ public class Full_H_Fragment extends BaseFragment<BaseFrgmPresenter> implements
 
     @BindView(R.id.videoview_one)
     PLVideoView mPLVideoViewOne;
+    @BindView(R.id.rel_one)
+    RelativeLayout mRelOne;
 
     private String mProgramsPath = Constant.VIDEO1_PATH;
 
@@ -56,13 +60,13 @@ public class Full_H_Fragment extends BaseFragment<BaseFrgmPresenter> implements
     }
 
     @Override
-    protected void setAreaView(Date date, ProgramRes programRes) {
+    protected void setAreaView(Date date, ProgramRes programRes,boolean isovertime) {
         switch (programRes.getArea()) {
             case "area1":
-                setVideoView(date, programRes, mPLVideoViewOne);
+                setVideoView(, mPLVideoViewOne, programRes, date, isovertime);
                 break;
             default:
-                setVideoView(date, programRes, mPLVideoViewOne);
+                setVideoView(, mPLVideoViewOne, programRes, date, isovertime);
                 break;
         }
     }

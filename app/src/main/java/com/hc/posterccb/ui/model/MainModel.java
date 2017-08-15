@@ -36,21 +36,21 @@ import com.hc.posterccb.bean.resource.ResourceBean;
 import com.hc.posterccb.exception.ApiException;
 import com.hc.posterccb.http.RequestManager;
 import com.hc.posterccb.subscriber.CommonSubscriber;
-import com.hc.posterccb.util.system.AppVersionTools;
-import com.hc.posterccb.util.system.ControlUtils;
 import com.hc.posterccb.util.DateFormatUtils;
-import com.hc.posterccb.util.file.FileUtils;
 import com.hc.posterccb.util.JsonUtils;
 import com.hc.posterccb.util.LogUtils;
-import com.hc.posterccb.util.system.NetworkUtil;
 import com.hc.posterccb.util.SpUtils;
 import com.hc.posterccb.util.StringUtils;
-import com.hc.posterccb.util.system.VolumeUtils;
 import com.hc.posterccb.util.ccbutils.XmlUtils;
 import com.hc.posterccb.util.download.MD5;
 import com.hc.posterccb.util.download.SFTPUtils;
 import com.hc.posterccb.util.encrypt.DesDecUtils;
 import com.hc.posterccb.util.encrypt.SilentInstall;
+import com.hc.posterccb.util.file.FileUtils;
+import com.hc.posterccb.util.system.AppVersionTools;
+import com.hc.posterccb.util.system.ControlUtils;
+import com.hc.posterccb.util.system.NetworkUtil;
+import com.hc.posterccb.util.system.VolumeUtils;
 import com.thoughtworks.xstream.XStream;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.ResponseBody;
 import rx.Observable;
 import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
@@ -90,6 +91,8 @@ public class MainModel extends BaseModel {
     private XmlPullParser mParser;
     private RequestManager requestManager = RequestManager.getInstance();
     private ProApplication mApplication = new ProApplication();
+    private List<Program> mProgramList;
+    private ArrayList<ResourceBean> resourceList;
 
 
     //轮询任务
@@ -583,83 +586,81 @@ public class MainModel extends BaseModel {
 
         String xmlStr = getStringFromTxT(path);
         if (xmlStr.equals("")) return;
-        ArrayList<ResourceBean> resourceList = new ArrayList<>();
+        resourceList = new ArrayList<>();
         resourceList = XmlUtils.parseResource(xmlStr);
         if (resourceList == null || resourceList.size() == 0) return;
         mApplication.setResourceBeanList(resourceList);
         mApplication.initDetailBeanList(resourceList);
         SFTPUtils sFTPUtils = new SFTPUtils();
         Observable.interval(1, TimeUnit.SECONDS)
-                .just(resourceList)
-                .flatMap(new Func1<List<ResourceBean>, Observable<ResourceBean>>() {
+                .subscribe(new Action1<Long>() {
                     @Override
-                    public Observable<ResourceBean> call(List<ResourceBean> been) {
-                        return Observable.from(been);
-                    }
-                })
-                //结束时操作
-                .doAfterTerminate(new Action0() {
-                    @Override
-                    public void call() {
-                        sFTPUtils.disconnect();
-                    }
-                })
-                .subscribeOn(Schedulers.io())
-                .subscribe(new Subscriber<ResourceBean>() {
-                    @Override
-                    public void onCompleted() {
-                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + mApplication.getResourceBean().getResname());//测试
-                        boolean md5 = MD5.decode(file, mApplication.getResourceBean().getMd5());
-                        if (md5) {
-                            setDownloadStatus("0001");//设置状态下载成功
-                        } else {
-                            setDownloadStatus("0104");
-                        }
+                    public void call(Long aLong) {
+                        Observable.just(resourceList)
+                                .flatMap(new Func1<ArrayList<ResourceBean>, Observable<ResourceBean>>() {
+                                    @Override
+                                    public Observable<ResourceBean> call(ArrayList<ResourceBean> been) {
+                                        return Observable.from(resourceList);
+                                    }
+                                })
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(new Subscriber<ResourceBean>() {
+                                    @Override
+                                    public void onCompleted() {
+                                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + mApplication.getResourceBean().getResname());//测试
+                                        boolean md5 = MD5.decode(file, mApplication.getResourceBean().getMd5());
+                                        if (md5) {
+                                            setDownloadStatus("0001");//设置状态下载成功
+                                        } else {
+                                            setDownloadStatus("0104");
+                                        }
+                                    }
 
-                    }
+                                    @Override
+                                    public void onError(Throwable e) {
+                                        setDownloadStatus("0");//设置状态下载出错
+                                    }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        setDownloadStatus("0");//设置状态下载出错
-                    }
-
-                    @Override
-                    public void onNext(ResourceBean bean) {
-                        mApplication.setResourceBean(bean);
-                        setDownloadStatus("0002");//设置状态下载中
-                        String localPath = Constant.UDP_TESTPATH;//测试
+                                    @Override
+                                    public void onNext(ResourceBean bean) {
+                                        mApplication.setResourceBean(bean);
+                                        setDownloadStatus("0002");//设置状态下载中
+                                        String localPath = Constant.UDP_TESTPATH;//测试
 //                            String localPath=Constant.LOCAL_PROGRAM_PATH;//
-                        File file = new File(localPath + "/test.mp4");//测试
+                                        File file = new File(localPath + "/test.mp4");//测试
 //                        double fileSize=FileUtils.getFileOrFilesSize(file.getPath(),SIZETYPE_KB);
-                        boolean md5 = MD5.decode(file, bean.getMd5());
-                        if (file.exists() && md5) {
-                            return;
-                        }
-                        Date date = new Date(System.currentTimeMillis());
-                        String dateStr = DateFormatUtils.date2String(date, "HH:mm");
-                        Set<String> tempSet = new HashSet<>();
-                        if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
-                            sFTPUtils.setUsername("");
-                            sFTPUtils.setPassword("");
-                            String url = (String) SpUtils.get("baseurl", Api.BASE_URL);
-                            sFTPUtils.setHost(url);
-                            Log.e(TAG, "下载资源文件");
-                            String remotePath = "test1/";//测试
+                                        boolean md5 = MD5.decode(file, bean.getMd5());
+                                        if (file.exists() && md5) {
+                                            return;
+                                        }
+                                        Date date = new Date(System.currentTimeMillis());
+                                        String dateStr = DateFormatUtils.date2String(date, "HH:mm");
+                                        Set<String> tempSet = new HashSet<>();
+                                        if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
+                                            sFTPUtils.setUsername("");
+                                            sFTPUtils.setPassword("");
+                                            String url = (String) SpUtils.get("baseurl", Api.BASE_URL);
+                                            sFTPUtils.setHost(url);
+                                            Log.e(TAG, "下载资源文件");
+                                            String remotePath = "test1/";//测试
 //                            String remotePath= Protocol.getLinkRemotePath(bean.getFtpAdd());
 //                            String fileName=Protocol.getLinkFileName(bean.getFtpAdd());
-                            mSFTPUtils.connect();
-                            Log.e(TAG, "连接成功");
+                                            mSFTPUtils.connect();
+                                            Log.e(TAG, "连接成功");
 
 //                            if (mSFTPUtils.isDirExist(remotePath + "/" + fileName))
 //                                setDownloadStatus("0101");
 
-                            mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");//测试
-                            if (MD5.decode(file, bean.getMd5())) {
-                                Log.e(TAG, "下载资源文件" + file.getName() + "成功");
-                            } else {
-                                Log.e(TAG, "资源文件" + file.getName() + "非法");
-                            }
-                        }
+                                            mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");//测试
+                                            if (MD5.decode(file, bean.getMd5())) {
+                                                Log.e(TAG, "下载资源文件" + file.getName() + "成功");
+                                            } else {
+                                                Log.e(TAG, "资源文件" + file.getName() + "非法");
+                                            }
+                                        }
+                                    }
+                                });
                     }
                 });
     }
@@ -782,61 +783,67 @@ public class MainModel extends BaseModel {
             LogUtils.e(TAG, "正常播放节目单为空");
             return;
         }
-        List<Program> list = new ArrayList<>();
-        list = XmlUtils.parseNormalProgramXml(xmlNormalStr);
-        for (Program program : list) {
+        mProgramList = new ArrayList<>();
+        mProgramList = XmlUtils.parseNormalProgramXml(xmlNormalStr);
+
+        for (Program program : mProgramList) {
             if (program.getType().equals("defaultpls")) {
                 mApplication.setDefProgram(program);
                 SpUtils.put("defaultpls", program);
             }
         }
         Observable.interval(1, TimeUnit.SECONDS)
-                .just(list)
-                .flatMap(new Func1<List<Program>, Observable<Program>>() {
+                .subscribe(new Action1<Long>() {
                     @Override
-                    public Observable<Program> call(List<Program> programs) {
-                        return Observable.from(programs);
+                    public void call(Long aLong) {
+                        Observable.just(mProgramList)
+                                .flatMap(new Func1<List<Program>, Observable<Program>>() {
+                                    @Override
+                                    public Observable<Program> call(List<Program> programs) {
+                                        return Observable.from(programs);
+                                    }
+                                })
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(new Subscriber<Program>() {
+                                    @Override
+                                    public void onCompleted() {
+
+                                    }
+
+                                    @Override
+                                    public void onError(Throwable e) {
+
+                                    }
+
+                                    @Override
+                                    public void onNext(Program program) {
+                                        if (program.getType().equals("defaultpls")) return;
+                                        Date date = new Date(System.currentTimeMillis());
+                                        Date stdtime = DateFormatUtils.string2Date(program.getStdtime(), "HH:ss");
+                                        Date edtime = DateFormatUtils.string2Date(program.getEdtime(), "HH:ss");
+                                        Program curProgram = mApplication.getProgram();
+                                        //
+                                        if (date.after(stdtime) && date.before(edtime)) {
+                                            if (mApplication.isPlay() && curProgram.equals(program)) {
+                                                return;
+                                            } else {
+                                                infoHint.logicNormalProgram(program);
+                                            }
+                                            Log.e("正常播放节目单", program.toString() + "---");
+                                        } else if (program.getStdtime().equals("") && program.getEdtime().equals("")) {
+                                            if (mApplication.isPlay() && curProgram.equals(program)) {
+                                                return;
+                                            } else {
+                                                infoHint.logicNormalProgram(program);
+                                            }
+                                        } else {
+                                            infoHint.logicNormalProgram(mApplication.getDefProgram());
+                                        }
+                                    }
+                                });
                     }
-                })
-                .subscribeOn(Schedulers.io())
-                .subscribe(new Subscriber<Program>() {
-                               @Override
-                               public void onCompleted() {
-
-                               }
-
-                               @Override
-                               public void onError(Throwable e) {
-
-                               }
-
-                               @Override
-                               public void onNext(Program program) {
-                                   if (program.getType().equals("defaultpls")) return;
-                                   Date date = new Date(System.currentTimeMillis());
-                                   Date stdtime = DateFormatUtils.string2Date(program.getStdtime(), "HH:ss");
-                                   Date edtime = DateFormatUtils.string2Date(program.getEdtime(), "HH:ss");
-                                   Program curProgram = mApplication.getProgram();
-                                   //
-                                   if (date.after(stdtime) && date.before(edtime)) {
-                                       if (mApplication.isPlay() && curProgram.equals(program)) {
-                                           return;
-                                       } else {
-                                           infoHint.logicNormalProgram(program);
-                                       }
-                                       Log.e("正常播放节目单", program.toString() + "---");
-                                   } else if (program.getStdtime().equals("") && program.getEdtime().equals("")) {
-                                       if (mApplication.isPlay() && curProgram.equals(program)) {
-                                           return;
-                                       } else {
-                                           infoHint.logicNormalProgram(program);
-                                       }
-                                   } else {
-                                       infoHint.logicNormalProgram(mApplication.getDefProgram());
-                                   }
-                               }
-                           }
-                );
+                });
     }
 
     //插播播放任务逻辑
@@ -1017,7 +1024,6 @@ public class MainModel extends BaseModel {
                         File file1 = new File(Constant.RESULT_PATH);
                         File file2 = new File(Constant.DEBUG_PATH);
                         File file3 = new File(Constant.LOGCAT_PATH);
-
 
 //                    Log.e("路径：",ConstUtil.RESULT_PATH+"--------"+ConstUtil.DEBUG_PATH+"-------"+ConstUtil.LOGCAT_PATH);
                         if (!file1.exists() || !file2.exists() || !file3.exists()) {
