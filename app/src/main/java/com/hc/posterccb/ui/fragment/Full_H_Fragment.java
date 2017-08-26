@@ -63,10 +63,10 @@ public class Full_H_Fragment extends BaseFragment<BaseFrgmPresenter> implements
     protected void setAreaView(Date date, ProgramRes programRes,boolean isovertime) {
         switch (programRes.getArea()) {
             case "area1":
-                setVideoView(, mPLVideoViewOne, programRes, date, isovertime);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
                 break;
             default:
-                setVideoView(, mPLVideoViewOne, programRes, date, isovertime);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
                 break;
         }
     }

@@ -13,8 +13,6 @@ import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
-import com.hc.posterccb.util.LogUtils;
-
 /**
  * Created by alex on 2017/7/17.
  */
@@ -41,7 +39,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
     private static int SCREEN_HEIGHT;
 
     public MarqueeTextView(Context context) {
-        this(context, null);
+        super(context);
         initView();
     }
 
@@ -66,7 +64,8 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
     }
 
     public void init(WindowManager windowManager, int count) {
-        bounds = new Rect();
+
+        paint = getPaint();
         mWindowManager = windowManager;
         mCount = count;
 
@@ -76,7 +75,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
             paint.setColor(color);
         }
         text = getText().toString();
-
+        textLength = paint.measureText(text);
         viewWidth = getWidth();
         if (viewWidth == 0) {
             if (windowManager != null) {
@@ -91,7 +90,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
         step = textLength;
         temp_view_plus_text_length = viewWidth + textLength;
         temp_view_plus_two_text_length = viewWidth + textLength * 2;
-//        y = getTextSize() + getPaddingTop();
+        y = getTextSize() + getPaddingTop();
     }
 
     @Override
@@ -134,7 +133,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
             out.writeFloat(step);
         }
 
-        public static final Parcelable.Creator<SavedState> CREATOR = new Parcelable.Creator<SavedState>() {
+        public static final Creator<SavedState> CREATOR = new Creator<SavedState>() {
 
             public SavedState[] newArray(int size) {
                 return new SavedState[size];
@@ -158,26 +157,30 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
 
     //开始
     public void startScroll() {
-        mMarquanTimes = 1;
+        mMarquanTimes = 0 ;
         isStarting = true;
+        setVisibility(VISIBLE);
         invalidate();
     }
 
     //停止
     public void stopScroll() {
         isStarting = false;
+        setVisibility(GONE);
         invalidate();
     }
 
     @Override
     public void onDraw(Canvas canvas) {
+        bounds = new Rect();
         paint = getPaint();
+        paint.setTextAlign(Paint.Align.CENTER);
         fm = paint.getFontMetrics();
-        textLength = paint.measureText(text);
+
 //        paint.setTextAlign(Paint.Align.CENTER);
         paint.getTextBounds(getText().toString(), 0, getText().toString().length(), bounds);
 
-        y = (getMeasuredHeight() + bounds.height() )/2+ (fm.descent - fm.ascent) / 2 - fm.descent;
+//        y = (getMeasuredHeight() + bounds.height() )/2;
 //        + (fm.descent - fm.ascent) / 2 - fm.descent;
         canvas.drawText(text, temp_view_plus_text_length - step, y, paint);
         if (!isStarting) {
@@ -191,7 +194,7 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
         if (step > temp_view_plus_two_text_length) {
             Log.d("mMarquanTimes", mMarquanTimes + "");
             mMarquanTimes++;
-            if (mMarquanTimes == mCount) stopScroll();
+            if (mMarquanTimes == mCount&&mCount!=0) stopScroll();
             step = textLength;
         }
         invalidate();
@@ -252,10 +255,10 @@ public class MarqueeTextView extends android.support.v7.widget.AppCompatTextView
         Paint textViewPaint = getPaint();
         float textWidth = textViewPaint.measureText(getText().toString());
         if (textWidth > availableWidth) {
-            LogUtils.e("isOverFlowed", "滑动");
+            Log.e("isOverFlowed", "滑动");
             return true;
         } else {
-            LogUtils.e("isOverFlowed", "不滑动");
+            Log.e("isOverFlowed", "不滑动");
             return false;
         }
     }

@@ -823,6 +823,7 @@ public class MainModel extends BaseModel {
                                         Date stdtime = DateFormatUtils.string2Date(program.getStdtime(), "HH:ss");
                                         Date edtime = DateFormatUtils.string2Date(program.getEdtime(), "HH:ss");
                                         Program curProgram = mApplication.getProgram();
+
                                         //
                                         if (date.after(stdtime) && date.before(edtime)) {
                                             if (mApplication.isPlay() && curProgram.equals(program)) {

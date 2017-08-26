@@ -48,6 +48,7 @@ public class FileUtils {
 
             fin.read(buffer);
 
+
             res = EncodingUtils.getString(buffer, "UTF-8");
 
             fin.close();
@@ -344,7 +345,6 @@ public class FileUtils {
      *         目标文件夹
      * @return List<String>
      */
-
     public static List<String> getPathOfDirectory(String dirPath) {
         List<String> pathList = null;
         File file = new File(dirPath);

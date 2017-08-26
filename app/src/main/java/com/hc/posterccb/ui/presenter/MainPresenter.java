@@ -107,7 +107,7 @@ public class MainPresenter extends BasePresenter<MainActivity>
     @Override
     public void checkLicense() {
         if (!getIView().checkPostParamNull()) {
-            ((MainModel) getiModelMap().get("checklicense")).CheckLisence(new MainModel.Config() {
+            ((MainModel) getiModelMap().get("checklicense")).checkLisence(new MainModel.Config() {
                 @Override
                 public void license() {
                     getIView().license();

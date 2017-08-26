@@ -8,7 +8,6 @@ import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.FragmentTransaction;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 
 import com.hc.posterccb.Constant;
@@ -24,17 +23,16 @@ import com.hc.posterccb.ui.fragment.Second_H_Fragment;
 import com.hc.posterccb.ui.fragment.Second_V_Fragment;
 import com.hc.posterccb.ui.fragment.Three_H_Fragment;
 import com.hc.posterccb.ui.presenter.MainPresenter;
-import com.hc.posterccb.util.file.FileUtils;
 import com.hc.posterccb.util.LogUtils;
-import com.hc.posterccb.util.system.MemInfo;
 import com.hc.posterccb.util.StringUtils;
+import com.hc.posterccb.util.file.FileUtils;
+import com.hc.posterccb.util.system.MemInfo;
 import com.hc.posterccb.util.system.VolumeUtils;
 import com.hc.posterccb.widget.MarqueeTextView;
 
 import java.io.IOException;
 
 import butterknife.BindView;
-import butterknife.OnClick;
 
 import static java.lang.Integer.parseInt;
 
@@ -49,15 +47,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     TextView mTvNolicense;
 
     private AudioManager am;
-
-    @BindView(R.id.btn_pause)
-    Button mBtnPause;
-    @BindView(R.id.btn_relay)
-    Button mBtnRelay;
-    @BindView(R.id.btn_delete)
-    Button mBtnDelete;
-    @BindView(R.id.btn_cancle)
-    Button mBtnCancle;
 
     private ActivityInteraction mInteraction;
 
@@ -74,7 +63,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     private String TAG = "MainActivity";
 
-
     private PowerManager localPowerManager = null;// 电源管理对象
     private PowerManager.WakeLock localWakeLock = null;// 电源锁
 
@@ -88,7 +76,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     private String mMac = Constant.MAC;
     //区分即时消息类的位置
     private String mRealTimePosition = "top";
-
 
     @Override
     protected MainPresenter loadPresenter() {
@@ -107,17 +94,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mPresenter.initConfig();
     }
 
-    @OnClick({R.id.btn_cancle, R.id.btn_delete, R.id.btn_relay, R.id.btn_pause})
-    void contoller(View view) {
-        switch (view.getId()) {
-            case R.id.btn_pause:
-                mInteraction.pause();
-                break;
-            case R.id.btn_relay:
-                mInteraction.replay();
-                break;
-        }
-    }
 
 
     @Override
@@ -149,14 +125,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     //初始化控件
     @Override
     protected void initView() {
-
-//        mFull_H_Fragment = new Full_H_Fragment();
-//        mThreeHFragment = new Three_H_Fragment();
-//        if (mThreeHFragment instanceof ActivityInteraction) {
-//            mInteraction = (ActivityInteraction) mThreeHFragment;
-//        } else {
-//            throw new IllegalArgumentException("activity must implements FragmentInteraction");
-//        }
 
         mFragmentManager = getSupportFragmentManager();
         mFragmentTransaction = mFragmentManager.beginTransaction();
@@ -300,13 +268,12 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @Override
     public void license() {
         startActivity(new Intent(this, LicenseActivity.class));
-
     }
 
     //未授权显示
     @Override
     public void noLicense() {
-        mTvNolicense.setVisibility(View.VISIBLE);
+//        mTvNolicense.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -333,21 +300,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         int speed = parseInt(bean.getSpeed());
         //播放的内容
         String message = bean.getMessage();
-        view.setText(message);
         view.setTextSize(fontSize);
+        view.setText(message,TextView.BufferType.SPANNABLE);
         view.setBackgroundColor(bgColor);
         view.setTextColor(fontColor);
-        //播放时长或者播放时间
-        if (!("").equals(bean.getCount())) {
-            int count = parseInt(bean.getCount());
-            if (mStvRealTimeTop.getMarquanTimes() == count) {
-                mStvRealTimeTop.stopScroll();
-            }
-        } else if (!("").equals(bean.getTimelength())) {
-            int timeLength = parseInt(bean.getTimelength());
-        }
-
-
         switch (speed) {
             case 0:
                 view.setSpeed(1);
@@ -359,6 +315,16 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
                 view.setSpeed(4);
                 break;
         }
+        //播放时长或者播放时间
+        if (!("").equals(bean.getCount())) {
+            int count = parseInt(bean.getCount());
+            view.init(getWindowManager(),count);
+        } else if (!("").equals(bean.getTimelength())) {
+            int timeLength = parseInt(bean.getTimelength());
+        }
+
+
+
 
 
     }
