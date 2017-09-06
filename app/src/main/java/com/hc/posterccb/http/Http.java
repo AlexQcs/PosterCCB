@@ -1,9 +1,10 @@
 package com.hc.posterccb.http;
 
-import com.hc.posterccb.api.Api;
+import android.util.Log;
+
+import com.hc.posterccb.Constant;
 import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.util.system.NetworkUtil;
-import com.hc.posterccb.util.SpUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class Http {
     private static OkHttpClient client;
     private static HttpService httpService;
     private static volatile Retrofit retrofit;
+    private static volatile Retrofit downloadRetrofit;
 
 
     /**
@@ -121,7 +123,12 @@ public class Http {
             synchronized (Http.class) {
                 if (retrofit == null) {
                     //添加一个log拦截器,打印所有的log
-                    HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
+                    HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
+                        @Override
+                        public void log(String message) {
+                            Log.e("qcs","OkHttp====Message:"+message);
+                        }
+                    });
                     //可以设置请求过滤的水平,body,basic,headers
                     httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
                     //设置请求的缓存的大小跟位置
@@ -134,15 +141,16 @@ public class Http {
                             .addInterceptor(addHeaderInterceptor()) // token过滤
                             .addInterceptor(httpLoggingInterceptor) //日志,所有的请求响应度看到
                             .cache(cache)  //添加缓存
-                            .connectTimeout(60l, TimeUnit.SECONDS)
-                            .readTimeout(60l, TimeUnit.SECONDS)
-                            .writeTimeout(60l, TimeUnit.SECONDS)
+                            .connectTimeout(60, TimeUnit.SECONDS)
+                            .readTimeout(60, TimeUnit.SECONDS)
+                            .writeTimeout(60, TimeUnit.SECONDS)
                             .build();
 
                     // 获取retrofit的实例
                     retrofit = new Retrofit
                             .Builder()
-                            .baseUrl((String) SpUtils.get("baseurl",Api.BASE_URL))  //自己配置
+//                            .baseUrl((String) SpUtils.get("baseurl",Api.BASE_URL))  //自己配置
+                            .baseUrl(Constant.BASE_URL)
                             .client(client)
                             .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
 //                            .addConverterFactory(GsonConverterFactory.create()) //这里是用的fastjson的
@@ -152,4 +160,6 @@ public class Http {
         }
         return retrofit;
     }
+
+
 }

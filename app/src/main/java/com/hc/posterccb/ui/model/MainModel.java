@@ -24,6 +24,7 @@ import com.hc.posterccb.bean.polling.LogReportBean;
 import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
+import com.hc.posterccb.bean.polling.SyncTimeBean;
 import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.bean.program.Program;
@@ -42,6 +43,7 @@ import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.SpUtils;
 import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.util.ccbutils.XmlUtils;
+import com.hc.posterccb.util.download.DownFileUtils;
 import com.hc.posterccb.util.download.MD5;
 import com.hc.posterccb.util.download.SFTPUtils;
 import com.hc.posterccb.util.encrypt.DesDecUtils;
@@ -57,6 +59,7 @@ import org.xmlpull.v1.XmlPullParser;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -82,7 +85,7 @@ public class MainModel extends BaseModel {
 
     private String TAG = "MainModel";
 
-    private SFTPUtils mSFTPUtils = new SFTPUtils();
+//    private SFTPUtils mSFTPUtils = new SFTPUtils();
 
     private volatile int mPollingTimer; //轮询时间
     private TaskReportBean mTaskReport = new TaskReportBean();
@@ -94,17 +97,27 @@ public class MainModel extends BaseModel {
     private List<Program> mProgramList;
     private ArrayList<ResourceBean> resourceList;
 
-
     //轮询任务
     public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint) {
         if (infoHint == null)
             throw new RuntimeException("InfoHint不能为空");
+
         mPollingTimer = (int) SpUtils.get("selectinterval", 10);//从sp获取轮询时间，默认10秒
+        Observable.just(mac)
+                .subscribeOn(Schedulers.io())
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        timesync(mac);
+                    }
+                });
+
         Observable.interval(mPollingTimer, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        httpService.polling((String) SpUtils.get("polling", "/xmlserver/revXml"), command, mac)
+//                        httpService.polling((String) SpUtils.get("polling", "/xmlserver/revXml"), command, mac)
+                        httpService.polling("PlayDev",command,"", mac)
                                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                                     @Override
                                     public void onNext(ResponseBody response) {
@@ -113,6 +126,7 @@ public class MainModel extends BaseModel {
                                         try {
                                             //获取返回的xml 字符串
                                             resStr = response.string();
+                                            Log.e("返回的结果",resStr);
                                             //获取返回的任务类型集合
                                             ArrayList<String> typeList = XmlUtils.getXmlType(resStr);
                                             if (typeList.size() <= 0) return;
@@ -155,6 +169,7 @@ public class MainModel extends BaseModel {
     //系统配置
     public void configSystem() {
         String jsonStr = getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
+        Log.e("sd卡配置信息",jsonStr);
         if (!jsonStr.equals("")) {
             Gson gson = new Gson();
             ConfigBean bean = gson.fromJson(jsonStr, ConfigBean.class);
@@ -319,6 +334,52 @@ public class MainModel extends BaseModel {
                 resDownLoadStatusReport(bean);
             }
         }
+    }
+
+    //同步时间
+    private void timesync(String mac){
+        httpService.timesync("PlayDev","timesync", mac)
+                .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
+                    @Override
+                    public void onNext(ResponseBody response) {
+
+                        String resStr = null;
+                        try {
+                            //获取返回的xml 字符串
+                            resStr = response.string();
+                            Log.e("返回的结果",resStr);
+                            if (!resStr.equals("")){
+                                SyncTimeBean syncTimeBean=XmlUtils.parseSyncTimeXml(resStr);
+                                if (syncTimeBean!=null){
+                                    if (!"1".equals(syncTimeBean.getResult())){
+                                        String timeStr=syncTimeBean.getServertime();
+                                        DateFormatUtils.syncTime(timeStr);
+                                    }
+                                }
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        //view显示成功信息
+//                            LogUtils.e("MainModel", resStr);
+                    }
+
+                    @Override
+                    public void onError(ApiException e) {
+                        super.onError(e);
+                        //view显示失败信息
+                        LogUtils.e("MainModel", e.getMessage());
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        super.onCompleted();
+                        SimpleDateFormat formatter    =   new    SimpleDateFormat    ("yyyy年MM月dd日    HH:mm:ss     ");
+                        Date    curDate    =   new    Date(System.currentTimeMillis());//获取当前时间
+                        String    str    =    formatter.format(curDate);
+                        Log.e("系统时间",str);
+                    }
+                });
     }
 
     //终端日志上报任务
@@ -489,8 +550,6 @@ public class MainModel extends BaseModel {
                             reportDownLoadStatus(resourceList);
                         }
                     }
-
-
                 });
 
     }
@@ -521,16 +580,12 @@ public class MainModel extends BaseModel {
 
     //通知终端下载资源文件列表
     private void resDownLoadFile(List<DownLoadFileBean> list) {
-
-        mSFTPUtils.setPassword("123456");
-        mSFTPUtils.setUsername("Alex");
         String tempFileName = "";
 
         Observable.just(list)
                 .doAfterTerminate(new Action0() {
                     @Override
                     public void call() {
-                        mSFTPUtils.disconnect();
                         Log.e(TAG, "下载资源文件断开连接");
                     }
                 })
@@ -557,33 +612,31 @@ public class MainModel extends BaseModel {
                     public void onNext(DownLoadFileBean bean) {
 
                         String url = (String) SpUtils.get("baseurl", Api.BASE_URL);
-                        mSFTPUtils.setHost(url);
-                        Log.e(TAG, "下载资源文件列表");
-                        String localPath = Constant.UDP_TESTPATH;//测试
-//                            String localPath=Constant.LOCAL_PROGRAM_MEDIACFG_PATH;//本地存储
-                        String remotePath = "test1/";//测试
-//                            String remotePath= Protocol.getLinkRemotePath(bean.getLink());
-//                            String fileName=Protocol.getLinkFileName(bean.getLink());
-                        mSFTPUtils.connect();
-                        Log.e(TAG, "连接成功");
-                        mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");//测试
-//                            mSFTPUtils.downloadFile(remotePath,fileName,localPath,fileName);
-                        File file = new File(localPath + "/test.mp4");//测试
+                        httpService.downLoad(url)
+                                .subscribeOn(Schedulers.io())
+                                .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
 
-//                        File file = new File(localPath+"/"+fileName);
-                        if (MD5.decode(file, bean.getMd5())) {
-                            Log.e(TAG, "下载资源文件列表成功");
-                            downLoadResource(file.getPath());
-                        } else {
-                            Log.e(TAG, "资源文件列表文件非法");
-                        }
+
+
+                                    @Override
+                                    public void onNext(ResponseBody body) {
+                                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + DownFileUtils.getResourceName(bean.getLink()));
+                                        Log.e(TAG, "下载资源文件列表");
+                                        DownFileUtils.writeFile2Disk(body, file);
+                                        if (MD5.decode(file, bean.getMd5())) {
+                                            Log.e(TAG, "下载资源文件列表成功");
+                                            downLoadResource(file.getPath());
+                                        } else {
+                                            Log.e(TAG, "资源文件列表文件非法");
+                                        }
+                                    }
+                                });
                     }
                 });
     }
 
     //下载资源文件
     private void downLoadResource(String path) {
-
         String xmlStr = getStringFromTxT(path);
         if (xmlStr.equals("")) return;
         resourceList = new ArrayList<>();
@@ -626,9 +679,9 @@ public class MainModel extends BaseModel {
                                     public void onNext(ResourceBean bean) {
                                         mApplication.setResourceBean(bean);
                                         setDownloadStatus("0002");//设置状态下载中
-                                        String localPath = Constant.UDP_TESTPATH;//测试
-//                            String localPath=Constant.LOCAL_PROGRAM_PATH;//
-                                        File file = new File(localPath + "/test.mp4");//测试
+//                                        String localPath = Constant.UDP_TESTPATH;//测试
+                                        String localPath = Constant.LOCAL_PROGRAM_PATH;//
+                                        File file = new File(localPath + "/" + bean.getResname());//测试
 //                        double fileSize=FileUtils.getFileOrFilesSize(file.getPath(),SIZETYPE_KB);
                                         boolean md5 = MD5.decode(file, bean.getMd5());
                                         if (file.exists() && md5) {
@@ -638,21 +691,23 @@ public class MainModel extends BaseModel {
                                         String dateStr = DateFormatUtils.date2String(date, "HH:mm");
                                         Set<String> tempSet = new HashSet<>();
                                         if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
-                                            sFTPUtils.setUsername("");
-                                            sFTPUtils.setPassword("");
                                             String url = (String) SpUtils.get("baseurl", Api.BASE_URL);
-                                            sFTPUtils.setHost(url);
-                                            Log.e(TAG, "下载资源文件");
-                                            String remotePath = "test1/";//测试
-//                            String remotePath= Protocol.getLinkRemotePath(bean.getFtpAdd());
-//                            String fileName=Protocol.getLinkFileName(bean.getFtpAdd());
-                                            mSFTPUtils.connect();
-                                            Log.e(TAG, "连接成功");
+                                            httpService.downLoad(url)
+                                                    .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
 
-//                            if (mSFTPUtils.isDirExist(remotePath + "/" + fileName))
-//                                setDownloadStatus("0101");
+                                                        @Override
+                                                        public void onError(Throwable e) {
+                                                            super.onError(e);
 
-                                            mSFTPUtils.downloadFile(remotePath, "aec.mp4", localPath, "test.mp4");//测试
+                                                        }
+
+                                                        @Override
+                                                        public void onNext(ResponseBody body) {
+                                                            File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResname());
+                                                            Log.e(TAG, "下载资源文件列表");
+                                                            DownFileUtils.writeFile2Disk(body, file);
+                                                        }
+                                                    });
                                             if (MD5.decode(file, bean.getMd5())) {
                                                 Log.e(TAG, "下载资源文件" + file.getName() + "成功");
                                             } else {
@@ -751,28 +806,61 @@ public class MainModel extends BaseModel {
             filename = "insert_program.txt";
         }
         String finalFilename = filename;
-
-        requestManager.downLoadFile(filename, (String) SpUtils.get("baseurl", Api.BASE_URL) + url, Constant.LOCAL_PROGRAM_PATH, new RequestManager.ReqCallBack<File>() {
-            @Override
-            public void onReqSuccess(File result) {
-                if (MD5.decode(result, bean.md5)) {
-                    LogUtils.e("下载播放列表", finalFilename + "下载成功");
-                    if (playmode == 1) {
-                        logicNomalProgram(infoHint);
-                    } else {
-                        logicInterProgram(infoHint);
+        httpService.downLoad(url)
+                .subscribeOn(Schedulers.io())
+                .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
+                    @Override
+                    public void onNext(ResponseBody body) {
+                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + finalFilename);
+                        Log.e(TAG, "下载资源文件列表");
+                        DownFileUtils.writeFile2Disk(body, file);
+                        if (MD5.decode(file, bean.md5)) {
+                            LogUtils.e("下载播放列表", finalFilename + "下载成功");
+                            if (playmode == 1) {
+                                logicNomalProgram(infoHint);
+                            } else {
+                                logicInterProgram(infoHint);
+                            }
+                        } else {
+                            LogUtils.e("下载播放列表", finalFilename + "下载失败");
+                        }
                     }
-                } else {
-                    LogUtils.e("下载播放列表", finalFilename + "下载失败");
-                }
 
-            }
+                    @Override
+                    public void onError(ApiException e) {
+                        super.onError(e);
+                        LogUtils.e("下载播放列表", finalFilename + "下载失败");
 
-            @Override
-            public void onReqFailed(String errorMsg) {
-                LogUtils.e("resUpgrade", finalFilename + "下载失败");
-            }
-        });
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        super.onCompleted();
+                        LogUtils.e("下载播放列表", finalFilename + "下载成功");
+                    }
+                });
+
+//        requestManager.downLoadFile(filename, (String) SpUtils.get("baseurl", Api.BASE_URL) + url, Constant.LOCAL_PROGRAM_PATH, new RequestManager.ReqCallBack<File>() {
+//            @Override
+//            public void onReqSuccess(File result) {
+//                if (MD5.decode(result, bean.md5)) {
+//                    LogUtils.e("下载播放列表", finalFilename + "下载成功");
+//                    if (playmode == 1) {
+//                        logicNomalProgram(infoHint);
+//                    } else {
+//                        logicInterProgram(infoHint);
+//                    }
+//                } else {
+//                    LogUtils.e("下载播放列表", finalFilename + "下载失败");
+//                }
+//
+//            }
+//
+//            @Override
+//            public void onReqFailed(String errorMsg) {
+//                LogUtils.e("resUpgrade", finalFilename + "下载失败");
+//            }
+//        });
     }
 
     //正常播放任务逻辑
@@ -980,6 +1068,7 @@ public class MainModel extends BaseModel {
         LogUtils.e("resResConfig", jsonStr);
         try {
             FileUtils.coverTxtToFile(jsonStr, Constant.LOCAL_CONFIG_TXT);
+            configSystem();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -993,6 +1082,7 @@ public class MainModel extends BaseModel {
         mTaskReport.setStatus("0000");
         xStream.alias("command", TaskReportBean.class);
         String postStr = xStream.toXML(mTaskReport);
+        Log.e("返回任务id",postStr);
         StringUtils.setEncoding(postStr, "UTF-8");
 
         httpService.report((String) SpUtils.get("logurl", "/xmlserver/revXml"), Constant.TASKREPORT, Constant.MAC, postStr)

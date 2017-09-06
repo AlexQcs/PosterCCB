@@ -89,6 +89,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         long unused = MemInfo.getAvailableSize();
         VolumeUtils.setVolum(5);
         LogUtils.e(TAG, "剩余内存" + unused);
+        mMac=mMac.toUpperCase();
+        mMac=mMac.replaceAll(":","-");
+        LogUtils.e(TAG,"mac地址"+mMac);
+
         mPresenter.pollingTask(mTaskName, mMac);
         mPresenter.checkLicense();
         mPresenter.initConfig();

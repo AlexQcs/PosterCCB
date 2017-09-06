@@ -18,6 +18,10 @@ public class Constant {
     public static final String UDP_TESTPATH = Environment.getExternalStorageDirectory() + "/Misc/test/";
 
 
+    public static final String BASE_URL="http://128.160.97.6:16300/zhyh/";
+//    public static final String BASE_URL="http://128.160.97.6:16300/zhyh/PlayDev.do";
+
+
 
 
     public static final String TASKTYPE = "tasktype";
@@ -92,6 +96,8 @@ public class Constant {
     public static String CREAT_DES_FILE_PATH="/data/data/com.hc.posterccb/files";
     //解密完成后生成的文本文件
     public static String CREAT_DES_FILE=CREAT_DES_FILE_PATH+"/DesSerial.txt";
+
+
 
     //--------------secnumber
     public static final String RESULT_PATH = Environment.getRootDirectory().getPath() + "/bin/sleep.bkup";

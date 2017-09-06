@@ -14,6 +14,7 @@ import com.hc.posterccb.bean.polling.LogReportBean;
 import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
+import com.hc.posterccb.bean.polling.SyncTimeBean;
 import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.bean.program.Program;
@@ -522,6 +523,57 @@ public class XmlUtils {
         }
 
         return program;
+    }
+
+    //时间同步
+    public static SyncTimeBean parseSyncTimeXml(String xmlStr) {
+        InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
+        XmlPullParser parser = Xml.newPullParser();
+        try {
+            parser.setInput(in, "UTF-8");
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
+        }
+        SyncTimeBean syncTimeBean = null;
+
+        try {
+            //开始解析事件
+            int eventType = parser.getEventType();
+
+            //处理事件，不碰到文档结束就一直处理
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                //因为定义了一堆静态常量，所以这里可以用switch
+                switch (eventType) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.START_TAG:
+                        //给当前标签起个名字
+                        String tagName = parser.getName();
+                        if (tagName.equals("servertime")) {
+                            syncTimeBean=new SyncTimeBean();
+                            syncTimeBean.setServertime(parser.getText());
+                        }else if (tagName.equals("result")){
+                            syncTimeBean=new SyncTimeBean();
+                            syncTimeBean.setResult(parser.getText());
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        break;
+                }
+                //别忘了用next方法处理下一个事件，忘了的结果就成死循环#_#
+                eventType = parser.next();
+            }
+        } catch (XmlPullParserException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return syncTimeBean;
     }
 
     public static ArrayList<ResourceBean> parseResource(String xmlStr) {

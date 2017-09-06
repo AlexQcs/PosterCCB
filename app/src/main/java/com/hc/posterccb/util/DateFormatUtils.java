@@ -55,7 +55,7 @@ public class DateFormatUtils {
 
 
 
-    public void syncTime(String date) {
+    public static void syncTime(String date) {
         try {
             Process process = Runtime.getRuntime().exec("su");
             Date resDate = DateFormatUtils.string2Date(date, "yyyy-M-dd HH:mm:ss");

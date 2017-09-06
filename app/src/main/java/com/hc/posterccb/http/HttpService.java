@@ -15,10 +15,16 @@ import rx.Observable;
 public interface HttpService {
 
     @POST
-    Observable<ResponseBody> polling(@Url String url,@Header("command")String command, @Header("mac")String mac);
+    Observable<ResponseBody> polling(@Url String url,@Header("command")String command,@Header("factory")String factory, @Header("mac")String mac);
 
     @POST
     Observable<ResponseBody> report(@Url String url,@Header("command")String command, @Header("mac")String mac, @Body String xmlStr );
+
+    @POST
+    Observable<ResponseBody> downLoad(@Url String url);
+
+    @POST
+    Observable<ResponseBody> timesync(@Url String url,@Header("command")String command, @Header("mac")String mac);
 
 //    @POST("/xmlserver/revXml")
 //    Observable<ResponseBody>
