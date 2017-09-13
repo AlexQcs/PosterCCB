@@ -126,7 +126,7 @@ public class Http {
                     HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
                         @Override
                         public void log(String message) {
-                            Log.e("qcs","OkHttp====Message:"+message);
+                            Log.e("qcs", "OkHttp====Message:" + message);
                         }
                     });
                     //可以设置请求过滤的水平,body,basic,headers
@@ -153,7 +153,7 @@ public class Http {
                             .baseUrl(Constant.BASE_URL)
                             .client(client)
                             .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-//                            .addConverterFactory(GsonConverterFactory.create()) //这里是用的fastjson的
+//                            .addConverterFactory(SimpleXmlConverterFactory.create()) //这里是用的fastjson的
                             .build();
                 }
             }

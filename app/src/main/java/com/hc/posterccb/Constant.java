@@ -18,11 +18,9 @@ public class Constant {
     public static final String UDP_TESTPATH = Environment.getExternalStorageDirectory() + "/Misc/test/";
 
 
-    public static final String BASE_URL="http://128.160.97.6:16300/zhyh/";
+//    public static final String BASE_URL="http://128.160.97.6:16300/zhyh/";
 //    public static final String BASE_URL="http://128.160.97.6:16300/zhyh/PlayDev.do";
-
-
-
+    public static final String BASE_URL="http://192.168.0.30:8080/xmlserver/";
 
     public static final String TASKTYPE = "tasktype";
     public static final String TASKREPORT="taskreport";

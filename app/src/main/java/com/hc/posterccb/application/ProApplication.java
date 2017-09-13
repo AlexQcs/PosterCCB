@@ -1,7 +1,9 @@
 package com.hc.posterccb.application;
 
+import android.app.ActivityManager;
 import android.app.Application;
 import android.content.Context;
+import android.util.Log;
 
 import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.bean.program.ProgramRes;
@@ -30,24 +32,46 @@ public class ProApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        if (LeakCanary.isInAnalyzerProcess(this)) {
-            return;
+        Log.e("ProApplication onCreate","我被调用了");
+        String processName = getProcessName(this, android.os.Process.myPid());
+        if (processName != null) {
+            boolean defaultProcess = processName.equals("com.hc.posterccb");
+            if (defaultProcess) {
+                //当前应用的初始化
+                if (LeakCanary.isInAnalyzerProcess(this)) {
+                    return;
+                }
+                LeakCanary.install(this);
+                instance = this;
+                mContext = this;
+                mDefProgram = new Program();
+                mResourceBean = new ResourceBean();
+                mResourceBeanList = new ArrayList<>();
+                mDetailBeanList = new ArrayList<>();
+                mProgramRes = new ProgramRes();
+            }
         }
-        LeakCanary.install(this);
-        instance = this;
-        mContext=this;
-        mDefProgram=new Program();
-        mResourceBean=new ResourceBean();
-        mResourceBeanList=new ArrayList<>();
-        mDetailBeanList=new ArrayList<>();
-        mProgramRes=new ProgramRes();
+
+    }
+
+    public static String getProcessName(Context cxt, int pid) {
+        ActivityManager am = (ActivityManager) cxt.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> runningApps = am.getRunningAppProcesses();
+        if (runningApps == null) {
+            return null;
+        }
+        for (ActivityManager.RunningAppProcessInfo procInfo : runningApps) {
+            if (procInfo.pid == pid) {
+                return procInfo.processName;
+            }
+        }
+        return null;
     }
 
     /**
-     * @return
-     * 全局的上下文
+     * @return 全局的上下文
      */
-    public static Context getmContext(){
+    public static Context getmContext() {
         return mContext;
     }
 
@@ -112,12 +136,12 @@ public class ProApplication extends Application {
         mProgramRes = programRes;
     }
 
-    public void initDetailBeanList(List<ResourceBean> resourceBeanList){
-        if (resourceBeanList==null||resourceBeanList.isEmpty())return;
-        mDetailBeanList=new ArrayList<>();
+    public void initDetailBeanList(List<ResourceBean> resourceBeanList) {
+        if (resourceBeanList == null || resourceBeanList.isEmpty()) return;
+        mDetailBeanList = new ArrayList<>();
         for (int i = 0; i < resourceBeanList.size(); i++) {
-            ResourceBean res=resourceBeanList.get(i);
-            DetailBean bean=new DetailBean();
+            ResourceBean res = resourceBeanList.get(i);
+            DetailBean bean = new DetailBean();
             bean.setFilename(res.getResname());
             bean.setResid(res.getResid());
             mDetailBeanList.add(bean);

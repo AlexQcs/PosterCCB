@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.PowerManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.util.Xml;
 
 import com.google.gson.Gson;
 import com.hc.posterccb.Constant;
@@ -14,19 +15,23 @@ import com.hc.posterccb.R;
 import com.hc.posterccb.api.Api;
 import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.base.BaseModel;
+import com.hc.posterccb.bean.IntervalBean;
 import com.hc.posterccb.bean.PostResult;
 import com.hc.posterccb.bean.UpGradeCfgBean;
+import com.hc.posterccb.bean.polling.AbstractBeanTaskItem;
+import com.hc.posterccb.bean.polling.BasePollingBean;
 import com.hc.posterccb.bean.polling.ConfigBean;
-import com.hc.posterccb.bean.polling.ControlBean;
-import com.hc.posterccb.bean.polling.ControlProgramBean;
-import com.hc.posterccb.bean.polling.DownLoadFileBean;
-import com.hc.posterccb.bean.polling.LogReportBean;
-import com.hc.posterccb.bean.polling.PollResultBean;
-import com.hc.posterccb.bean.polling.ProgramBean;
+import com.hc.posterccb.bean.polling.ItemBeanConfig;
+import com.hc.posterccb.bean.polling.ItemBeanControl;
+import com.hc.posterccb.bean.polling.ItemBeanControlProgram;
+import com.hc.posterccb.bean.polling.ItemBeanDownLoadFile;
+import com.hc.posterccb.bean.polling.ItemBeanLogReport;
+import com.hc.posterccb.bean.polling.ItemBeanProgram;
+import com.hc.posterccb.bean.polling.ItemBeanRealTimeMsg;
+import com.hc.posterccb.bean.polling.ItemBeanUpGrade;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.SyncTimeBean;
 import com.hc.posterccb.bean.polling.TempBean;
-import com.hc.posterccb.bean.polling.UpGradeBean;
 import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.bean.report.CfgReportBean;
 import com.hc.posterccb.bean.report.ReportDownloadStatus;
@@ -57,8 +62,10 @@ import com.thoughtworks.xstream.XStream;
 
 import org.xmlpull.v1.XmlPullParser;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -67,6 +74,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import rx.Observable;
 import rx.Subscriber;
@@ -77,6 +86,8 @@ import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 import static com.hc.posterccb.util.file.FileUtils.getStringFromTxT;
+import static com.hc.posterccb.util.system.MemInfo.file;
+import static rx.Observable.interval;
 
 /**
  * Created by alex on 2017/7/10.
@@ -87,22 +98,25 @@ public class MainModel extends BaseModel {
 
 //    private SFTPUtils mSFTPUtils = new SFTPUtils();
 
-    private volatile int mPollingTimer; //轮询时间
+    private volatile int mPollingTimer = 10; //轮询时间
+    private Observable<Long> mPollingObservable;
+    private Subscriber mPollingSubscriber;
+
+    private IntervalBean mIntervalBean = IntervalBean.getInstance();
     private TaskReportBean mTaskReport = new TaskReportBean();
 
     private boolean mLicensed = false;
     private XmlPullParser mParser;
     private RequestManager requestManager = RequestManager.getInstance();
-    private ProApplication mApplication = new ProApplication();
+    private ProApplication mApplication = ProApplication.getInstance();
     private List<Program> mProgramList;
     private ArrayList<ResourceBean> resourceList;
+
 
     //轮询任务
     public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint) {
         if (infoHint == null)
             throw new RuntimeException("InfoHint不能为空");
-
-        mPollingTimer = (int) SpUtils.get("selectinterval", 10);//从sp获取轮询时间，默认10秒
         Observable.just(mac)
                 .subscribeOn(Schedulers.io())
                 .subscribe(new Action1<String>() {
@@ -111,13 +125,31 @@ public class MainModel extends BaseModel {
                         timesync(mac);
                     }
                 });
+//        mPollingTimer= (int) SpUtils.get("selectinterval",10);
+        mPollingTimer = 10;
+        pollingLogic(mPollingTimer, command, mac, infoHint);
+    }
 
-        Observable.interval(mPollingTimer, TimeUnit.SECONDS)
+    //轮询逻辑，便于递归调用
+    public void pollingLogic(int pollingTimer, @NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint) {
+        Observable.interval(pollingTimer, TimeUnit.SECONDS)
+                .takeUntil(new Func1<Long, Boolean>() {
+                    @Override
+                    public Boolean call(Long aLong) {
+                        int temptimer = (int) SpUtils.get("selectinterval", 10);
+                        if (pollingTimer != temptimer) {
+                            pollingLogic(temptimer, command, mac, infoHint);
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                })
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
 //                        httpService.polling((String) SpUtils.get("polling", "/xmlserver/revXml"), command, mac)
-                        httpService.polling("PlayDev",command,"", mac)
+                        httpService.polling("revXml", command, "", mac)
                                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                                     @Override
                                     public void onNext(ResponseBody response) {
@@ -126,17 +158,33 @@ public class MainModel extends BaseModel {
                                         try {
                                             //获取返回的xml 字符串
                                             resStr = response.string();
-                                            Log.e("返回的结果",resStr);
+//                                            Log.e("返回的结果", resStr);
                                             //获取返回的任务类型集合
-                                            ArrayList<String> typeList = XmlUtils.getXmlType(resStr);
-                                            if (typeList.size() <= 0) return;
-                                            //获取任务类型实体类
-                                            for (String type : typeList) {
-                                                PostResult postResult = XmlUtils.getTaskBean(type, resStr);//通过返回的响应xml报文解析出是哪个任务
-                                                Log.e("MainModel", postResult.toString());
-                                                //处理任务类型
-                                                resResult(type, postResult, infoHint);
+                                            BasePollingBean pollingBean = null;
+                                            try {
+                                                pollingBean = XmlUtils.parsePollingXml(resStr);
+                                                Log.e("返回的结果", pollingBean.toString());
+                                                List<AbstractBeanTaskItem> taskItems = pollingBean.getTaskitems();
+                                                if (taskItems == null || taskItems.size() == 0)
+                                                    return;
+                                                for (AbstractBeanTaskItem item : taskItems) {
+                                                    resResult(item, infoHint);
+                                                }
+
+                                            } catch (Exception e) {
+                                                e.printStackTrace();
                                             }
+
+
+//                                            ArrayList<String> typeList = XmlUtils.getXmlType(resStr);
+//                                            if (typeList.size() <= 0) return;
+//                                            //获取任务类型实体类
+//                                            for (String type : typeList) {
+//                                                PostResult postResult = XmlUtils.getTaskBean(type, resStr);//通过返回的响应xml报文解析出是哪个任务
+//                                                Log.e("MainModel", postResult.toString());
+//                                                //处理任务类型
+//                                                resResult(type, postResult, infoHint);
+//                                            }
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         }
@@ -155,6 +203,7 @@ public class MainModel extends BaseModel {
                                 });
                     }
                 });
+
     }
 
     //下载文件
@@ -163,21 +212,26 @@ public class MainModel extends BaseModel {
     }
 
     public void init() {
-        configSystem();
+//        configSystem();
     }
 
     //系统配置
     public void configSystem() {
+        //1.从/PosterCCB/config.txt 文件中取出配置信息json字符串
         String jsonStr = getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
-        Log.e("sd卡配置信息",jsonStr);
+        Log.e("sd卡配置信息", jsonStr);
         if (!jsonStr.equals("")) {
+            //2.将json字符串转为ConfigBean实体类
             Gson gson = new Gson();
-            ConfigBean bean = gson.fromJson(jsonStr, ConfigBean.class);
+            ItemBeanConfig bean = gson.fromJson(jsonStr, ItemBeanConfig.class);
             Log.e("系统配置", bean.toString() + "---");
-            String powerOnTimeStr = bean.getStaruptime();//开机时间
-            String powerOffTimeStr = bean.getShutdowntime();//关机时间
-            Date powerOnTime = DateFormatUtils.string2Date(powerOnTimeStr, "HH:mm");
-            Date powerOffTime = DateFormatUtils.string2Date(powerOffTimeStr, "HH:mm");
+            //开机时间
+            Date date = new Date(System.currentTimeMillis());
+            String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
+            String powerOnTimeStr = nowdate + bean.getStaruptime();//开机时间
+            String powerOffTimeStr = nowdate + bean.getShutdowntime();//关机时间
+            Date powerOnTime = DateFormatUtils.string2Date(powerOnTimeStr, "yyyy-MM-dd HH:mm");
+            Date powerOffTime = DateFormatUtils.string2Date(powerOffTimeStr, "yyyy-MM-dd HH:mm");
             int diskspacealarm = Integer.parseInt(bean.getDiskspacealarm());//硬盘警告阀值
             SpUtils.put(mApplication.getString(R.string.diskspacealarm), diskspacealarm);
             String serverip = bean.getServerconfig();//服务器信息  http://ip:port/appname
@@ -187,8 +241,9 @@ public class MainModel extends BaseModel {
             String httpServer = bean.getHttpserver();//http下载服务器地址列表
             SpUtils.put(mApplication.getString(R.string.httpserver), httpServer);
             int selectinterval = Integer.parseInt(bean.getSelectinterval());//轮询时间
-            mPollingTimer = selectinterval;
             SpUtils.put(mApplication.getString(R.string.selectinterval), selectinterval);//保存轮询时间
+
+
             int volume = Integer.parseInt(bean.getVolume());//终端音量 机器最高音量为15
             VolumeUtils.setVolum(volume);
             int downloadrate = Integer.parseInt(bean.getVolume());//下载速度
@@ -232,113 +287,94 @@ public class MainModel extends BaseModel {
     }
 
     //处理轮询任务返回
-    private void resResult(String taskType, PostResult postResult, InfoHint infoHint) {
-        if (postResult.getBean() == null) {
-            return;
-        }
+    private void resResult(AbstractBeanTaskItem item, InfoHint infoHint) {
 
+        String id = item.getTaskid();
+        String taskType = item.getTasktype();
         switch (taskType) {
             //播放类任务
             case Constant.POLLING_PROGRAM: {
-                ArrayList<ProgramBean> list = postResult.getList();
-                PollResultBean bean = (PollResultBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
+                ArrayList<ItemBeanProgram> list = (ArrayList<ItemBeanProgram>) item.getT();
                 resProgram(list, infoHint);
                 break;
             }
             //升级类任务
             case Constant.POLLING_UPGRADE: {
-                UpGradeBean bean = (UpGradeBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
+                ItemBeanUpGrade bean = (ItemBeanUpGrade) item.getT();
                 resUpgrade(bean);
                 break;
             }
             //控制类任务
             case Constant.POLLING_CONTROL: {
-                ControlBean bean = (ControlBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
+                ItemBeanControl bean = (ItemBeanControl) item.getT();
                 resControl(bean);
                 break;
             }
             //即时消息类任务
             case Constant.POLLING_REALTIMEMSG: {
-                RealTimeMsgBean bean = (RealTimeMsgBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
+                ItemBeanRealTimeMsg bean = (ItemBeanRealTimeMsg) item.getT();
                 resRealTimeMsg(bean, infoHint);
                 break;
             }
             //取消即时类任务
             case Constant.POLLING_CANCELREALTIMEMSG: {
-                PollResultBean bean = (PollResultBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resCacnleRealTimeMsg(bean, infoHint);
+                resCacnleRealTimeMsg(infoHint);
                 break;
             }
             //配置类任务
             case Constant.POLLING_CONFIG: {
-                ConfigBean bean = (ConfigBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resConfig(bean);
+                ItemBeanConfig bean = (ItemBeanConfig) item.getT();
+                resConfig(bean, infoHint);
                 break;
             }
             //控制类任务
             case Constant.POLLING_CONTROLPROGRAM: {
-                ControlProgramBean bean = (ControlProgramBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
+                ItemBeanControlProgram bean = (ItemBeanControlProgram) item.getT();
                 resControlProgram(bean, infoHint);
                 break;
             }
             //终端配置信息日志上报任务
             case Constant.POLLING_CFGREPORT: {
-                PollResultBean bean = (PollResultBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
-                reportCfg(bean);
+                reportCfg();
                 break;
             }
             //终端配置信息日志上报任务
             case Constant.POLLING_WORKSTATUSREPORT: {
-                PollResultBean bean = (PollResultBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
-                reportWorkStatus(bean);
+                reportWorkStatus();
                 break;
             }
             //终端工作状态上报类任务
             case Constant.POLLING_MONITORREPORT: {
-                PollResultBean bean = (PollResultBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
-                reportMonitor(bean);
+                reportMonitor();
                 break;
             }
 
             //通知终端上报日志
             case Constant.POLLING_LOGREPORT: {
-                LogReportBean bean = (LogReportBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
+                ItemBeanLogReport bean = (ItemBeanLogReport) item.getT();
                 reportLog(bean);
                 break;
             }
 
             //通知终端下载资源
             case Constant.POLLING_DOWNLOADRES: {
-                PollResultBean bean = (PollResultBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
-                ArrayList<DownLoadFileBean> list = postResult.getList();
+                ArrayList<ItemBeanDownLoadFile> list = (ArrayList<ItemBeanDownLoadFile>) item.getT();
                 resDownLoadFile(list);
                 break;
             }
 
             //通知终端上报下载状态
             case Constant.POLLING_DOWNLOADSTATUSREPORT: {
-                PollResultBean bean = (PollResultBean) postResult.getBean();
-                postTaskreport(bean.getTasktype(), bean.getTaskid());
-                resDownLoadStatusReport(bean);
+                resDownLoadStatusReport();
+                break;
             }
         }
+        postTaskreport(taskType, id);
     }
 
     //同步时间
-    private void timesync(String mac){
-        httpService.timesync("PlayDev","timesync", mac)
+    private void timesync(String mac) {
+        httpService.timesync("revXml", "timesync", mac)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody response) {
@@ -347,12 +383,12 @@ public class MainModel extends BaseModel {
                         try {
                             //获取返回的xml 字符串
                             resStr = response.string();
-                            Log.e("返回的结果",resStr);
-                            if (!resStr.equals("")){
-                                SyncTimeBean syncTimeBean=XmlUtils.parseSyncTimeXml(resStr);
-                                if (syncTimeBean!=null){
-                                    if (!"1".equals(syncTimeBean.getResult())){
-                                        String timeStr=syncTimeBean.getServertime();
+                            Log.e("返回的结果", resStr);
+                            if (!resStr.equals("")) {
+                                SyncTimeBean syncTimeBean = XmlUtils.parseSyncTimeXml(resStr);
+                                if (syncTimeBean != null) {
+                                    if (!"1".equals(syncTimeBean.getResult())) {
+                                        String timeStr = syncTimeBean.getServertime();
                                         DateFormatUtils.syncTime(timeStr);
                                     }
                                 }
@@ -374,21 +410,21 @@ public class MainModel extends BaseModel {
                     @Override
                     public void onCompleted() {
                         super.onCompleted();
-                        SimpleDateFormat formatter    =   new    SimpleDateFormat    ("yyyy年MM月dd日    HH:mm:ss     ");
-                        Date    curDate    =   new    Date(System.currentTimeMillis());//获取当前时间
-                        String    str    =    formatter.format(curDate);
-                        Log.e("系统时间",str);
+                        SimpleDateFormat formatter = new SimpleDateFormat("yyyy年MM月dd日    HH:mm:ss     ");
+                        Date curDate = new Date(System.currentTimeMillis());//获取当前时间
+                        String str = formatter.format(curDate);
+                        Log.e("系统时间", str);
                     }
                 });
     }
 
     //终端日志上报任务
-    private void reportLog(LogReportBean bean) {
+    private void reportLog(ItemBeanLogReport bean) {
 
     }
 
     //终端在播内容上报
-    private void reportMonitor(PollResultBean bean) {
+    private void reportMonitor() {
         String jsonStr = getStringFromTxT(Constant.LOCAL_PROGRAM_TXT);
         if (!jsonStr.equals("")) {
 
@@ -398,7 +434,7 @@ public class MainModel extends BaseModel {
 
     //终端工作状态上报
     @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
-    private void reportWorkStatus(PollResultBean bean) {
+    private void reportWorkStatus() {
 
         PowerManager pm = (PowerManager) mApplication.getSystemService(Context.POWER_SERVICE);
         boolean screen = pm.isInteractive();
@@ -413,7 +449,8 @@ public class MainModel extends BaseModel {
         XStream xStream = new XStream();
         String postStr = xStream.toXML(postBean);
         StringUtils.setEncoding(postStr, "UTF-8");
-        httpService.report((String) SpUtils.get(mApplication.getString(R.string.serverip), Api.LOCALHOST), Constant.REPORT_CONFIG, Constant.MAC, postStr)
+        RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
+        httpService.report((String) SpUtils.get(mApplication.getString(R.string.serverip), Api.LOCALHOST), Constant.REPORT_CONFIG, Constant.MAC, requestBody)
                 .subscribeOn(Schedulers.io())
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
@@ -424,7 +461,7 @@ public class MainModel extends BaseModel {
     }
 
     //终端配置信息日志上报
-    private void reportCfg(PollResultBean bean) {
+    private void reportCfg() {
         String jsonStr = getStringFromTxT(Constant.LOCAL_CONFIG_TXT);
         if (!jsonStr.equals("")) {
             Gson gson = new Gson();
@@ -466,14 +503,21 @@ public class MainModel extends BaseModel {
             XStream xStream = new XStream();
             String postStr = xStream.toXML(postBean);
             StringUtils.setEncoding(postStr, "UTF-8");
+            RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
             httpService.report((String) SpUtils
-                    .get(mApplication.getString(R.string.serverip), Api.LOCALHOST), Constant.REPORT_CONFIG, Constant.MAC, postStr)
+                    .get(mApplication.getString(R.string.serverip), Api.LOCALHOST), Constant.REPORT_CONFIG, Constant.MAC, requestBody)
                     .subscribeOn(Schedulers.io())
                     .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                         @Override
                         public void onNext(ResponseBody body) {
                             reportRequest(body, "配置信息");
                         }
+
+                        @Override
+                        public void onError(ApiException e) {
+                            e.printStackTrace();
+                        }
+
                     });
         }
     }
@@ -484,10 +528,14 @@ public class MainModel extends BaseModel {
         try {
             //获取返回的xml 字符串
             resStr = body.string();
-            mParser = XmlUtils.getXmlPullParser(resStr);
+            InputStream in = new ByteArrayInputStream(resStr.getBytes());
+            mParser = Xml.newPullParser();
+            mParser.setInput(in, "UTF-8");
+            Log.e("上报任务通用返回处理", resStr);
             PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ReportIdReqBean.class);
             ReportIdReqBean mStatus = (ReportIdReqBean) postResult.getBean();
-            int status = Integer.getInteger(mStatus.getResult());
+            Log.e("上报任务通用返回处理", mStatus.toString());
+            int status = Integer.parseInt(mStatus.getResult());
             if (status == 0) {
                 LogUtils.e("上报响应", "上报" + task + "响应成功");
             } else {
@@ -499,8 +547,8 @@ public class MainModel extends BaseModel {
     }
 
     //控制类任务  0:重启 1:休眠 2:唤醒
-    private void resControl(ControlBean bean) {
-        int control = Integer.parseInt(bean.getControl());
+    private void resControl(ItemBeanControl bean) {
+        int control = bean.getControl();
         Observable.just(control)
                 .subscribe(new Action1<Integer>() {
                     @Override
@@ -533,7 +581,7 @@ public class MainModel extends BaseModel {
     }
 
     //通知终端上报资源下载状态
-    private void resDownLoadStatusReport(PollResultBean bean) {
+    private void resDownLoadStatusReport() {
 
         Observable.just(Constant.LOCAL_RESOURCE_LIST_PATH, Constant.LOCAL_INSERT_RESOURCE_LIST_PATH)
                 .observeOn(Schedulers.io())
@@ -554,6 +602,7 @@ public class MainModel extends BaseModel {
 
     }
 
+    //设置资源下载状态
     private void reportDownLoadStatus(ArrayList<ResourceBean> list) {
         ReportDownloadStatus status = new ReportDownloadStatus();
 
@@ -579,7 +628,7 @@ public class MainModel extends BaseModel {
     }
 
     //通知终端下载资源文件列表
-    private void resDownLoadFile(List<DownLoadFileBean> list) {
+    private void resDownLoadFile(List<ItemBeanDownLoadFile> list) {
         String tempFileName = "";
 
         Observable.just(list)
@@ -589,13 +638,13 @@ public class MainModel extends BaseModel {
                         Log.e(TAG, "下载资源文件断开连接");
                     }
                 })
-                .flatMap(new Func1<List<DownLoadFileBean>, Observable<DownLoadFileBean>>() {
+                .flatMap(new Func1<List<ItemBeanDownLoadFile>, Observable<ItemBeanDownLoadFile>>() {
                     @Override
-                    public Observable<DownLoadFileBean> call(List<DownLoadFileBean> list) {
+                    public Observable<ItemBeanDownLoadFile> call(List<ItemBeanDownLoadFile> list) {
                         return Observable.from(list);
                     }
                 }).subscribeOn(Schedulers.io())
-                .subscribe(new Subscriber<DownLoadFileBean>() {
+                .subscribe(new Subscriber<ItemBeanDownLoadFile>() {
                     @Override
                     public void onCompleted() {
                         Log.e(TAG, "下载资源文件成功");
@@ -609,13 +658,12 @@ public class MainModel extends BaseModel {
                     }
 
                     @Override
-                    public void onNext(DownLoadFileBean bean) {
+                    public void onNext(ItemBeanDownLoadFile bean) {
 
-                        String url = (String) SpUtils.get("baseurl", Api.BASE_URL);
+                        String url = (String) SpUtils.get("baseurl", Api.BASE_URL) + bean.getLink();
                         httpService.downLoad(url)
                                 .subscribeOn(Schedulers.io())
                                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
-
 
 
                                     @Override
@@ -645,7 +693,7 @@ public class MainModel extends BaseModel {
         mApplication.setResourceBeanList(resourceList);
         mApplication.initDetailBeanList(resourceList);
         SFTPUtils sFTPUtils = new SFTPUtils();
-        Observable.interval(1, TimeUnit.SECONDS)
+        interval(1, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
@@ -691,7 +739,7 @@ public class MainModel extends BaseModel {
                                         String dateStr = DateFormatUtils.date2String(date, "HH:mm");
                                         Set<String> tempSet = new HashSet<>();
                                         if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
-                                            String url = (String) SpUtils.get("baseurl", Api.BASE_URL);
+                                            String url = (String) SpUtils.get("baseurl", Api.BASE_URL)+bean.getHref();
                                             httpService.downLoad(url)
                                                     .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
 
@@ -732,7 +780,7 @@ public class MainModel extends BaseModel {
     }
 
     //播放类控制类
-    private void resControlProgram(ControlProgramBean bean, final InfoHint infoHint) {
+    private void resControlProgram(ItemBeanControlProgram bean, final InfoHint infoHint) {
         int cmd = Integer.getInteger(bean.getCmd());
         Observable.just(cmd)
                 .subscribe(new Subscriber<Integer>() {
@@ -767,7 +815,7 @@ public class MainModel extends BaseModel {
     }
 
     //播放节目单类任务
-    private void resProgram(ArrayList<ProgramBean> list, InfoHint infoHint) {
+    private void resProgram(ArrayList<ItemBeanProgram> list, InfoHint infoHint) {
 
         String arrayStr = JsonUtils.ArrayList2JsonStr(list);
         LogUtils.e("resProgram", arrayStr);
@@ -778,22 +826,22 @@ public class MainModel extends BaseModel {
         }
 
         Observable.just(list)
-                .flatMap(new Func1<ArrayList<ProgramBean>, Observable<ProgramBean>>() {
+                .flatMap(new Func1<ArrayList<ItemBeanProgram>, Observable<ItemBeanProgram>>() {
                     @Override
-                    public Observable<ProgramBean> call(ArrayList<ProgramBean> list) {
+                    public Observable<ItemBeanProgram> call(ArrayList<ItemBeanProgram> list) {
                         return Observable.from(list);
                     }
                 }).subscribeOn(Schedulers.newThread())
-                .subscribe(new Action1<ProgramBean>() {
+                .subscribe(new Action1<ItemBeanProgram>() {
                     @Override
-                    public void call(ProgramBean bean) {
+                    public void call(ItemBeanProgram bean) {
                         downloadProgram(bean, infoHint);
                     }
                 });
     }
 
     //下载播放节目单
-    private void downloadProgram(ProgramBean bean, InfoHint infoHint) {
+    private void downloadProgram(ItemBeanProgram bean, InfoHint infoHint) {
         LogUtils.e("ProgramBean", bean.toString());
         String url = bean.getLink();
         String[] array = url.split("/");
@@ -814,6 +862,17 @@ public class MainModel extends BaseModel {
                         File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + finalFilename);
                         Log.e(TAG, "下载资源文件列表");
                         DownFileUtils.writeFile2Disk(body, file);
+                    }
+
+                    @Override
+                    public void onError(ApiException e) {
+                        super.onError(e);
+                        LogUtils.e("下载播放列表", finalFilename + "下载失败");
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        super.onCompleted();
                         if (MD5.decode(file, bean.md5)) {
                             LogUtils.e("下载播放列表", finalFilename + "下载成功");
                             if (playmode == 1) {
@@ -824,19 +883,6 @@ public class MainModel extends BaseModel {
                         } else {
                             LogUtils.e("下载播放列表", finalFilename + "下载失败");
                         }
-                    }
-
-                    @Override
-                    public void onError(ApiException e) {
-                        super.onError(e);
-                        LogUtils.e("下载播放列表", finalFilename + "下载失败");
-
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        super.onCompleted();
-                        LogUtils.e("下载播放列表", finalFilename + "下载成功");
                     }
                 });
 
@@ -880,7 +926,7 @@ public class MainModel extends BaseModel {
                 SpUtils.put("defaultpls", program);
             }
         }
-        Observable.interval(1, TimeUnit.SECONDS)
+        interval(1, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
@@ -968,7 +1014,7 @@ public class MainModel extends BaseModel {
     }
 
     //升级任务
-    private void resUpgrade(UpGradeBean bean) {
+    private void resUpgrade(ItemBeanUpGrade bean) {
         String jsonStr = JsonUtils.Bean2JsonStr(bean);
         SpUtils.put("UpGradeBean", jsonStr);
 
@@ -1017,7 +1063,7 @@ public class MainModel extends BaseModel {
     }
 
     //即时消息类任务
-    private void resRealTimeMsg(RealTimeMsgBean bean, final InfoHint infoHint) {
+    private void resRealTimeMsg(ItemBeanRealTimeMsg bean, final InfoHint infoHint) {
         String jsonStr = JsonUtils.Bean2JsonStr(bean);
         SpUtils.put("realtime", jsonStr);
         realTimeTimer(infoHint);
@@ -1040,7 +1086,7 @@ public class MainModel extends BaseModel {
         infoHint.realTimeMessage(bean);
 
         Log.e("即时消息", bean.toString() + "---");
-        Observable.interval(1, TimeUnit.SECONDS)
+        interval(1, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
@@ -1058,12 +1104,12 @@ public class MainModel extends BaseModel {
     }
 
     //取消即时消息任务
-    private void resCacnleRealTimeMsg(PollResultBean bean, final InfoHint infoHint) {
+    private void resCacnleRealTimeMsg(final InfoHint infoHint) {
         infoHint.realTimeCancle();
     }
 
     //终端配置信息类任务
-    private void resConfig(ConfigBean bean) {
+    private void resConfig(ItemBeanConfig bean, @NonNull final InfoHint infoHint) {
         String jsonStr = JsonUtils.Bean2JsonStr(bean);
         LogUtils.e("resResConfig", jsonStr);
         try {
@@ -1082,14 +1128,19 @@ public class MainModel extends BaseModel {
         mTaskReport.setStatus("0000");
         xStream.alias("command", TaskReportBean.class);
         String postStr = xStream.toXML(mTaskReport);
-        Log.e("返回任务id",postStr);
+        Log.e("返回任务id", postStr);
         StringUtils.setEncoding(postStr, "UTF-8");
-
-        httpService.report((String) SpUtils.get("logurl", "/xmlserver/revXml"), Constant.TASKREPORT, Constant.MAC, postStr)
+        RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
+        httpService.report((String) SpUtils.get("logurl", "/xmlserver/revXml"), Constant.TASKREPORT, Constant.MAC, requestBody)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody body) {
                         reportRequest(body, "任务id");
+                    }
+
+                    @Override
+                    public void onError(ApiException e) {
+                        e.printStackTrace();
                     }
                 });
     }
@@ -1108,7 +1159,7 @@ public class MainModel extends BaseModel {
                 desSerialNumber(config);
             }
         }
-        Observable.interval(1000, TimeUnit.SECONDS)
+        interval(1000, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {

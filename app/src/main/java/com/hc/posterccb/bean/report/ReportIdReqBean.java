@@ -25,4 +25,12 @@ public class ReportIdReqBean {
     public void setErrorinfo(String errorinfo) {
         this.errorinfo = errorinfo;
     }
+
+    @Override
+    public String toString() {
+        return "ReportIdReqBean{" +
+                "result='" + result + '\'' +
+                ", errorinfo='" + errorinfo + '\'' +
+                '}';
+    }
 }

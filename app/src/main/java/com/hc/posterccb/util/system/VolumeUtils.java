@@ -11,9 +11,10 @@ import com.hc.posterccb.util.LogUtils;
  */
 
 public class VolumeUtils {
-    public static void setVolum(int direction){
+    public static void setVolum(double direction){
+        direction=15*(direction/100);
         AudioManager am=(AudioManager) ProApplication.getmContext().getSystemService(Context.AUDIO_SERVICE);
-        am.setStreamVolume(AudioManager.STREAM_MUSIC,direction, AudioManager.STREAM_MUSIC);
+        am.setStreamVolume(AudioManager.STREAM_MUSIC, (int) direction, AudioManager.STREAM_MUSIC);
         int max =am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);//得到媒体音量的最大值
         LogUtils.e("系统最大音量",max+"");
         int current=am.getStreamVolume(AudioManager.STREAM_MUSIC);//得到媒体音量的当前值

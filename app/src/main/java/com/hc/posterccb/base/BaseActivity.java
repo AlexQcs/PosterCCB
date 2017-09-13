@@ -3,6 +3,7 @@ package com.hc.posterccb.base;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -25,6 +26,7 @@ public abstract class BaseActivity<P extends BasePresenter> extends FragmentActi
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        Log.e("onCreate","我被调用了");
         super.onCreate(savedInstanceState);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -107,10 +109,12 @@ public abstract class BaseActivity<P extends BasePresenter> extends FragmentActi
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
+        Log.e("onDestroy","我被调用了");
         if (mPresenter != null)
             mPresenter.detachView();
         mUnbinder.unbind();
 
     }
+
+
 }

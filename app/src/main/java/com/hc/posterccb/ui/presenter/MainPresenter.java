@@ -20,7 +20,7 @@ public class MainPresenter extends BasePresenter<MainActivity>
 
 
     @Override
-    public void pollingTask(String command, String mac) {
+    public void pollingGatTask(String command, String mac) {
         if (!getIView().checkPostParamNull()) {
             ((MainModel) getiModelMap().get("polling")).pollingTask(command, mac, new MainModel.InfoHint() {
                 //轮询成功
@@ -29,7 +29,7 @@ public class MainPresenter extends BasePresenter<MainActivity>
                     getIView().pollingSuccess(str);
                 }
 
-                //轮询成功
+                //轮询失败
                 @Override
                 public void failInfo(String str) {
                     LogUtils.e("MainPresenter.failInfo", str);

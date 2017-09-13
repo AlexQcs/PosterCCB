@@ -27,7 +27,6 @@ import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.StringUtils;
 import com.hc.posterccb.util.file.FileUtils;
 import com.hc.posterccb.util.system.MemInfo;
-import com.hc.posterccb.util.system.VolumeUtils;
 import com.hc.posterccb.widget.MarqueeTextView;
 
 import java.io.IOException;
@@ -87,13 +86,12 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     protected void initData() {
         FileUtils.checkAppFile();
         long unused = MemInfo.getAvailableSize();
-        VolumeUtils.setVolum(5);
         LogUtils.e(TAG, "剩余内存" + unused);
         mMac=mMac.toUpperCase();
         mMac=mMac.replaceAll(":","-");
         LogUtils.e(TAG,"mac地址"+mMac);
 
-        mPresenter.pollingTask(mTaskName, mMac);
+        mPresenter.pollingGatTask(mTaskName, mMac);
         mPresenter.checkLicense();
         mPresenter.initConfig();
     }

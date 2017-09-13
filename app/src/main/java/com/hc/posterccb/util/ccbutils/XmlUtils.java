@@ -1,15 +1,26 @@
 package com.hc.posterccb.util.ccbutils;
 
 
+import android.util.Log;
 import android.util.Xml;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.bean.PostResult;
 import com.hc.posterccb.bean.UpGradeCfgBean;
+import com.hc.posterccb.bean.polling.AbstractBeanTaskItem;
+import com.hc.posterccb.bean.polling.BasePollingBean;
 import com.hc.posterccb.bean.polling.ConfigBean;
 import com.hc.posterccb.bean.polling.ControlBean;
 import com.hc.posterccb.bean.polling.ControlProgramBean;
 import com.hc.posterccb.bean.polling.DownLoadFileBean;
+import com.hc.posterccb.bean.polling.ItemBeanConfig;
+import com.hc.posterccb.bean.polling.ItemBeanControl;
+import com.hc.posterccb.bean.polling.ItemBeanControlProgram;
+import com.hc.posterccb.bean.polling.ItemBeanDownLoadFile;
+import com.hc.posterccb.bean.polling.ItemBeanLogReport;
+import com.hc.posterccb.bean.polling.ItemBeanProgram;
+import com.hc.posterccb.bean.polling.ItemBeanRealTimeMsg;
+import com.hc.posterccb.bean.polling.ItemBeanUpGrade;
 import com.hc.posterccb.bean.polling.LogReportBean;
 import com.hc.posterccb.bean.polling.PollResultBean;
 import com.hc.posterccb.bean.polling.ProgramBean;
@@ -30,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by alex on 2017/6/30.
@@ -192,7 +204,7 @@ public class XmlUtils {
                         if (parser.getName().equals(Constant.TASKTYPE)) {
 
                             eventType = parser.next();
-                            xmlType = parser.getText().trim();
+                            xmlType = parser.nextText().trim();
                             list.add(xmlType);
                             //根据类型返回指定字节
                         }
@@ -550,11 +562,11 @@ public class XmlUtils {
                         //给当前标签起个名字
                         String tagName = parser.getName();
                         if (tagName.equals("servertime")) {
-                            syncTimeBean=new SyncTimeBean();
-                            syncTimeBean.setServertime(parser.getText());
-                        }else if (tagName.equals("result")){
-                            syncTimeBean=new SyncTimeBean();
-                            syncTimeBean.setResult(parser.getText());
+                            syncTimeBean = new SyncTimeBean();
+                            syncTimeBean.setServertime(parser.nextText());
+                        } else if (tagName.equals("result")) {
+                            syncTimeBean = new SyncTimeBean();
+                            syncTimeBean.setResult(parser.nextText());
                         }
                         break;
                     case XmlPullParser.END_TAG:
@@ -639,4 +651,323 @@ public class XmlUtils {
         return parser;
     }
 
+    public static BasePollingBean parsePollingXml(String xmlStr) {
+        InputStream in = new ByteArrayInputStream(xmlStr.getBytes());
+
+        XmlPullParser parser = Xml.newPullParser();
+        try {
+            parser.setInput(in, "UTF-8");
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
+        }
+
+        String tempTaskType = "";//接收到的任务类型
+
+        BasePollingBean basePollingBean = null;
+        List<AbstractBeanTaskItem> taskItemArrayList = new ArrayList<>();
+        AbstractBeanTaskItem taskItem = null;
+        boolean isItemEventStarted = false;
+        ItemBeanProgram programBean = new ItemBeanProgram();
+        List<ItemBeanProgram> programs = new ArrayList<>();
+        ItemBeanControl controlBean = new ItemBeanControl();
+        ItemBeanUpGrade upGradeBean = new ItemBeanUpGrade();
+        ItemBeanRealTimeMsg realTimeMsgBean = new ItemBeanRealTimeMsg();
+        ItemBeanConfig configBean = new ItemBeanConfig();
+        ItemBeanControlProgram controlProgramBean = new ItemBeanControlProgram();
+        ItemBeanDownLoadFile downLoadFileBean = new ItemBeanDownLoadFile();
+        List<ItemBeanDownLoadFile> loadFileBeanList = new ArrayList<>();
+        ItemBeanLogReport logReportBean = new ItemBeanLogReport();
+
+        try {
+            //开始解析事件
+            int eventType = parser.getEventType();
+
+            //处理事件，不碰到文档结束就一直处理
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                //因为定义了一堆静态常量，所以这里可以用switch
+                switch (eventType) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.START_TAG:
+                        //给当前标签起个名字
+                        String tagName = parser.getName();
+                        if ("tasklist".equals(tagName)) {
+                            basePollingBean = new BasePollingBean();
+                        } else if ("taskcount".equals(tagName)) {
+                            LogUtils.e("basePollingBean是否为空", basePollingBean + "dsadsa");
+//                            LogUtils.e("taskcount内容",parser.nextText()+"dsadsa");
+                            basePollingBean.setTaskcount(Integer.parseInt(parser.nextText()));
+                        } else if ("taskitem".equals(tagName)) {
+                            isItemEventStarted = true;
+                            taskItem = new AbstractBeanTaskItem();
+                        } else if ("tasktype".equals(tagName)) {
+                            taskItem.setTasktype(parser.nextText());
+                        } else if ("taskid".equals(tagName)) {
+                            taskItem.setTaskid(parser.nextText());
+                        } else if ("content".equals(tagName)) {
+                            if (taskItem == null || taskItem.getTasktype() == null) continue;
+                            switch (taskItem.getTasktype()) {
+                                case Constant.POLLING_PROGRAM:
+                                    programBean = new ItemBeanProgram();
+                                    break;
+
+                                case Constant.POLLING_DOWNLOADRES:
+                                    downLoadFileBean = new ItemBeanDownLoadFile();
+                                    break;
+                            }
+                        } else if (!"command".equals(tagName)) {
+                            if (taskItem == null || taskItem.getTasktype() == null) continue;
+                            switch (taskItem.getTasktype()) {
+                                case Constant.POLLING_PROGRAM:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为播放类任务");
+                                    switch (tagName) {
+                                        case "csize":
+                                            programBean.setCsize(Integer.parseInt(parser.nextText()));
+                                            break;
+                                        case "link":
+                                            programBean.setLink(parser.nextText());
+                                            break;
+                                        case "md5":
+                                            programBean.setMd5(parser.nextText());
+                                            break;
+                                        case "playmode":
+                                            programBean.setPlaymode(parser.nextText());
+                                            break;
+                                    }
+                                    break;
+                                case Constant.POLLING_CONTROL:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为控制类任务");
+                                    switch (tagName) {
+                                        case "control":
+                                            controlBean.setControl(Integer.parseInt(parser.nextText()));
+                                            break;
+                                    }
+                                    break;
+                                case Constant.POLLING_UPGRADE:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为升级类任务");
+                                    switch (tagName) {
+                                        case "link":
+                                            upGradeBean.setLink(parser.nextText());
+                                            break;
+                                        case "version":
+                                            upGradeBean.setVersion(parser.nextText());
+                                            break;
+                                    }
+                                    break;
+                                case Constant.POLLING_REALTIMEMSG:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为即时消息类任务");
+                                    switch (tagName) {
+                                        case "bgcolor":
+                                            realTimeMsgBean.setBgcolor(parser.nextText());
+                                            break;
+                                        case "fontcolor":
+                                            realTimeMsgBean.setFontcolor(parser.nextText());
+                                            break;
+                                        case "count":
+                                            realTimeMsgBean.setCount(parser.getName());
+                                            break;
+                                        case "starttime":
+                                            realTimeMsgBean.setStarttime(parser.nextText());
+                                            break;
+                                        case "endtime":
+                                            realTimeMsgBean.setEndtime(parser.nextText());
+                                            break;
+                                        case "message":
+                                            realTimeMsgBean.setMessage(parser.nextText());
+                                            break;
+                                        case "position":
+                                            realTimeMsgBean.setPosition(parser.nextText());
+                                            break;
+                                        case "speed":
+                                            realTimeMsgBean.setSpeed(parser.nextText());
+                                            break;
+                                        case "timelength":
+                                            realTimeMsgBean.setTimelength(parser.nextText());
+                                            break;
+                                        case "fontsize":
+                                            realTimeMsgBean.setFontsize(parser.nextText());
+                                            break;
+                                    }
+                                    break;
+                                case Constant.POLLING_CANCELREALTIMEMSG:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为取消即时消息类任务");
+                                    break;
+                                case Constant.POLLING_CONFIG:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为终端配置类任务");
+                                    switch (tagName) {
+                                        case "startuptime":
+                                            configBean.setStaruptime(parser.nextText());
+                                            break;
+                                        case "shutdowntime":
+                                            configBean.setShutdowntime(parser.nextText());
+                                            break;
+                                        case "diskspacealarm":
+                                            configBean.setDiskspacealarm(parser.nextText());
+                                            break;
+                                        case "serverconfig":
+                                            configBean.setServerconfig(parser.nextText());
+                                            break;
+                                        case "selectinterval":
+                                            configBean.setSelectinterval(parser.nextText());
+                                            break;
+                                        case "volume":
+                                            configBean.setVolume(parser.nextText());
+                                            break;
+                                        case "ftpserver":
+                                            configBean.setFtpserver(parser.nextText());
+                                            break;
+                                        case "httpserver":
+                                            configBean.setHttpserver(parser.nextText());
+                                            break;
+                                        case "downloadrate":
+                                            configBean.setDownloadrate(parser.nextText());
+                                            break;
+                                        case "downloadtime":
+                                            configBean.setDownloadtime(parser.nextText());
+                                            break;
+                                        case "logserver":
+                                            configBean.setLogserver(parser.nextText());
+                                            break;
+                                        case "uploadlogtime":
+                                            configBean.setUploadlogtime(parser.nextText());
+                                            break;
+                                        case "keeplogtime":
+                                            configBean.setKeeplogtime(parser.nextText());
+                                            break;
+                                    }
+                                    break;
+                                case Constant.POLLING_CONTROLPROGRAM:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为播放任务控制类任务");
+                                    switch (tagName) {
+                                        case "cmd":
+                                            controlProgramBean.setCmd(parser.nextText());
+                                            break;
+                                    }
+                                    break;
+                                case Constant.POLLING_CFGREPORT:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为终端配置信息日志上报类任务");
+                                    break;
+                                case Constant.POLLING_WORKSTATUSREPORT:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为终端工作状态上报类任务");
+                                    break;
+                                case Constant.POLLING_MONITORREPORT:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为终端在播内容上报类任务");
+                                    break;
+                                case Constant.POLLING_LOGREPORT:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为终端日志上报类任务");
+                                    switch (tagName) {
+                                        case "logtype":
+                                            logReportBean.setLogtype(parser.nextText());
+                                            break;
+                                    }
+                                    break;
+                                case Constant.POLLING_DOWNLOADRES:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为通知终端下载资源文件类任务");
+                                    switch (tagName) {
+                                        case "csize":
+                                            String temp=parser.nextText();
+                                            Log.e("文件大小",temp);
+                                            boolean a=(downLoadFileBean==null);
+                                            Log.e("LoadFileBean是否为空",a+"");
+                                            downLoadFileBean.setCsize(Integer.parseInt(temp));
+                                            break;
+                                        case "link":
+                                            downLoadFileBean.setLink(parser.nextText());
+                                            break;
+                                        case "md5":
+                                            downLoadFileBean.setMd5(parser.nextText());
+                                            break;
+                                        case "playmode":
+                                            downLoadFileBean.setPlaymode(Integer.parseInt(parser.nextText()));
+                                            break;
+                                    }
+                                    break;
+                                case Constant.POLLING_DOWNLOADSTATUSREPORT:
+                                    LogUtils.e("XmlUtils", "检测到数据类型为通知终端上报资源下载状态类任务");
+                                    break;
+                            }
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        String endTagName = parser.getName();
+                        switch (endTagName) {
+
+
+                            case "taskitem":
+
+                                switch (taskItem.getTasktype()) {
+                                    case Constant.POLLING_PROGRAM:
+                                        taskItem.setT(programs);
+                                        break;
+                                    case Constant.POLLING_UPGRADE:
+                                        taskItem.setT(upGradeBean);
+                                        break;
+                                    case Constant.POLLING_REALTIMEMSG:
+                                        taskItem.setT(realTimeMsgBean);
+                                        break;
+                                    case Constant.POLLING_CANCELREALTIMEMSG:
+
+                                        break;
+                                    case Constant.POLLING_CONFIG:
+                                        taskItem.setT(configBean);
+                                        break;
+                                    case Constant.POLLING_CONTROLPROGRAM:
+                                        taskItem.setT(controlProgramBean);
+                                        break;
+                                    case Constant.POLLING_CFGREPORT:
+                                        break;
+                                    case Constant.POLLING_WORKSTATUSREPORT:
+                                        break;
+                                    case Constant.POLLING_MONITORREPORT:
+                                        break;
+                                    case Constant.POLLING_LOGREPORT:
+                                        taskItem.setT(logReportBean);
+                                        break;
+                                    case Constant.POLLING_DOWNLOADRES:
+                                        taskItem.setT(loadFileBeanList);
+                                        break;
+                                    case Constant.POLLING_DOWNLOADSTATUSREPORT:
+                                        break;
+                                }
+                                taskItemArrayList.add(taskItem);
+                                taskItem = null;
+                                break;
+                            case "content":
+                                switch (taskItem.getTasktype()) {
+                                    case Constant.POLLING_PROGRAM:
+                                        programs.add(programBean);
+//                                        programBean = null;
+                                        break;
+                                    case Constant.POLLING_DOWNLOADRES:
+                                        loadFileBeanList.add(downLoadFileBean);
+//                                        downLoadFileBean = null;
+                                        break;
+                                }
+                                break;
+                            case "tasklist":
+                                basePollingBean.setTaskitems(taskItemArrayList);
+                                break;
+                        }
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        basePollingBean.setTaskitems(taskItemArrayList);
+                        break;
+
+                }
+                //别忘了用next方法处理下一个事件，忘了的结果就成死循环#_#
+                eventType = parser.next();
+            }
+        } catch (XmlPullParserException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return basePollingBean;
+    }
+
 }
+
+

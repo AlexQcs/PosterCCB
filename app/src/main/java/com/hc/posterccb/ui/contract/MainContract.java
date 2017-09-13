@@ -62,7 +62,7 @@ public class MainContract {
          * @author.Alex.on.a
          * @throw
          */
-        void pollingTask(String command, String mac);
+        void pollingGatTask(String command, String mac);
 
         void downLoadFile(String command, String mac, String path);
 

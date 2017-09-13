@@ -38,6 +38,11 @@ dependencies {
     compile('com.thoughtworks.xstream:xstream:1.4.7') {
         exclude group: 'xmlpull', module: 'xmlpull'
     }
+    compile ('com.squareup.retrofit2:converter-simplexml:2.0.1'){
+        exclude group: 'xpp3', module: 'xpp3'
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'stax', module: 'stax'
+    }
     compile files('libs/pldroid-player-1.6.0.jar')
     compile files('libs/android-xml-json.jar')
     compile files('libs/dom4j-1.6.1.jar')
@@ -64,4 +69,5 @@ dependencies {
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.7.0'
     debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5'
     releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5'
+
 }

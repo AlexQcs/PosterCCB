@@ -1,5 +1,6 @@
 package com.hc.posterccb.http;
 
+import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.http.Body;
 import retrofit2.http.Header;
@@ -18,7 +19,7 @@ public interface HttpService {
     Observable<ResponseBody> polling(@Url String url,@Header("command")String command,@Header("factory")String factory, @Header("mac")String mac);
 
     @POST
-    Observable<ResponseBody> report(@Url String url,@Header("command")String command, @Header("mac")String mac, @Body String xmlStr );
+    Observable<ResponseBody> report(@Url String url,@Header("command")String command, @Header("mac")String mac, @Body RequestBody xmlStr );
 
     @POST
     Observable<ResponseBody> downLoad(@Url String url);

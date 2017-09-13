@@ -1,51 +1,23 @@
 package com.hc.posterccb.bean.polling;
 
 /**
- * Created by alex on 2017/7/14.
- * 配置终端参数任务
+ * Created by alex on 2017/9/8.
  */
 
-public class ConfigBean {
-    public String taskcount;
-    public String tasktype;
-    public String taskid;
-    public String startuptime;//开机时间 HH:MM:SS
-    public String shutdowntime;//关机时间 HH:MM:SS
-    public String diskspacealarm;//硬盘告警阀值，单位（MB）
-    public String serverconfig;//服务器信息 http://ip:port/appname
-    public String selectinterval;//轮询时间间隔，单位（s） 默认值10秒
-    public String volume;//终端音量0-100
-    public String ftpserver;//ftp下载服务器地址列表
-    public String httpserver;//http下载服务器地址列表
-    public String downloadrate;//终端下载速率：kb/s
-    public String downloadtime;//下载时间段：HH:MM:SS- HH:MM:SS，
-    public String logserver;//ftp://user:pwd@serverip:port/logdir
-    public String uploadlogtime;//日志定时上传时间 HH:MM:SS
-    public String keeplogtime;//日志保留时间 默认7天
-
-    public String getTasktype() {
-        return tasktype;
-    }
-
-    public void setTasktype(String tasktype) {
-        this.tasktype = tasktype;
-    }
-
-    public String getTaskcount() {
-        return taskcount;
-    }
-
-    public void setTaskcount(String taskcount) {
-        this.taskcount = taskcount;
-    }
-
-    public String getTaskid() {
-        return taskid;
-    }
-
-    public void setTaskid(String taskid) {
-        this.taskid = taskid;
-    }
+public class ItemBeanConfig{
+    private String startuptime;//开机时间 HH:MM:SS
+    private String shutdowntime;//关机时间 HH:MM:SS
+    private String diskspacealarm;//硬盘告警阀值，单位（MB）
+    private String serverconfig;//服务器信息 http://ip:port/appname
+    private String selectinterval;//轮询时间间隔，单位（s） 默认值10秒
+    private String volume;//终端音量0-100
+    private String ftpserver;//ftp下载服务器地址列表
+    private String httpserver;//http下载服务器地址列表
+    private String downloadrate;//终端下载速率：kb/s
+    private String downloadtime;//下载时间段：HH:MM:SS- HH:MM:SS，
+    private String logserver;//ftp://user:pwd@serverip:port/logdir
+    private String uploadlogtime;//日志定时上传时间 HH:MM:SS
+    private String keeplogtime;//日志保留时间 默认7天
 
     public String getStaruptime() {
         return startuptime;
@@ -149,5 +121,24 @@ public class ConfigBean {
 
     public void setKeeplogtime(String keeplogtime) {
         this.keeplogtime = keeplogtime;
+    }
+
+    @Override
+    public String toString() {
+        return "ItemBeanConfig{" +
+                "startuptime='" + startuptime + '\'' +
+                ", shutdowntime='" + shutdowntime + '\'' +
+                ", diskspacealarm='" + diskspacealarm + '\'' +
+                ", serverconfig='" + serverconfig + '\'' +
+                ", selectinterval='" + selectinterval + '\'' +
+                ", volume='" + volume + '\'' +
+                ", ftpserver='" + ftpserver + '\'' +
+                ", httpserver='" + httpserver + '\'' +
+                ", downloadrate='" + downloadrate + '\'' +
+                ", downloadtime='" + downloadtime + '\'' +
+                ", logserver='" + logserver + '\'' +
+                ", uploadlogtime='" + uploadlogtime + '\'' +
+                ", keeplogtime='" + keeplogtime + '\'' +
+                '}';
     }
 }
