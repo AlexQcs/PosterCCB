@@ -1,5 +1,7 @@
 package com.hc.posterccb.ui.fragment;
 
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.widget.RelativeLayout;
 
 import com.hc.posterccb.Constant;
@@ -35,9 +37,6 @@ public class Second_V_Fragment extends BaseFragment<BaseFrgmPresenter> implement
     @BindView(R.id.rel_two)
     RelativeLayout mRelTwo;
 
-    @BindView(R.id.rel_three)
-    RelativeLayout mRelThree;
-
     private String mProgramsPath = Constant.VIDEO1_PATH;
 
 
@@ -46,6 +45,7 @@ public class Second_V_Fragment extends BaseFragment<BaseFrgmPresenter> implement
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void setAreaView(Date date, ProgramRes programRes, boolean isovertime) {
         switch (programRes.getArea()) {

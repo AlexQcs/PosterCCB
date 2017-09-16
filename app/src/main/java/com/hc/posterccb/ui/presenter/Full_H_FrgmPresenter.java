@@ -1,37 +1,37 @@
 package com.hc.posterccb.ui.presenter;
 
-import com.hc.posterccb.base.BaseFragment;
 import com.hc.posterccb.base.BasePresenter;
 import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.mvp.IModel;
-import com.hc.posterccb.ui.contract.BaseFrgmContract;
-import com.hc.posterccb.ui.model.BaseFrgmModel;
+import com.hc.posterccb.ui.contract.Full_H_Constract;
+import com.hc.posterccb.ui.fragment.Full_H_Fragment;
+import com.hc.posterccb.ui.model.Full_H_Model;
 
 import java.util.HashMap;
 
 /**
- * Created by alex on 2017/8/2.
+ * Created by alex on 2017/9/15.
  */
 
-public class BaseFrgmPresenter extends BasePresenter<BaseFragment> implements BaseFrgmContract.FrgmPresenter {
+public class Full_H_FrgmPresenter extends BasePresenter<Full_H_Fragment> implements Full_H_Constract.FrgmPresenter {
     @Override
     public void getProgramList(Program program) {
         if (program==null)return;
         if (!getIView().checkPostParamNull()) {
-            ((BaseFrgmModel) getiModelMap().get("postplaylog")).getProgram(program, new BaseFrgmModel.InfoHint() {
+            ((Full_H_Model) getiModelMap().get("postplaylog")).getProgram(program, new Full_H_Model.InfoHint() {
                 @Override
                 public void playVideo(Program program) {
-//                    getIView().playProgram(program);
+                    getIView().playProgram(program);
                 }
 
                 @Override
                 public void playErrorLog(String msg) {
-//                    getIView().playSuccess(msg);
+                    getIView().playSuccess(msg);
                 }
 
                 @Override
                 public void playSuccessLog(String msg) {
-//                    getIView().playError(msg);
+                    getIView().playError(msg);
                 }
             });
         }
@@ -39,7 +39,7 @@ public class BaseFrgmPresenter extends BasePresenter<BaseFragment> implements Ba
 
     @Override
     public HashMap<String, IModel> getiModelMap() {
-        return loadModelMap(new BaseFrgmModel());
+        return loadModelMap(new Full_H_Model());
     }
 
     @Override

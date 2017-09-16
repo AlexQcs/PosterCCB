@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
+import com.hc.posterccb.application.ProApplication;
 import com.hc.posterccb.base.BaseActivity;
 import com.hc.posterccb.base.BaseFragment;
 import com.hc.posterccb.bean.polling.RealTimeMsgBean;
@@ -58,7 +59,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     private Three_H_Fragment mThree_H_Fragment;
 
     private android.support.v4.app.FragmentManager mFragmentManager;
-    private FragmentTransaction mFragmentTransaction;
+//    private FragmentTransaction mFragmentTransaction;
 
     private String TAG = "MainActivity";
 
@@ -76,6 +77,8 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     //区分即时消息类的位置
     private String mRealTimePosition = "top";
 
+    private ProApplication mApplication = ProApplication.getInstance();
+
     @Override
     protected MainPresenter loadPresenter() {
         return new MainPresenter();
@@ -87,16 +90,14 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         FileUtils.checkAppFile();
         long unused = MemInfo.getAvailableSize();
         LogUtils.e(TAG, "剩余内存" + unused);
-        mMac=mMac.toUpperCase();
-        mMac=mMac.replaceAll(":","-");
-        LogUtils.e(TAG,"mac地址"+mMac);
+        mMac = mMac.toUpperCase();
+        mMac = mMac.replaceAll(":", "-");
+        LogUtils.e(TAG, "mac地址" + mMac);
 
-        mPresenter.pollingGatTask(mTaskName, mMac);
+        mPresenter.pollingGetTask(mTaskName, mMac);
         mPresenter.checkLicense();
         mPresenter.initConfig();
     }
-
-
 
     @Override
     protected void initListener() {
@@ -129,40 +130,114 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     protected void initView() {
 
         mFragmentManager = getSupportFragmentManager();
-        mFragmentTransaction = mFragmentManager.beginTransaction();
 
     }
 
     //播放模板替换
-    private void replaceModel(String modelStr) {
+    private ActivityInteraction replaceModel(String modelStr) {
 
-        switch (modelStr) {
 
-            case "model_full_h":
-                mFull_H_Fragment = new Full_H_Fragment();
-                mFragmentTransaction.replace(R.id.frame_fragment, mFull_H_Fragment, "model_full_h");
-                mFragmentTransaction.commit();
-                break;
-            case "model_full_v":
-                mFull_V_fragment = new Full_V_Fragment();
-                mFragmentTransaction.replace(R.id.frame_fragment, mFull_V_fragment, "model_full_v");
-                mFragmentTransaction.commit();
-                break;
-            case "model_second_h":
-                mSecond_H_fragment = new Second_H_Fragment();
-                mFragmentTransaction.replace(R.id.frame_fragment, mSecond_H_fragment, "model_second_h");
-                mFragmentTransaction.commit();
-                break;
-            case "model_second_v":
-                mSecond_V_fragment = new Second_V_Fragment();
-                mFragmentTransaction.replace(R.id.frame_fragment, mSecond_V_fragment, "model_second_v");
-                mFragmentTransaction.commit();
-                break;
-            case "model_three_h":
-                mThree_H_Fragment = new Three_H_Fragment();
-                mFragmentTransaction.replace(R.id.frame_fragment, mThree_H_Fragment, "model_three_h");
-                mFragmentTransaction.commit();
-                break;
+//        String model= mApplication.getDisplayModel();
+//        switch (modelStr) {
+//            case "model_full_h":
+//                LogE("模板为：竖直全屏");
+//                if (model==null||!modelStr.equals(model)){
+//                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+//                    if (mFull_H_Fragment==null){
+//                        mFull_H_Fragment=new Full_H_Fragment();
+//                        mFragmentTransaction.add(R.id.frame_fragment,mFull_H_Fragment,"model_full_h");
+//                    }
+//                    hideFragment(mFragmentTransaction);
+//                    mFragmentTransaction.show(mFull_H_Fragment);
+//                    mApplication.setDisplayModel(modelStr);
+//                    mFragmentTransaction.commit();
+//                }
+//                return mFull_H_Fragment;
+//            case "model_full_v":
+//                LogE("模板为：横向全屏");
+//                if (model==null||!modelStr.equals(model)){
+////                    mFragmentTransaction = mFragmentManager.beginTransaction();
+////                    mFragmentTransaction.replace(R.id.frame_fragment, mFull_V_fragment, modelStr);
+//                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+//                    if (mFull_V_fragment==null){
+//                        mFull_V_fragment=new Full_V_Fragment();
+//                        mFragmentTransaction.add(R.id.frame_fragment,mFull_V_fragment,"model_full_h");
+//                    }
+//                    hideFragment(mFragmentTransaction);
+//                    mFragmentTransaction.show(mFull_V_fragment);
+//                    mApplication.setDisplayModel(modelStr);
+//                    mFragmentTransaction.commit();
+//                }
+//                return mFull_V_fragment;
+//            case "model_second_h":
+//                LogE("模板为：竖直双版");
+//
+//                if (model==null||!modelStr.equals(model)){
+////                    mFragmentTransaction = mFragmentManager.beginTransaction();
+////                    mFragmentTransaction.replace(R.id.frame_fragment, mSecond_H_fragment, modelStr);
+//                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+//                    if (mSecond_H_fragment==null){
+//                        mSecond_H_fragment=new Second_H_Fragment();
+//                        mFragmentTransaction.add(R.id.frame_fragment,mSecond_H_fragment,"model_full_h");
+//                    }
+//                    hideFragment(mFragmentTransaction);
+//                    mFragmentTransaction.show(mSecond_H_fragment);
+//                    mApplication.setDisplayModel(modelStr);
+//                    mFragmentTransaction.commit();
+//                }
+//                return mSecond_H_fragment;
+//            case "model_second_v":
+//                LogE("模板为：横向双版");
+//                if (model==null||!modelStr.equals(model)){
+////                    mFragmentTransaction = mFragmentManager.beginTransaction();
+////                    mFragmentTransaction.replace(R.id.frame_fragment, mSecond_V_fragment, modelStr);
+//                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+//                    if (mSecond_V_fragment==null){
+//                        mSecond_V_fragment=new Second_V_Fragment();
+//                        mFragmentTransaction.add(R.id.frame_fragment,mSecond_V_fragment,"model_full_h");
+//                    }
+//                    hideFragment(mFragmentTransaction);
+//                    mFragmentTransaction.show(mSecond_V_fragment);
+//                    mApplication.setDisplayModel(modelStr);
+//                    mFragmentTransaction.commit();
+//                }
+//                return mSecond_V_fragment;
+//            case "model_three_h":
+//                LogE("模板为：全屏三版");
+//
+//                if (model==null||!modelStr.equals(model)){
+////                    mFragmentTransaction = mFragmentManager.beginTransaction();
+////                    mFragmentTransaction.replace(R.id.frame_fragment, mThree_H_Fragment, "model_three_h");
+//                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+//                    if (mThree_H_Fragment==null){
+//                        mThree_H_Fragment=new Three_H_Fragment();
+//                        mFragmentTransaction.add(R.id.frame_fragment,mThree_H_Fragment,"model_full_h");
+//                    }
+//                    hideFragment(mFragmentTransaction);
+//                    mFragmentTransaction.show(mThree_H_Fragment);
+//                    mApplication.setDisplayModel(modelStr);
+//                    mFragmentTransaction.commit();
+//                }
+//                return mThree_H_Fragment;
+//        }
+        return mFull_H_Fragment;
+    }
+
+    private void hideFragment(FragmentTransaction transaction) {
+        if (mFull_H_Fragment != null) {
+            transaction.hide(mFull_H_Fragment);
+        }
+        if (mFull_V_fragment != null) {
+            transaction.hide(mFull_V_fragment);
+        }
+        if (mSecond_H_fragment != null) {
+            transaction.hide(mSecond_H_fragment);
+        }
+        if (mSecond_V_fragment != null) {
+            transaction.hide(mSecond_V_fragment);
+        }
+        if (mThree_H_Fragment != null) {
+            transaction.hide(mThree_H_Fragment);
         }
     }
 
@@ -200,7 +275,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mRealTimePosition = position;
         if (position.equals("top")) {
             setMarqueeTextView(mStvRealTimeTop, bean);
-
         } else if (position.equals("under")) {
             setMarqueeTextView(mStvRealTimeBottom, bean);
         }
@@ -260,7 +334,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     public void cancleInterruptVideo() {
         mInteraction.interruptCancle();
         try {
-            FileUtils.coverTxtToFile("", Constant.LOCAL_PROGRAM_INTER_TXT);
+            FileUtils.coverTxtToFile("", Constant.LOCAL_INSERT_PROGRAM_LIST_PATH);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -280,13 +354,107 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     @Override
     public void logicNormalProgram(Program program) {
-        replaceModel(program.areatype);
+//        mInteraction = replaceModel(program.areatype);
+
+        String model = mApplication.getDisplayModel();
+        String modelStr = program.areatype;
+        switch (modelStr) {
+            case "model_full_h":
+                LogE("模板为：竖直全屏");
+                if (model == null || !modelStr.equals(model)) {
+                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    if (mFull_H_Fragment == null) {
+                        mFull_H_Fragment = new Full_H_Fragment();
+                        mFragmentTransaction.add(R.id.frame_fragment, mFull_H_Fragment, "model_full_h");
+                    }
+                    hideFragment(mFragmentTransaction);
+                    mFragmentTransaction.show(mFull_H_Fragment);
+                    mApplication.setDisplayModel(modelStr);
+                    mFragmentTransaction.commit();
+                    mInteraction = mFull_H_Fragment;
+                }
+                break;
+            case "model_full_v":
+                LogE("模板为：横向全屏");
+                if (model == null || !modelStr.equals(model)) {
+//                    mFragmentTransaction = mFragmentManager.beginTransaction();
+//                    mFragmentTransaction.replace(R.id.frame_fragment, mFull_V_fragment, modelStr);
+                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    if (mFull_V_fragment == null) {
+                        mFull_V_fragment = new Full_V_Fragment();
+                        mFragmentTransaction.add(R.id.frame_fragment, mFull_V_fragment, "model_full_h");
+                    }
+                    hideFragment(mFragmentTransaction);
+                    mFragmentTransaction.show(mFull_V_fragment);
+                    mApplication.setDisplayModel(modelStr);
+                    mFragmentTransaction.commit();
+                    mInteraction = mFull_V_fragment;
+                }
+                break;
+            case "model_second_h":
+                LogE("模板为：竖直双版");
+
+                if (model == null || !modelStr.equals(model)) {
+//                    mFragmentTransaction = mFragmentManager.beginTransaction();
+//                    mFragmentTransaction.replace(R.id.frame_fragment, mSecond_H_fragment, modelStr);
+                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    if (mSecond_H_fragment == null) {
+                        mSecond_H_fragment = new Second_H_Fragment();
+                        mFragmentTransaction.add(R.id.frame_fragment, mSecond_H_fragment, "model_full_h");
+                    }
+                    hideFragment(mFragmentTransaction);
+                    mFragmentTransaction.show(mSecond_H_fragment);
+                    mApplication.setDisplayModel(modelStr);
+                    mFragmentTransaction.commit();
+                    mInteraction = mSecond_H_fragment;
+                }
+                break;
+            case "model_second_v":
+                LogE("模板为：横向双版");
+                if (model == null || !modelStr.equals(model)) {
+//                    mFragmentTransaction = mFragmentManager.beginTransaction();
+//                    mFragmentTransaction.replace(R.id.frame_fragment, mSecond_V_fragment, modelStr);
+                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    if (mSecond_V_fragment == null) {
+                        mSecond_V_fragment = new Second_V_Fragment();
+                        mFragmentTransaction.add(R.id.frame_fragment, mSecond_V_fragment, "model_full_h");
+                    }
+                    hideFragment(mFragmentTransaction);
+                    mFragmentTransaction.show(mSecond_V_fragment);
+                    mApplication.setDisplayModel(modelStr);
+                    mFragmentTransaction.commit();
+                    mInteraction = mSecond_V_fragment;
+                }
+                break;
+            case "model_three_h":
+                LogE("模板为：全屏三版");
+
+                if (model == null || !modelStr.equals(model)) {
+//                    mFragmentTransaction = mFragmentManager.beginTransaction();
+//                    mFragmentTransaction.replace(R.id.frame_fragment, mThree_H_Fragment, "model_three_h");
+                    FragmentTransaction mFragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    if (mThree_H_Fragment == null) {
+                        mThree_H_Fragment = new Three_H_Fragment();
+                        mFragmentTransaction.add(R.id.frame_fragment, mThree_H_Fragment, "model_full_h");
+                    }
+                    hideFragment(mFragmentTransaction);
+                    mFragmentTransaction.show(mThree_H_Fragment);
+                    mApplication.setDisplayModel(modelStr);
+                    mFragmentTransaction.commit();
+                    mInteraction = mThree_H_Fragment;
+                }
+                break;
+        }
+
+        if (mInteraction == null) {
+            LogE("找不到对应模板");
+        }
         mInteraction.playNormalProgram(program);
     }
 
     @Override
     public void logicInterProgram(Program program) {
-        replaceModel(program.areatype);
+        mInteraction = replaceModel(program.areatype);
         mInteraction.playInterProgram(program);
     }
 
@@ -303,7 +471,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         //播放的内容
         String message = bean.getMessage();
         view.setTextSize(fontSize);
-        view.setText(message,TextView.BufferType.SPANNABLE);
+        view.setText(message, TextView.BufferType.SPANNABLE);
         view.setBackgroundColor(bgColor);
         view.setTextColor(fontColor);
         switch (speed) {
@@ -320,13 +488,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         //播放时长或者播放时间
         if (!("").equals(bean.getCount())) {
             int count = parseInt(bean.getCount());
-            view.init(getWindowManager(),count);
+            view.init(getWindowManager(), count);
         } else if (!("").equals(bean.getTimelength())) {
             int timeLength = parseInt(bean.getTimelength());
         }
-
-
-
 
 
     }

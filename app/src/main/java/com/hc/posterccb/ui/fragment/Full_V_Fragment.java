@@ -1,5 +1,7 @@
 package com.hc.posterccb.ui.fragment;
 
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.widget.RelativeLayout;
 
 import com.hc.posterccb.Constant;
@@ -30,6 +32,11 @@ public class Full_V_Fragment extends BaseFragment<BaseFrgmPresenter> implements
 
     private String mProgramsPath = Constant.VIDEO1_PATH;
 
+
+    @Override
+    public void playProgram(Program program) {
+
+    }
 
     @Override
     public void playSuccess(String msg) {
@@ -65,6 +72,7 @@ public class Full_V_Fragment extends BaseFragment<BaseFrgmPresenter> implements
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void setAreaView(Date date, ProgramRes programRes, boolean isovertime) {
         switch (programRes.getArea()) {

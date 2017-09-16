@@ -20,7 +20,7 @@ public class MainPresenter extends BasePresenter<MainActivity>
 
 
     @Override
-    public void pollingGatTask(String command, String mac) {
+    public void pollingGetTask(String command, String mac) {
         if (!getIView().checkPostParamNull()) {
             ((MainModel) getiModelMap().get("polling")).pollingTask(command, mac, new MainModel.InfoHint() {
                 //轮询成功
@@ -60,15 +60,6 @@ public class MainPresenter extends BasePresenter<MainActivity>
                     getIView().cancleRealtimeTask();
                 }
 
-                @Override
-                public void logicNormalProgram(Program program) {
-                    getIView().logicNormalProgram(program);
-                }
-
-                @Override
-                public void logicInterProgram(Program program) {
-                    getIView().logicInterProgram(program);
-                }
 
                 //暂停播放
                 @Override
@@ -92,6 +83,16 @@ public class MainPresenter extends BasePresenter<MainActivity>
                 @Override
                 public void videoInterruptCancle() {
                     getIView().cancleInterruptVideo();
+                }
+            }, new MainModel.InfoPlay() {
+                @Override
+                public void logicNormalProgram(Program bean) {
+                    getIView().logicNormalProgram(bean);
+                }
+
+                @Override
+                public void logicInterProgram(Program bean) {
+                    getIView().logicInterProgram(bean);
                 }
             });
         }
@@ -124,8 +125,28 @@ public class MainPresenter extends BasePresenter<MainActivity>
     @Override
     public void initConfig() {
         if (!getIView().checkPostParamNull()) {
-            ((MainModel) getiModelMap().get("initconfig")).init();
+            ((MainModel) getiModelMap().get("initconfig")).init(new MainModel.InfoPlay() {
+                @Override
+                public void logicNormalProgram(Program bean) {
+                    getIView().logicNormalProgram(bean);
+                }
+
+                @Override
+                public void logicInterProgram(Program bean) {
+                    getIView().logicInterProgram(bean);
+                }
+            });
         }
+    }
+
+    @Override
+    public void logicNomalPlay() {
+
+    }
+
+    @Override
+    public void logicInserPlay() {
+
     }
 
 

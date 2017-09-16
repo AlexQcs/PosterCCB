@@ -23,6 +23,7 @@ public class ProApplication extends Application {
     private static Context mContext;
     private Program mProgram; //当前节目单
     private boolean mIsPlay;  //是否有节目单正在播放
+    private String mDisplayModel;
     private Program mDefProgram;
     private ResourceBean mResourceBean;
     private ProgramRes mProgramRes;
@@ -52,6 +53,14 @@ public class ProApplication extends Application {
             }
         }
 
+    }
+
+    public String getDisplayModel() {
+        return mDisplayModel;
+    }
+
+    public void setDisplayModel(String displayModel) {
+        mDisplayModel = displayModel;
     }
 
     public static String getProcessName(Context cxt, int pid) {

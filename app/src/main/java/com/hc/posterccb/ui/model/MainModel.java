@@ -114,7 +114,7 @@ public class MainModel extends BaseModel {
 
 
     //轮询任务
-    public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint) {
+    public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint, @NonNull final InfoPlay infoPlay) {
         if (infoHint == null)
             throw new RuntimeException("InfoHint不能为空");
         Observable.just(mac)
@@ -127,18 +127,18 @@ public class MainModel extends BaseModel {
                 });
 //        mPollingTimer= (int) SpUtils.get("selectinterval",10);
         mPollingTimer = 10;
-        pollingLogic(mPollingTimer, command, mac, infoHint);
+        pollingLogic(mPollingTimer, command, mac, infoHint, infoPlay);
     }
 
     //轮询逻辑，便于递归调用
-    public void pollingLogic(int pollingTimer, @NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint) {
+    public void pollingLogic(int pollingTimer, @NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint, @NonNull final InfoPlay infoPlay) {
         Observable.interval(pollingTimer, TimeUnit.SECONDS)
                 .takeUntil(new Func1<Long, Boolean>() {
                     @Override
                     public Boolean call(Long aLong) {
                         int temptimer = (int) SpUtils.get("selectinterval", 10);
                         if (pollingTimer != temptimer) {
-                            pollingLogic(temptimer, command, mac, infoHint);
+                            pollingLogic(temptimer, command, mac, infoHint, infoPlay);
                             return true;
                         } else {
                             return false;
@@ -168,7 +168,7 @@ public class MainModel extends BaseModel {
                                                 if (taskItems == null || taskItems.size() == 0)
                                                     return;
                                                 for (AbstractBeanTaskItem item : taskItems) {
-                                                    resResult(item, infoHint);
+                                                    resResult(item, infoHint, infoPlay);
                                                 }
 
                                             } catch (Exception e) {
@@ -211,8 +211,9 @@ public class MainModel extends BaseModel {
 
     }
 
-    public void init() {
+    public void init(@NonNull final InfoPlay infoHint) {
 //        configSystem();
+        logicNormalProgram(infoHint);
     }
 
     //系统配置
@@ -287,7 +288,7 @@ public class MainModel extends BaseModel {
     }
 
     //处理轮询任务返回
-    private void resResult(AbstractBeanTaskItem item, InfoHint infoHint) {
+    private void resResult(AbstractBeanTaskItem item, InfoHint infoHint, InfoPlay infoPlay) {
 
         String id = item.getTaskid();
         String taskType = item.getTasktype();
@@ -295,7 +296,7 @@ public class MainModel extends BaseModel {
             //播放类任务
             case Constant.POLLING_PROGRAM: {
                 ArrayList<ItemBeanProgram> list = (ArrayList<ItemBeanProgram>) item.getT();
-                resProgram(list, infoHint);
+                resProgram(list, infoPlay);
                 break;
             }
             //升级类任务
@@ -425,7 +426,7 @@ public class MainModel extends BaseModel {
 
     //终端在播内容上报
     private void reportMonitor() {
-        String jsonStr = getStringFromTxT(Constant.LOCAL_PROGRAM_TXT);
+        String jsonStr = getStringFromTxT(Constant.LOCAL_PROGRAM_CFG);
         if (!jsonStr.equals("")) {
 
         }
@@ -664,8 +665,6 @@ public class MainModel extends BaseModel {
                         httpService.downLoad(url)
                                 .subscribeOn(Schedulers.io())
                                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
-
-
                                     @Override
                                     public void onNext(ResponseBody body) {
                                         File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + DownFileUtils.getResourceName(bean.getLink()));
@@ -675,7 +674,7 @@ public class MainModel extends BaseModel {
                                             Log.e(TAG, "下载资源文件列表成功");
                                             downLoadResource(file.getPath());
                                         } else {
-                                            Log.e(TAG, "资源文件列表文件非法");
+                                            Log.e(TAG, "下载资源文件列表文件md5不对应");
                                         }
                                     }
                                 });
@@ -739,7 +738,7 @@ public class MainModel extends BaseModel {
                                         String dateStr = DateFormatUtils.date2String(date, "HH:mm");
                                         Set<String> tempSet = new HashSet<>();
                                         if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
-                                            String url = (String) SpUtils.get("baseurl", Api.BASE_URL)+bean.getHref();
+                                            String url = (String) SpUtils.get("baseurl", Api.BASE_URL) + bean.getHref();
                                             httpService.downLoad(url)
                                                     .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
 
@@ -815,12 +814,12 @@ public class MainModel extends BaseModel {
     }
 
     //播放节目单类任务
-    private void resProgram(ArrayList<ItemBeanProgram> list, InfoHint infoHint) {
+    private void resProgram(ArrayList<ItemBeanProgram> list, InfoPlay infoPlay) {
 
         String arrayStr = JsonUtils.ArrayList2JsonStr(list);
         LogUtils.e("resProgram", arrayStr);
         try {
-            FileUtils.coverTxtToFile(arrayStr, Constant.LOCAL_PROGRAM_TXT);
+            FileUtils.coverTxtToFile(arrayStr, Constant.LOCAL_PROGRAM_CFG);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -835,13 +834,13 @@ public class MainModel extends BaseModel {
                 .subscribe(new Action1<ItemBeanProgram>() {
                     @Override
                     public void call(ItemBeanProgram bean) {
-                        downloadProgram(bean, infoHint);
+                        downloadProgram(bean, infoPlay);
                     }
                 });
     }
 
     //下载播放节目单
-    private void downloadProgram(ItemBeanProgram bean, InfoHint infoHint) {
+    private void downloadProgram(ItemBeanProgram bean, InfoPlay infoPlay) {
         LogUtils.e("ProgramBean", bean.toString());
         String url = bean.getLink();
         String[] array = url.split("/");
@@ -849,9 +848,9 @@ public class MainModel extends BaseModel {
         int playmode = Integer.parseInt(bean.getPlaymode());
         String filename = array[array.length - 1];
         if (playmode == 1) {
-            filename = "program.txt";
+            filename = "program.xml";
         } else {
-            filename = "insert_program.txt";
+            filename = "insert_program.xml";
         }
         String finalFilename = filename;
         httpService.downLoad(url)
@@ -859,7 +858,7 @@ public class MainModel extends BaseModel {
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody body) {
-                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + finalFilename);
+                        File file = new File(Constant.LOCAL_PROGRAM_MEDIACFG_PATH + "/" + finalFilename);
                         Log.e(TAG, "下载资源文件列表");
                         DownFileUtils.writeFile2Disk(body, file);
                     }
@@ -876,12 +875,12 @@ public class MainModel extends BaseModel {
                         if (MD5.decode(file, bean.md5)) {
                             LogUtils.e("下载播放列表", finalFilename + "下载成功");
                             if (playmode == 1) {
-                                logicNomalProgram(infoHint);
+                                logicNormalProgram(infoPlay);
                             } else {
-                                logicInterProgram(infoHint);
+                                logicInterProgram(infoPlay);
                             }
                         } else {
-                            LogUtils.e("下载播放列表", finalFilename + "下载失败");
+                            LogUtils.e("下载播放列表", finalFilename + "  文件md5不对应");
                         }
                     }
                 });
@@ -910,9 +909,9 @@ public class MainModel extends BaseModel {
     }
 
     //正常播放任务逻辑
-    private void logicNomalProgram(InfoHint infoHint) {
+    private void logicNormalProgram(InfoPlay infoPlay) {
 
-        String xmlNormalStr = getStringFromTxT(Constant.LOCAL_PROGRAM_NORMAL_TXT);
+        String xmlNormalStr = getStringFromTxT(Constant.LOCAL_PROGRAM_LIST_PATH);
         if (xmlNormalStr.equals("")) {
             LogUtils.e(TAG, "正常播放节目单为空");
             return;
@@ -921,76 +920,91 @@ public class MainModel extends BaseModel {
         mProgramList = XmlUtils.parseNormalProgramXml(xmlNormalStr);
 
         for (Program program : mProgramList) {
-            if (program.getType().equals("defaultpls")) {
+            if (program.getType().equals(Constant.SP_PROGRAM_DEF)) {
+                program.setMode(Constant.PROGRAM_MODE_DEF);
                 mApplication.setDefProgram(program);
-                SpUtils.put("defaultpls", program);
+                SpUtils.put(Constant.SP_PROGRAM_DEF, program);
             }
         }
         interval(1, TimeUnit.SECONDS)
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        Observable.just(mProgramList)
-                                .flatMap(new Func1<List<Program>, Observable<Program>>() {
-                                    @Override
-                                    public Observable<Program> call(List<Program> programs) {
-                                        return Observable.from(programs);
-                                    }
-                                })
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Subscriber<Program>() {
-                                    @Override
-                                    public void onCompleted() {
+                        normalProgram(infoPlay);
+                    }
+                });
+    }
 
-                                    }
+    //正常播放任务
+    private void normalProgram(InfoPlay infoPlay) {
+        Observable.just(mProgramList)
+                .flatMap(new Func1<List<Program>, Observable<Program>>() {
+                    @Override
+                    public Observable<Program> call(List<Program> programs) {
+                        return Observable.from(programs);
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<Program>() {
+                    @Override
+                    public void onCompleted() {
+                    }
 
-                                    @Override
-                                    public void onError(Throwable e) {
+                    @Override
+                    public void onError(Throwable e) {
 
-                                    }
+                    }
 
-                                    @Override
-                                    public void onNext(Program program) {
-                                        if (program.getType().equals("defaultpls")) return;
-                                        Date date = new Date(System.currentTimeMillis());
-                                        Date stdtime = DateFormatUtils.string2Date(program.getStdtime(), "HH:ss");
-                                        Date edtime = DateFormatUtils.string2Date(program.getEdtime(), "HH:ss");
-                                        Program curProgram = mApplication.getProgram();
+                    @Override
+                    public void onNext(Program program) {
+                        if (program.getType().equals("defaultpls")) return;
+                        Date date = new Date(System.currentTimeMillis());
+                        String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
+                        String stdtimeStr = nowdate + program.getStdtime();
+                        String edtimeStr = nowdate + program.getEdtime();
+                        Date stdtime = DateFormatUtils.string2Date(stdtimeStr, "yyyy-MM-dd HH:mm");
+                        Date edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
+                        Program curProgram = mApplication.getProgram();
 
-                                        //
-                                        if (date.after(stdtime) && date.before(edtime)) {
-                                            if (mApplication.isPlay() && curProgram.equals(program)) {
-                                                return;
-                                            } else {
-                                                infoHint.logicNormalProgram(program);
-                                            }
-                                            Log.e("正常播放节目单", program.toString() + "---");
-                                        } else if (program.getStdtime().equals("") && program.getEdtime().equals("")) {
-                                            if (mApplication.isPlay() && curProgram.equals(program)) {
-                                                return;
-                                            } else {
-                                                infoHint.logicNormalProgram(program);
-                                            }
-                                        } else {
-                                            infoHint.logicNormalProgram(mApplication.getDefProgram());
-                                        }
-                                    }
-                                });
+                        //
+                        if (date.after(stdtime) && date.before(edtime)) {
+
+                            if (mApplication.isPlay() && curProgram.equals(program)) {
+                                return;
+                            } else {
+                                program.setMode(Constant.PROGRAM_MODE_NORMAL);
+                                infoPlay.logicNormalProgram(program);
+                            }
+                            Log.e("正常播放节目单", program.toString() + "---");
+//                        } else if (program.getEdtime()==null||program.getStdtime()==null||program.getStdtime().equals("") || program.getEdtime().equals("")) {
+//                            if (mApplication.isPlay() && curProgram.equals(program)) {
+//                                return;
+//                            } else {
+//                                program.setMode(Constant.PROGRAM_MODE_NORMAL);
+//                                infoPlay.logicNormalProgram(program);
+//                            }
+//                            Log.e("正常播放节目单", program.toString() + "---");
+//                        }
+                        } else {
+                            program.setMode(Constant.PROGRAM_MODE_DEF);
+                            infoPlay.logicNormalProgram(mApplication.getDefProgram());
+                            Log.e("正常播放节目单", program.toString() + "---");
+                        }
                     }
                 });
     }
 
     //插播播放任务逻辑
-    private void logicInterProgram(InfoHint infoHint) {
-        String xmlInterStr = getStringFromTxT(Constant.LOCAL_PROGRAM_INTER_TXT);
+    private void logicInterProgram(InfoPlay infoPlay) {
+        String xmlInterStr = getStringFromTxT(Constant.LOCAL_INSERT_PROGRAM_LIST_PATH);
         if (xmlInterStr.equals("")) {
             LogUtils.e(TAG, "插播播放节目单为空");
             return;
         }
 
         Program program = XmlUtils.parseInterProgramXml(xmlInterStr);
-
+        program.setMode(Constant.PROGRAM_MODE_INTER);
         Observable.just(program)
                 .subscribeOn(Schedulers.io())
                 .subscribe(new Subscriber<Program>() {
@@ -1006,7 +1020,8 @@ public class MainModel extends BaseModel {
 
                                @Override
                                public void onNext(Program program) {
-                                   infoHint.logicNormalProgram(program);
+                                   program.setMode(Constant.PROGRAM_MODE_INTER);
+                                   infoPlay.logicInterProgram(program);
                                    Log.e("插播播放节目单", program.toString() + "---");
                                }
                            }
@@ -1016,15 +1031,15 @@ public class MainModel extends BaseModel {
     //升级任务
     private void resUpgrade(ItemBeanUpGrade bean) {
         String jsonStr = JsonUtils.Bean2JsonStr(bean);
-        SpUtils.put("UpGradeBean", jsonStr);
+        SpUtils.put(Constant.SP_UPGRADE, jsonStr);
 
-        requestManager.downLoadFile("upgrade.txt", (String) SpUtils.get("baseurl", Api.BASE_URL) + bean.getLink(), Constant.LOCAL_APK_PATH, new RequestManager.ReqCallBack<File>() {
+        requestManager.downLoadFile("upgrade.txt", (String) SpUtils.get(Constant.SP_BASEURL, Api.BASE_URL) + bean.getLink(), Constant.LOCAL_APK_PATH, new RequestManager.ReqCallBack<File>() {
             @Override
             public void onReqSuccess(File result) {
                 LogUtils.e("resUpgrade", "升级配置文件下载成功");
                 String xmlStr = FileUtils.getStringFromTxT(result.getPath());
                 ArrayList<UpGradeCfgBean> list = XmlUtils.parseUpGradeXml(xmlStr);
-                String href = (String) SpUtils.get("baseurl", Api.BASE_URL) + list.get(0).getHref();
+                String href = (String) SpUtils.get(Constant.SP_BASEURL, Api.BASE_URL) + list.get(0).getHref();
                 downloadApk(href);
             }
 
@@ -1065,14 +1080,14 @@ public class MainModel extends BaseModel {
     //即时消息类任务
     private void resRealTimeMsg(ItemBeanRealTimeMsg bean, final InfoHint infoHint) {
         String jsonStr = JsonUtils.Bean2JsonStr(bean);
-        SpUtils.put("realtime", jsonStr);
+        SpUtils.put(Constant.SP_REALTIME, jsonStr);
         realTimeTimer(infoHint);
     }
 
     //即时消息类
     private void realTimeTimer(final InfoHint infoHint) {
         Gson gson = new Gson();
-        String jsonStr = (String) SpUtils.get("realtime", "");
+        String jsonStr = (String) SpUtils.get(Constant.SP_REALTIME, "");
         if (jsonStr.equals("")) return;
         RealTimeMsgBean bean = gson.fromJson(jsonStr, RealTimeMsgBean.class);
         infoHint.realTimeMessage(bean);
@@ -1259,11 +1274,6 @@ public class MainModel extends BaseModel {
          */
         void realTimeCancle();
 
-        //播放类逻辑
-        void logicNormalProgram(Program bean);
-
-        void logicInterProgram(Program bean);
-
 
         //暂停播放
         void videoPause();
@@ -1286,6 +1296,13 @@ public class MainModel extends BaseModel {
         void license();
 
         void noLicense();
+    }
+
+    public interface InfoPlay {
+        //播放类逻辑
+        void logicNormalProgram(Program bean);
+
+        void logicInterProgram(Program bean);
     }
 
 }

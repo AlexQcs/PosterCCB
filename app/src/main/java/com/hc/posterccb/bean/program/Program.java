@@ -7,11 +7,21 @@ import java.util.ArrayList;
  */
 
 public class Program {
-    public String type;
+    public String mode;//插播还是正常播
+    public String type;//一般列表还是默认列表
     public String areatype;
     public String stdtime;
     public String edtime;
     public ArrayList<ProgramRes> mList;
+
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
 
     public ArrayList<ProgramRes> getList() {
         return mList;

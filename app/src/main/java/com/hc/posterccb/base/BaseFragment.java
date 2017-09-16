@@ -1,8 +1,11 @@
 package com.hc.posterccb.base;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,12 +14,12 @@ import android.widget.RelativeLayout;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.application.ProApplication;
-import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.bean.program.ProgramRes;
 import com.hc.posterccb.mvp.IView;
-import com.hc.posterccb.ui.contract.BaseFrgmContract;
+import com.hc.posterccb.ui.acitivity.MainActivity;
 import com.hc.posterccb.util.DateFormatUtils;
 import com.hc.posterccb.util.LogUtils;
+import com.hc.posterccb.util.file.MediaFileUtil;
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.widget.PLVideoView;
@@ -41,7 +44,7 @@ import rx.schedulers.Schedulers;
  * Created by alex on 2017/7/8.
  */
 
-public abstract class BaseFragment<P extends BasePresenter> extends Fragment implements IView, BaseFrgmContract.FrgmView {
+public abstract class BaseFragment<P extends BasePresenter> extends Fragment implements IView ,MainActivity.ActivityInteraction{
     protected AVOptions options;
     protected View rootView;
     protected P mPresenter;
@@ -49,13 +52,14 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     protected Context mContext;
     protected String TAG = "Fragment";
     protected boolean isOverTime;//是否在定时播放内
+    protected ProApplication mApplication=ProApplication.getInstance();
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
         if (rootView == null)
             rootView = inflater.inflate(getLayoutResource(), container, false);
-        mContext = getActivity();
         mUnbinder = ButterKnife.bind(this, rootView);
         mPresenter = loadPresenter();
         initCommonData();
@@ -63,10 +67,19 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
         initListener();
         initData();
         setOptions();
-        initPresenter();
         initView();
-
         return rootView;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
     }
 
     protected abstract void initListener();
@@ -133,11 +146,11 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     //获取布局文件
     protected abstract int getLayoutResource();
 
-    //简单页面无需mvp就不用管此方法即可,完美兼容各种实际场景的变通
-    protected void initPresenter() {
-        if (mPresenter != null) {
-            mPresenter.attachView(this);
-        }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mContext=context;
     }
 
     //初始化view
@@ -224,48 +237,14 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
         return isNull;
     }
 
-    @Override
-    public void playProgram(Program program) {
-        final List<ProgramRes> programResList = program.getList();
-        if (programResList == null || programResList.size() == 0) {
-            playError("播放列表为空");
-            return;
-        }
-        //正常播放
-        if (!program.getStdtime().equals("") && !program.getEdtime().equals("")) {
-            Observable.interval(1, TimeUnit.SECONDS)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Action1<Long>() {
-                        @Override
-                        public void call(Long aLong) {
-                            Date date = new Date(System.currentTimeMillis());
-                            String currentTime = DateFormatUtils.date2String(date, "HH:mm");
-//                            Log.e("现在时间", currentTime + "---");
-                            Date startPlayTime = DateFormatUtils.string2Date(program.getStdtime(), "HH:mm");
-                            Date endPlayTime = DateFormatUtils.string2Date(program.getEdtime(), "HH:mm");
-                            try {
-                                //定时播放
-                                if (startPlayTime.getTime() < date.getTime() && date.getTime() < endPlayTime.getTime()) {
-                                    areaPlay(programResList);
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-        } else {
-            //插播播放
-            areaPlay(programResList);
-        }
 
-    }
 
     //按照位置播放
-    void areaPlay(List<ProgramRes> programResList) {
+    protected void areaPlay(List<ProgramRes> programResList) {
         Collections.sort(programResList);
         List<Date> limitTime = new ArrayList<>();
         for (ProgramRes res : programResList) {
-            if (!res.getStdtime().equals("") && !res.getEdtime().equals("")) {
+            if (res.getStdtime()!=null&&res.getEdtime()!=null&&!res.getStdtime().equals("") && !res.getEdtime().equals("")) {
                 Date sttime = DateFormatUtils.string2Date(res.getStdtime(), "HH:mm");
                 Date edtime = DateFormatUtils.string2Date(res.getEdtime(), "HH:mm");
                 limitTime.add(sttime);
@@ -319,19 +298,20 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     //设置播放节目单中的资源播放位置接口
     protected abstract void setAreaView(Date date, ProgramRes programRes, boolean isovertime);
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     protected void setVideoView(RelativeLayout layout, PLVideoView view, ProgramRes bean, Date date, boolean isovertime) {
         ProgramRes appRes = ProApplication.getInstance().getProgramRes();
         String path = Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResnam();
         File file = new File(path);
         if (!file.exists()) return;
-        if (bean.getResnam().equals("")) return;
+        if (bean.getResnam()==null||bean.getResnam().equals("")) return;
 
-        if (bean.getStdtime().equals("") && bean.getEdtime().equals("") && !isOverTime) {
-            int priority = bean.getPriority().equals("") ? 0 : Integer.parseInt(bean.getPriority());
-            int appPriority = appRes.getPriority().equals("") ? 0 : Integer.parseInt(appRes.getPriority());
+        if (bean.getStdtime()==null && bean.getEdtime()==null && !isOverTime) {
+            int priority =( bean.getPriority()==null )? 0 : Integer.parseInt(bean.getPriority());
+            int appPriority = (appRes.getPriority()==null) ? 0 : Integer.parseInt(appRes.getPriority());
             if (!view.isPlaying() && !bean.equals(appRes) && priority >= appPriority) {
                 ProApplication.getInstance().setProgramRes(bean);
-                int playtimes = Integer.parseInt(bean.getPlaycnt());
+                int playtimes =(bean.getPlaycnt()==null)?0:Integer.parseInt(bean.getPlaycnt());
                 nomalResPlay(layout,view, path, playtimes);
 //                view.setVideoPath(path);
 //                view.start();
@@ -358,33 +338,46 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
      * @param path
      *         资源路径
      */
-    protected void nomalResPlay(RelativeLayout layout,PLVideoView view, String path, int playTimes) {
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+    protected void nomalResPlay(RelativeLayout layout, PLVideoView view, String path, int playTimes) {
         final int[] tempTimes = {0};
-        view.setVideoPath(path);
-        view.setOnPreparedListener(new PLMediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(PLMediaPlayer player, int i) {
-                view.seekTo(0);
-                view.start();
-            }
-        });
-        view.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
-            @Override
-            public boolean onError(PLMediaPlayer player, int i) {
-                return false;
-            }
-        });
-        view.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(PLMediaPlayer player) {
-                view.stopPlayback();
-                tempTimes[0]++;
-                if (tempTimes[0] < playTimes || playTimes == 0) {
-                    view.setVideoPath(path);
+        boolean isImg=MediaFileUtil.isImageFileType(path);
+        if (isImg){
+            view.setVisibility(View.GONE);
+            Drawable drawable = Drawable.createFromPath(path);
+            layout.setBackground(drawable);
+        }else {
+            view.setVisibility(View.VISIBLE);
+            view.setVideoPath(path);
+            view.setOnPreparedListener(new PLMediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(PLMediaPlayer player, int i) {
                     view.seekTo(0);
                     view.start();
                 }
-            }
-        });
+            });
+            view.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(PLMediaPlayer player, int i) {
+                    return false;
+                }
+            });
+            view.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(PLMediaPlayer player) {
+                    view.stopPlayback();
+                    tempTimes[0]++;
+                    if (tempTimes[0] < playTimes || playTimes == 0) {
+                        view.setVideoPath(path);
+                        view.seekTo(0);
+                        view.start();
+                    }
+                }
+            });
+        }
+
     }
+
+
+
 }

@@ -62,13 +62,19 @@ public class MainContract {
          * @author.Alex.on.a
          * @throw
          */
-        void pollingGatTask(String command, String mac);
+        void pollingGetTask(String command, String mac);
 
         void downLoadFile(String command, String mac, String path);
 
         void checkLicense();
 
         void initConfig();
+
+        void logicNomalPlay();
+
+        void logicInserPlay();
+
+
     }
 
 }
