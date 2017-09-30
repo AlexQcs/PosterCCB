@@ -1,7 +1,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
              xmlns:tools="http://schemas.android.com/tools"
-             android:layout_width="1920dp"
-             android:layout_height="1080dp"
+             android:layout_width="1080dp"
+             android:layout_height="1920dp"
              tools:context="com.hc.posterccb.ui.fragment.Full_V_Fragment">
 
     <!-- TODO: Update blank fragment layout -->

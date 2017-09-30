@@ -27,6 +27,9 @@ public interface HttpService {
     @POST
     Observable<ResponseBody> timesync(@Url String url,@Header("command")String command, @Header("mac")String mac);
 
+    @POST
+    Observable<ResponseBody> getModel(@Url String url);
+
 //    @POST("/xmlserver/revXml")
 //    Observable<ResponseBody>
 }

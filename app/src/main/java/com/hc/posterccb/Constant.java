@@ -20,7 +20,8 @@ public class Constant {
 
     //    public static final String BASE_URL="http://128.160.97.6:16300/zhyh/";
 //    public static final String BASE_URL="http://128.160.97.6:16300/zhyh/PlayDev.do";
-    public static final String BASE_URL = "http://192.168.0.30:8080/xmlserver/";
+    public static final String BASE_URL = "http://54.0.161.68:16300/zhyh/";
+    public static final String BASE_PORT="PlayDev";
 
     public static final String TASKTYPE = "tasktype";
     public static final String TASKREPORT = "taskreport";
@@ -92,12 +93,18 @@ public class Constant {
     public static final String LOCAL_PROGRAM_INTER_TXT = LOCAL_PROGRAM_PATH + "/inter.txt";
     //播放资源配置文件夹
     public static final String LOCAL_PROGRAM_MEDIACFG_PATH = LOCAL_FILE_PATH + "/mediacfg";
+    //升级apk文件夹
+    public static final String LOCAL_UPGRO_PATH = LOCAL_FILE_PATH + "/apk";
+    //升级apk路径
+    public static final String LOCAL_UPAPK_PATH = LOCAL_UPGRO_PATH + "/up.apk";
     //********
     public static final String LOCAL_PROGRAM_CFG = LOCAL_PROGRAM_MEDIACFG_PATH + "/programConfig.xml";
     //正常播放机节目单
     public static final String LOCAL_PROGRAM_LIST_PATH = LOCAL_PROGRAM_MEDIACFG_PATH + "/program.xml";
     //插播播放节目单
     public static final String LOCAL_INSERT_PROGRAM_LIST_PATH = LOCAL_PROGRAM_MEDIACFG_PATH + "/insert_program.xml";
+    //模板we
+    public static final String LOCAL_MODEL_LIST_PATH = LOCAL_PROGRAM_MEDIACFG_PATH + "/model.xml";
     //正常播放 播放资源下载列表
     public static final String LOCAL_RESOURCE_LIST_PATH = LOCAL_PROGRAM_MEDIACFG_PATH + "/resource.xml";
     //插播播放 播放资源下载列表

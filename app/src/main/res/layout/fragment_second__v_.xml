@@ -1,7 +1,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="1920dp"
-              android:layout_height="1080dp"
+              android:layout_width="1080dp"
+              android:layout_height="1920dp"
               android:orientation="vertical"
               tools:context="com.hc.posterccb.ui.fragment.Second_V_Fragment">
 
@@ -20,7 +20,7 @@
     <RelativeLayout
         android:id="@+id/rel_two"
         android:layout_width="1080dp"
-        android:layout_height="610dp">
+        android:layout_height="1310dp">
         <com.pili.pldroid.player.widget.PLVideoView
             android:id="@+id/videoview_two"
             android:layout_width="1080dp"

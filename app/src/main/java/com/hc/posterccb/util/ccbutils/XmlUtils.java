@@ -471,6 +471,7 @@ public class XmlUtils {
         } catch (XmlPullParserException e) {
             e.printStackTrace();
         }
+        ArrayList<Program> programArray = new ArrayList<Program>();
         Program program = null;
         ArrayList<ProgramRes> programResArrayList = new ArrayList<>();
         ProgramRes programRes = null;
@@ -517,9 +518,21 @@ public class XmlUtils {
                         } else if (parser.getName().equalsIgnoreCase("defaultpls") || parser.getName().equalsIgnoreCase("pls")) {
                             if (program != null) {
                                 program.setList(programResArrayList);
+                                programArray.add(program);
+                                program = null;
                             }
                         }
-                        break;
+//                        if (parser.getName().equalsIgnoreCase("res")) {
+//                            if (programRes != null) {
+//                                programResArrayList.add(programRes);
+//                            }
+//                            programRes = null;
+//                        } else if (parser.getName().equalsIgnoreCase("defaultpls") || parser.getName().equalsIgnoreCase("pls")) {
+//                            if (program != null) {
+//                                program.setList(programResArrayList);
+//                            }
+//                        }
+//                        break;
                     case XmlPullParser.END_DOCUMENT:
                         break;
                 }

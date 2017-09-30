@@ -15,6 +15,7 @@ import com.hc.posterccb.util.DateFormatUtils;
 import com.pili.pldroid.player.widget.PLVideoView;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -66,11 +67,10 @@ public class Full_H_Fragment extends BaseFragment<Full_H_FrgmPresenter> implemen
 
     }
 
-
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void setAreaView(Date date, ProgramRes programRes, boolean isovertime) {
-        if (programRes.getArea()==null){
+        if (programRes.getArea() == null) {
             setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
             return;
         }
@@ -83,6 +83,8 @@ public class Full_H_Fragment extends BaseFragment<Full_H_FrgmPresenter> implemen
                 break;
         }
     }
+
+
 
     @Override
     public void playSuccess(String msg) {
@@ -131,6 +133,9 @@ public class Full_H_Fragment extends BaseFragment<Full_H_FrgmPresenter> implemen
 
     @Override
     public void playInterProgram(Program program) {
+        if (mPresenter == null) {
+            return;
+        }
         mApplication.setProgram(program);
         mPresenter.getProgramList(program);
     }
@@ -141,6 +146,10 @@ public class Full_H_Fragment extends BaseFragment<Full_H_FrgmPresenter> implemen
         if (programResList == null || programResList.size() == 0) {
             playError("播放列表为空");
             return;
+        }
+        mApplication.setPlaycntMap(new HashMap<String,Integer>());
+        for (ProgramRes res : programResList) {
+            mApplication.getPlaycntMap().put(res.getResnam(),Integer.parseInt(res.playcnt));
         }
         //正常播放
         if (program.getMode().equals(Constant.PROGRAM_MODE_NORMAL)) {
@@ -172,4 +181,5 @@ public class Full_H_Fragment extends BaseFragment<Full_H_FrgmPresenter> implemen
         }
 
     }
+
 }

@@ -12,6 +12,7 @@ import com.hc.posterccb.bean.resource.ResourceBean;
 import com.squareup.leakcanary.LeakCanary;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -26,9 +27,20 @@ public class ProApplication extends Application {
     private String mDisplayModel;
     private Program mDefProgram;
     private ResourceBean mResourceBean;
-    private ProgramRes mProgramRes;
+    private ProgramRes mArea1ProgramRes;
+    private ProgramRes mArea2ProgramRes;
+    private ProgramRes mArea3ProgramRes;
     private List<ResourceBean> mResourceBeanList;
     private List<DetailBean> mDetailBeanList;
+    private HashMap<String,Integer> mPlaycntMap;
+
+    private volatile boolean mPicPlayArea1IsOver;
+    private volatile boolean mPicPlayArea2IsOver;
+    private volatile boolean mPicPlayArea3IsOver;
+
+
+
+    private String mProPath;
 
     @Override
     public void onCreate() {
@@ -49,11 +61,47 @@ public class ProApplication extends Application {
                 mResourceBean = new ResourceBean();
                 mResourceBeanList = new ArrayList<>();
                 mDetailBeanList = new ArrayList<>();
-                mProgramRes = new ProgramRes();
+                mArea1ProgramRes = new ProgramRes();
+                mArea2ProgramRes = new ProgramRes();
+                mArea3ProgramRes = new ProgramRes();
+                mPlaycntMap=new HashMap<>();
             }
         }
 
     }
+
+    public String getProPath() {
+        return mProPath;
+    }
+
+    public void setProPath(String proPath) {
+        mProPath = proPath;
+    }
+
+    public boolean isPicPlayArea1IsOver() {
+        return mPicPlayArea1IsOver;
+    }
+
+    public void setPicPlayArea1IsOver(boolean picPlayArea1IsOver) {
+        mPicPlayArea1IsOver = picPlayArea1IsOver;
+    }
+
+    public boolean isPicPlayArea2IsOver() {
+        return mPicPlayArea2IsOver;
+    }
+
+    public void setPicPlayArea2IsOver(boolean picPlayArea2IsOver) {
+        mPicPlayArea2IsOver = picPlayArea2IsOver;
+    }
+
+    public boolean isPicPlayArea3IsOver() {
+        return mPicPlayArea3IsOver;
+    }
+
+    public void setPicPlayArea3IsOver(boolean picPlayArea3IsOver) {
+        mPicPlayArea3IsOver = picPlayArea3IsOver;
+    }
+
 
     public String getDisplayModel() {
         return mDisplayModel;
@@ -83,6 +131,7 @@ public class ProApplication extends Application {
     public static Context getmContext() {
         return mContext;
     }
+
 
 
     public static ProApplication getInstance() {
@@ -137,12 +186,36 @@ public class ProApplication extends Application {
         mDetailBeanList = detailBeanList;
     }
 
-    public ProgramRes getProgramRes() {
-        return mProgramRes;
+    public ProgramRes getArea1ProgramRes() {
+        return mArea1ProgramRes;
     }
 
-    public void setProgramRes(ProgramRes programRes) {
-        mProgramRes = programRes;
+    public void setArea1ProgramRes(ProgramRes area1ProgramRes) {
+        mArea1ProgramRes = area1ProgramRes;
+    }
+
+    public ProgramRes getArea2ProgramRes() {
+        return mArea2ProgramRes;
+    }
+
+    public void setArea2ProgramRes(ProgramRes area2ProgramRes) {
+        mArea2ProgramRes = area2ProgramRes;
+    }
+
+    public ProgramRes getArea3ProgramRes() {
+        return mArea3ProgramRes;
+    }
+
+    public void setArea3ProgramRes(ProgramRes area3ProgramRes) {
+        mArea3ProgramRes = area3ProgramRes;
+    }
+
+    public HashMap<String, Integer> getPlaycntMap() {
+        return mPlaycntMap;
+    }
+
+    public void setPlaycntMap(HashMap<String, Integer> playcntMap) {
+        mPlaycntMap = playcntMap;
     }
 
     public void initDetailBeanList(List<ResourceBean> resourceBeanList) {

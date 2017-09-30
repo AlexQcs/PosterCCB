@@ -261,6 +261,7 @@ public class FileUtils {
             folderCreate(Constant.LOCAL_PROGRAM_MEDIACFG_PATH);
             fileCreate(Constant.LOCAL_ERROR_TXT);
             fileCreate(Constant.LOCAL_CONFIG_TXT);
+            fileCreate(Constant.LOCAL_MODEL_LIST_PATH);
         } catch (Exception e) {
             e.printStackTrace();
         }
