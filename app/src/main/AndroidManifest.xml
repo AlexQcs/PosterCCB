@@ -16,25 +16,24 @@
     <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"/>
 
+    <!-- 开机启动 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.READ_LOGS"/>
 
     <application
         android:name=".application.ProApplication"
-        android:sharedUserId="android.uid.system"
         android:allowBackup="true"
+        android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
         android:icon="@mipmap/icon"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:sharedUserId="android.uid.system"
         android:supportsRtl="true"
-        android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
         android:theme="@style/AppTheme">
-        <activity android:name=".ui.acitivity.MainActivity"
-            android:launchMode="singleTask"
-            >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
+        <activity
+            android:name=".ui.acitivity.MainActivity"
+            android:launchMode="singleTask">
 
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
         </activity>
 
         <receiver android:name=".broadcast.AutoStartReceiver">
@@ -46,6 +45,13 @@
         </receiver>
 
         <activity android:name=".ui.acitivity.LicenseActivity">
+        </activity>
+        <activity android:name=".ui.acitivity.WelcomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
         </activity>
     </application>
 

@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.PowerManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.util.Xml;
 
@@ -57,6 +58,7 @@ import com.hc.posterccb.util.encrypt.SilentInstall;
 import com.hc.posterccb.util.file.FileUtils;
 import com.hc.posterccb.util.system.AppVersionTools;
 import com.hc.posterccb.util.system.ControlUtils;
+import com.hc.posterccb.util.system.MemInfo;
 import com.hc.posterccb.util.system.NetworkUtil;
 import com.hc.posterccb.util.system.VolumeUtils;
 import com.thoughtworks.xstream.XStream;
@@ -80,6 +82,7 @@ import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import rx.Observable;
 import rx.Subscriber;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -109,8 +112,12 @@ public class MainModel extends BaseModel {
     private XmlPullParser mParser;
     private RequestManager requestManager = RequestManager.getInstance();
     private ProApplication mApplication = ProApplication.getInstance();
-    private List<Program> mProgramList;
+//    private List<Program> mProgramList;
     private ArrayList<ResourceBean> resourceList;
+
+    private Subscription mSubscriptionNormal;
+    private Subscription mSubscriptionInsert;
+    private Subscription mSubscriptionPolling;
 
 
     //轮询任务
@@ -125,7 +132,6 @@ public class MainModel extends BaseModel {
                         timesync(mac);
                     }
                 });
-//        mPollingTimer= (int) SpUtils.get("selectinterval",10);
         mPollingTimer = 10;
         pollingLogic(mPollingTimer, command, mac, infoHint, infoPlay);
     }
@@ -148,62 +154,57 @@ public class MainModel extends BaseModel {
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-//                        httpService.polling((String) SpUtils.get("polling", "/xmlserver/"), command, mac)
-                        httpService.polling(Constant.BASE_PORT, command, "", mac)
-                                .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
-                                    @Override
-                                    public void onNext(ResponseBody response) {
-
-                                        String resStr = null;
-                                        try {
-                                            //获取返回的xml 字符串
-                                            resStr = response.string();
-//                                            Log.e("返回的结果", resStr);
-                                            //获取返回的任务类型集合
-                                            BasePollingBean pollingBean = null;
-                                            try {
-                                                pollingBean = XmlUtils.parsePollingXml(resStr);
-                                                Log.e("返回的结果", pollingBean.toString());
-                                                List<AbstractBeanTaskItem> taskItems = pollingBean.getTaskitems();
-                                                if (taskItems == null || taskItems.size() == 0)
-                                                    return;
-                                                for (AbstractBeanTaskItem item : taskItems) {
-                                                    resResult(item, infoHint, infoPlay);
-                                                }
-
-                                            } catch (Exception e) {
-                                                e.printStackTrace();
-                                            }
-
-
-//                                            ArrayList<String> typeList = XmlUtils.getXmlType(resStr);
-//                                            if (typeList.size() <= 0) return;
-//                                            //获取任务类型实体类
-//                                            for (String type : typeList) {
-//                                                PostResult postResult = XmlUtils.getTaskBean(type, resStr);//通过返回的响应xml报文解析出是哪个任务
-//                                                Log.e("MainModel", postResult.toString());
-//                                                //处理任务类型
-//                                                resResult(type, postResult, infoHint);
-//                                            }
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                        //view显示成功信息
-                                        infoHint.successInfo(resStr);
-//                            LogUtils.e("MainModel", resStr);
-                                    }
-
-                                    @Override
-                                    public void onError(ApiException e) {
-                                        super.onError(e);
-                                        //view显示失败信息
-                                        infoHint.failInfo(e.message);
-                                        LogUtils.e("MainModel", e.getMessage());
-                                    }
-                                });
+                        polling(command,mac,infoHint,infoPlay);
                     }
                 });
 
+    }
+
+    public void polling(String command,String mac,InfoHint infoHint,InfoPlay infoPlay){
+        if (mSubscriptionPolling!=null&&!mSubscriptionPolling.isUnsubscribed()){
+            mSubscriptionPolling.unsubscribe();
+        }
+        mSubscriptionPolling=httpService.polling(Constant.BASE_PORT, command, "", mac)
+                .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
+                    @Override
+                    public void onNext(ResponseBody response) {
+
+                        String resStr = null;
+                        try {
+                            //获取返回的xml 字符串
+                            resStr = response.string();
+//                                            Log.e("返回的结果", resStr);
+                            //获取返回的任务类型集合
+                            BasePollingBean pollingBean = null;
+                            try {
+                                pollingBean = XmlUtils.parsePollingXml(resStr);
+                                Log.e("返回的结果", pollingBean.toString());
+                                List<AbstractBeanTaskItem> taskItems = pollingBean.getTaskitems();
+                                if (taskItems == null || taskItems.size() == 0)
+                                    return;
+                                for (AbstractBeanTaskItem item : taskItems) {
+                                    resResult(item, infoHint, infoPlay);
+                                }
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        //view显示成功信息
+                        infoHint.successInfo(resStr);
+//                            LogUtils.e("MainModel", resStr);
+                    }
+
+                    @Override
+                    public void onError(ApiException e) {
+                        super.onError(e);
+                        //view显示失败信息
+                        infoHint.failInfo(e.message);
+                        LogUtils.e("MainModel", e.getMessage());
+                    }
+                });
     }
 
     //下载文件
@@ -213,8 +214,8 @@ public class MainModel extends BaseModel {
 
     public void init(@NonNull final InfoPlay infoPlay) {
 //        configSystem();
-//        logicNormalProgram(infoPlay);
-        logicInterProgram(infoPlay);
+        logicNormalProgram(infoPlay);
+//        logicInterProgram(infoPlay);
 //        logicInterProgram
     }
 
@@ -377,7 +378,7 @@ public class MainModel extends BaseModel {
 
     //同步时间
     private void timesync(String mac) {
-        DateFormatUtils.syncTime("1");
+//        DateFormatUtils.syncTime("1");
         httpService.timesync(Constant.BASE_PORT, "timesync", mac)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
@@ -509,7 +510,7 @@ public class MainModel extends BaseModel {
             StringUtils.setEncoding(postStr, "UTF-8");
             RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
             httpService.report((String) SpUtils
-                    .get(mApplication.getString(R.string.serverip), Api.LOCALHOST), Constant.REPORT_CONFIG, Constant.MAC, requestBody)
+                    .get(mApplication.getString(R.string.serverip),Constant.BASE_URL+Constant.BASE_PORT), Constant.REPORT_CONFIG, Constant.MAC, requestBody)
                     .subscribeOn(Schedulers.io())
                     .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                         @Override
@@ -740,7 +741,7 @@ public class MainModel extends BaseModel {
                                         String localPath = Constant.LOCAL_PROGRAM_PATH;//
                                         File file = null;
                                         if (bean.getResname() == null && "model".equals(bean.getType())) {
-                                            postModel(bean);
+//                                            postModel(bean);
                                         } else {
                                             file = new File(localPath + "/" + bean.getResname());//测试
                                             boolean md5 = MD5.decode(file, bean.getMd5());
@@ -785,6 +786,7 @@ public class MainModel extends BaseModel {
     }
 
     //下载单个资源文件
+
     private void downLoadRes(ResourceBean bean) {
         String url = (String) SpUtils.get("baseurl", Constant.BASE_URL) + bean.getHref();
         File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResname());
@@ -798,6 +800,7 @@ public class MainModel extends BaseModel {
 
                     }
 
+                    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
                     @Override
                     public void onCompleted() {
                         if (MD5.decode(file, bean.getMd5())) {
@@ -805,6 +808,14 @@ public class MainModel extends BaseModel {
                         } else {
                             Log.e(TAG, "资源文件" + file.getName() + "非法");
                         }
+
+                        long unusedMemory = MemInfo.getAvailableSize();
+                        LogUtils.e(TAG, "剩余内存" + unusedMemory);
+                        int configMem = (int) SpUtils.get(mApplication.getString(R.string.diskspacealarm), 500);
+                        if (unusedMemory < configMem) {
+                            resourcesync();
+                        }
+
                     }
 
                     @Override
@@ -925,6 +936,12 @@ public class MainModel extends BaseModel {
                         super.onCompleted();
                         if (MD5.decode(programlfile, bean.md5)) {
                             LogUtils.e("下载播放列表", finalFilename + "下载成功");
+                            if (mSubscriptionNormal!=null&&!mSubscriptionNormal.isUnsubscribed()){
+                                mSubscriptionNormal.unsubscribe();
+                            }
+                            if (mSubscriptionInsert!=null&&!mSubscriptionInsert.isUnsubscribed()){
+                                mSubscriptionInsert.unsubscribe();
+                            }
                             if (playmode == 1) {
                                 logicNormalProgram(infoPlay);
                             } else {
@@ -967,28 +984,24 @@ public class MainModel extends BaseModel {
             LogUtils.e(TAG, "正常播放节目单为空");
             return;
         }
-        mProgramList = new ArrayList<>();
+        List<Program> mProgramList = new ArrayList<>();
         mProgramList = XmlUtils.parseNormalProgramXml(xmlNormalStr);
 
         for (Program program : mProgramList) {
+            Log.e("内存正常播放节目单", program.toString());
             if (program.getType().equals(Constant.SP_PROGRAM_DEF)) {
                 program.setMode(Constant.PROGRAM_MODE_DEF);
                 mApplication.setDefProgram(program);
                 SpUtils.put(Constant.SP_PROGRAM_DEF, program);
             }
         }
-        interval(1, TimeUnit.SECONDS)
-                .subscribe(new Action1<Long>() {
-                    @Override
-                    public void call(Long aLong) {
-                        normalProgram(infoPlay);
-                    }
-                });
+        mApplication.setNormalPlay(false);
+        normalProgram(infoPlay,mProgramList);
     }
 
     //正常播放任务
-    private void normalProgram(InfoPlay infoPlay) {
-        if (mProgramList==null||mProgramList.size()==0)return;
+    private void normalProgram(InfoPlay infoPlay,List<Program> mProgramList) {
+        if (mProgramList == null || mProgramList.size() == 0) return;
         for (Program program : mProgramList) {
             if (program.getType().equals("defaultpls")) continue;
             ArrayList<ProgramRes> resList = program.getList();
@@ -996,8 +1009,8 @@ public class MainModel extends BaseModel {
                 File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + res.getResnam());
                 List<ResourceBean> resFileList = mApplication.getResourceBeanList();
                 for (ResourceBean bean : resFileList) {
-                    File resFile=new File(Constant.LOCAL_PROGRAM_PATH+"/"+bean.getResname());
-                    if (MD5.decode(resFile,bean.getMd5())) {
+                    File resFile = new File(Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResname());
+                    if (!MD5.decode(resFile, bean.getMd5())) {
                         program.setMode(Constant.PROGRAM_MODE_DEF);
                         infoPlay.logicNormalProgram(mApplication.getDefProgram());
                         Log.e("默认播放节目单", program.toString() + "---");
@@ -1007,18 +1020,14 @@ public class MainModel extends BaseModel {
             }
         }
 
-        Observable.just(mProgramList)
-                .flatMap(new Func1<List<Program>, Observable<Program>>() {
-                    @Override
-                    public Observable<Program> call(List<Program> programs) {
-                        return Observable.from(programs);
-                    }
-                })
+        mSubscriptionNormal= Observable.interval(1,TimeUnit.SECONDS)
+                .onBackpressureDrop()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<Program>() {
+                .subscribe(new Subscriber<Long>() {
                     @Override
                     public void onCompleted() {
+
                     }
 
                     @Override
@@ -1027,42 +1036,56 @@ public class MainModel extends BaseModel {
                     }
 
                     @Override
-                    public void onNext(Program program) {
-                        if (program.getType().equals("defaultpls")) return;
-                        Date date = new Date(System.currentTimeMillis());
-                        String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
-                        String stdtimeStr = nowdate + program.getStdtime();
-                        String edtimeStr = nowdate + program.getEdtime();
-                        Date stdtime = DateFormatUtils.string2Date(stdtimeStr, "yyyy-MM-dd HH:mm");
-                        Date edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
-                        Program curProgram = mApplication.getProgram();
+                    public void onNext(Long aLong) {
+                        for (int i = 0; i < mProgramList.size(); i++) {
+                            Program program=mProgramList.get(i);
 
-                        //
-                        if (date.after(stdtime) && date.before(edtime)) {
-
-                            if (mApplication.isPlay() && curProgram.equals(program)) {
-                                return;
+                        }
+                        for (Program program : mProgramList) {
+                            if (program.getType().equals("defaultpls")) continue;
+                            Date date = new Date(System.currentTimeMillis());
+                            String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
+                            String stdtimeStr = nowdate + program.getStdtime();
+                            String edtimeStr = nowdate + program.getEdtime();
+                            Date stdtime = null;
+                            Date edtime = null;
+                            boolean isInTime = false;
+                            if (stdtimeStr.length() < 16 || edtimeStr.length() < 16) {
+                                isInTime = true;
                             } else {
-                                program.setMode(Constant.PROGRAM_MODE_NORMAL);
-                                infoPlay.logicNormalProgram(program);
+                                stdtime = DateFormatUtils.string2Date(stdtimeStr, "yyyy-MM-dd HH:mm");
+                                edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
+                                if (date.after(stdtime) && date.before(edtime)) isInTime = true;
                             }
-                            Log.e("正常播放节目单", program.toString() + "---");
-//                        } else if (program.getEdtime()==null||program.getStdtime()==null||program.getStdtime().equals("") || program.getEdtime().equals("")) {
-//                            if (mApplication.isPlay() && curProgram.equals(program)) {
-//                                return;
-//                            } else {
-//                                program.setMode(Constant.PROGRAM_MODE_NORMAL);
-//                                infoPlay.logicNormalProgram(program);
-//                            }
-//                            Log.e("正常播放节目单", program.toString() + "---");
-//                        }
-                        } else {
-                            program.setMode(Constant.PROGRAM_MODE_DEF);
-                            infoPlay.logicNormalProgram(mApplication.getDefProgram());
-                            Log.e("默认播放节目单", program.toString() + "---");
+
+                            Program curProgram = mApplication.getProgram();
+                            //
+                            if (isInTime) {
+                                Log.e(TAG, "正常播放节目单在播放时间内");
+                                if (mApplication.isInterIsPlay() || curProgram.equals(program)||mApplication.isNormalPlay()) {
+                                    if (mApplication.isInterIsPlay()) Log.e(TAG, "插播播放节目单播放中");
+                                    if (mApplication.isNormalPlay()) Log.e(TAG, "正常播放节目单播放中");
+                                    if (curProgram.equals(program)) Log.e(TAG, "相同播放节目单播放中");
+                                    return;
+                                } else {
+                                    mApplication.setInterIsPlay(false);
+                                    mApplication.setNormalPlay(true);
+                                    program.setMode(Constant.PROGRAM_MODE_NORMAL);
+                                    infoPlay.logicNormalProgram(program);
+                                    Log.e("正常播放节目单", program.toString() + "---");
+                                }
+                            } else {
+                                Log.e(TAG, "正常播放节目单不在播放时间内");
+                                mApplication.setInterIsPlay(false);
+                                program.setMode(Constant.PROGRAM_MODE_DEF);
+                                infoPlay.logicNormalProgram(mApplication.getDefProgram());
+                                Log.e("默认播放节目单", program.toString() + "---");
+                            }
                         }
                     }
                 });
+
+
     }
 
     //插播播放任务逻辑
@@ -1072,49 +1095,21 @@ public class MainModel extends BaseModel {
             LogUtils.e(TAG, "插播播放节目单为空");
             return;
         }
-        mProgramList = new ArrayList<>();
+        List<Program> mProgramList = new ArrayList<>();
         mProgramList = XmlUtils.parseNormalProgramXml(xmlInterStr);
-//        Program program = XmlUtils.parseInterProgramXml(xmlInterStr);
-//        program.setMode(Constant.PROGRAM_MODE_INTER);
-//        ArrayList<ProgramRes> resList=program.getList();
-//        if (resList==null||resList.size()==0)return;
-//        for (ProgramRes res : resList) {
-//
-//        }
-
-
-
-        interval(1, TimeUnit.SECONDS)
-                .subscribe(new Action1<Long>() {
-                    @Override
-                    public void call(Long aLong) {
-                        interProgram(infoPlay);
-                    }
-                });
-
-//        interval(1, TimeUnit.SECONDS)
-//                .subscribe(new Action1<Long>() {
-//                    @Override
-//                    public void call(Long aLong) {
-//                        interProgram(program,infoPlay);
-//                    }
-//                });
-
+        interProgram(infoPlay,mProgramList);
     }
 
-    private void interProgram(InfoPlay infoPlay){
-        Observable.just(mProgramList)
-                .flatMap(new Func1<List<Program>, Observable<Program>>() {
-                    @Override
-                    public Observable<Program> call(List<Program> programs) {
-                        return Observable.from(programs);
-                    }
-                })
+    //插播播放
+    private void interProgram(InfoPlay infoPlay,List<Program> mProgramList) {
+        mSubscriptionInsert=Observable.interval(1,TimeUnit.SECONDS)
+                .onBackpressureDrop()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<Program>() {
+                .subscribe(new Subscriber<Long>() {
                     @Override
                     public void onCompleted() {
+
                     }
 
                     @Override
@@ -1123,63 +1118,44 @@ public class MainModel extends BaseModel {
                     }
 
                     @Override
-                    public void onNext(Program program) {
-//                        if (program.getType().equals("defaultpls")) return;
-                        Date date = new Date(System.currentTimeMillis());
-                        String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
-                        String stdtimeStr = nowdate + program.getStdtime();
-                        String edtimeStr = nowdate + program.getEdtime();
-                        Date stdtime = DateFormatUtils.string2Date(stdtimeStr, "yyyy-MM-dd HH:mm");
-                        Date edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
-                        Program curProgram = mApplication.getProgram();
-                        //
-                        if (date.after(stdtime) && date.before(edtime)) {
+                    public void onNext(Long aLong) {
+                        for (Program program : mProgramList) {
+                            Date date = new Date(System.currentTimeMillis());
+                            String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
+                            String stdtimeStr = nowdate + program.getStdtime();
+                            String edtimeStr = nowdate + program.getEdtime();
+                            Date stdtime = null;
+                            Date edtime = null;
+                            Program curProgram = mApplication.getProgram();
 
-                            if (mApplication.isPlay() && curProgram.equals(program)) {
-                                return;
+                            boolean isInTime = false;
+                            if (stdtimeStr.length() < 16 || edtimeStr.length() < 16) {
+                                isInTime = true;
                             } else {
-                                mApplication.setProgram(program);
-                                program.setMode(Constant.PROGRAM_MODE_INTER);
-                                infoPlay.logicInterProgram(program);
+                                stdtime = DateFormatUtils.string2Date(stdtimeStr, "yyyy-MM-dd HH:mm");
+                                edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
+                                if (date.after(stdtime) && date.before(edtime)) isInTime = true;
                             }
-                            Log.e("插播播放节目单", program.toString() + "---");
-//                        } else if (program.getEdtime()==null||program.getStdtime()==null||program.getStdtime().equals("") || program.getEdtime().equals("")) {
-//                            if (mApplication.isPlay() && curProgram.equals(program)) {
-//                                return;
-//                            } else {
-//                                program.setMode(Constant.PROGRAM_MODE_NORMAL);
-//                                infoPlay.logicNormalProgram(program);
-//                            }
-//                            Log.e("正常播放节目单", program.toString() + "---");
-//                        }
+
+                            //
+                            if (isInTime) {
+                                if (mApplication.isInterIsPlay() && curProgram.equals(program)) {
+                                    if (mApplication.isInterIsPlay())
+                                        Log.e("interProgram", "相同插播播放节目播放中");
+                                    return;
+                                } else {
+                                    mApplication.setInterIsPlay(true);
+                                    mApplication.setNormalPlay(false);
+                                    mApplication.setProgram(program);
+                                    program.setMode(Constant.PROGRAM_MODE_INTER);
+                                    infoPlay.logicInterProgram(program);
+                                    Log.e("插播播放节目单", program.toString() + "---");
+                                }
+                            }
                         }
                     }
                 });
-
-//        Observable.just(program)
-//                .subscribeOn(Schedulers.io())
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe(new Subscriber<Program>() {
-//                               @Override
-//                               public void onCompleted() {
-//
-//                               }
-//
-//                               @Override
-//                               public void onError(Throwable e) {
-//
-//                               }
-//
-//                               @Override
-//                               public void onNext(Program program) {
-//                                   program.setMode(Constant.PROGRAM_MODE_INTER);
-//                                   if (infoPlay==null)LogUtils.e("infoPlay","null");
-//                                   infoPlay.logicInterProgram(program);
-//                                   Log.e("插播播放节目单", program.toString() + "---");
-//                               }
-//                           }
-//                );
-    };
+    }
 
     //升级任务
     private void resUpgrade(ItemBeanUpGrade bean) {
@@ -1210,7 +1186,7 @@ public class MainModel extends BaseModel {
                         ArrayList<UpGradeCfgBean> list = XmlUtils.parseUpGradeXml(xmlStr);
 
                         if (MD5.decode(new File(apkCfgPath), list.get(0).getMd5())) {
-                            String href = (String) SpUtils.get(Constant.SP_BASEURL, Constant.BASE_URL) + list.get(0).getHref();
+                            String href = list.get(0).getHref();
                             downloadApk(href);
                         }
                     }
@@ -1325,7 +1301,7 @@ public class MainModel extends BaseModel {
         Log.e("返回任务id", postStr);
         StringUtils.setEncoding(postStr, "UTF-8");
         RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
-        httpService.report((String) SpUtils.get("logurl", "/xmlserver/"), Constant.TASKREPORT, Constant.MAC, requestBody)
+        httpService.report((String) SpUtils.get("logurl", Constant.BASE_PORT), Constant.TASKREPORT, Constant.MAC, requestBody)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody body) {
@@ -1410,6 +1386,45 @@ public class MainModel extends BaseModel {
 
     }
 
+    private void resourcesync() {
+        RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), "");
+        httpService.report(Constant.BASE_PORT, Constant.RESOURCESYNC, Constant.MAC, requestBody)
+                .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
+                    @Override
+                    public void onNext(ResponseBody body) {
+                        resourcesyncRequrst(body);
+                    }
+
+                    @Override
+                    public void onError(ApiException e) {
+                        e.printStackTrace();
+                    }
+                });
+    }
+
+    private void resourcesyncRequrst(ResponseBody body) {
+//        String resStr = null;
+//        try {
+//            //获取返回的xml 字符串
+//            resStr = body.string();
+//            InputStream in = new ByteArrayInputStream(resStr.getBytes());
+//            mParser = Xml.newPullParser();
+//            mParser.setInput(in, "UTF-8");
+//            Log.e("上报任务通用返回处理", resStr);
+//            PostResult postResult = XmlUtils.getBeanByParseXml(mParser, Constant.XML_LISTTAG, TempBean.class, Constant.XML_STARTDOM, ReportIdReqBean.class);
+//            ReportIdReqBean mStatus = (ReportIdReqBean) postResult.getBean();
+//            Log.e("上报任务通用返回处理", mStatus.toString());
+//            int status = Integer.parseInt(mStatus.getResult());
+//            if (status == 0) {
+//                LogUtils.e("上报响应", "上报" + task + "响应成功");
+//            } else {
+//                LogUtils.e("上报响应", "上报" + task + "错误:" + mStatus.getResult());
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+    }
+
     //关机
     private void powerOff(String dateStr) {
 
@@ -1419,7 +1434,6 @@ public class MainModel extends BaseModel {
     private void powerOn(String dateStr) {
 
     }
-
 
     //通过接口产生信息回调
     public interface InfoHint {

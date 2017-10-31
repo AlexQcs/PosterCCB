@@ -17,7 +17,6 @@ public class ProgramRes implements Comparable<ProgramRes> {
     public String priority;
 
 
-
     public String getResnam() {
         return resnam;
     }

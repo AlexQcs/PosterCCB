@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +22,6 @@ import com.hc.posterccb.util.DateFormatUtils;
 import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.download.DownFileUtils;
 import com.hc.posterccb.util.file.MediaFileUtil;
-import com.hc.posterccb.util.system.RxCountDown;
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.widget.PLVideoView;
@@ -30,6 +30,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.concurrent.TimeUnit;
@@ -37,11 +38,9 @@ import java.util.concurrent.TimeUnit;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import rx.Observable;
-import rx.Subscriber;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action0;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 /**
@@ -65,6 +64,13 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     private volatile int mRecArea2 = 40;
     private volatile int mRecArea3 = 40;
     String mArea = "";
+
+    protected Subscription mSubscriptionAreaPlay;
+
+    private Subscription mSubscriptionTimerArea1;
+    private Subscription mSubscriptionTimerArea2;
+    private Subscription mSubscriptionTimerArea3;
+
 
     @Nullable
     @Override
@@ -273,127 +279,159 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
                 limitTime.add(edtime);
             }
         }
-//        String modelType = mApplication.getProgram().getMode();
-//        if (Constant.PROGRAM_MODE_INTER.equals(modelType)) {
-//            mApplication.setNormalArea1ProTime(0);
-//            mApplication.setNormalArea2ProTime(0);
-//            mApplication.setNormalArea3ProTime(0);
-//        } else {
-//            mApplication.setInterArea1PicProTime(0);
-//            mApplication.setInterArea2PicProTime(0);
-//            mApplication.setInterArea3PicProTime(0);
-//        }
-        Observable.interval(1, TimeUnit.SECONDS)
+        mSubscriptionAreaPlay = Observable.interval(1, TimeUnit.SECONDS)
+                .onBackpressureDrop()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        Observable.just(programResList)
-                                .flatMap(new Func1<List<ProgramRes>, Observable<ProgramRes>>() {
-                                    @Override
-                                    public Observable<ProgramRes> call(List<ProgramRes> programResList) {
-                                        return Observable.from(programResList);
+                        if (mApplication.getPlaycntMap() != null) {
+                            HashMap<String, Integer> map = mApplication.getPlaycntMap();
+                            boolean needToPlay = false;
+                            for (String key : map.keySet()) {
+                                int cnt = map.get(key);
+                                if (cnt >= 0) {
+                                    needToPlay = true;
+                                }
+                            }
+                            mApplication.setNormalPlay(needToPlay);
+                            mApplication.setAreaIsPlay(needToPlay);
+                        }
+                        for (int n =0; n<programResList.size(); n++) {
+                            ProgramRes programRes=programResList.get(n);
+                            Date date = new Date(System.currentTimeMillis());
+                            String path = Constant.LOCAL_PROGRAM_PATH + "/" + DownFileUtils.getResourceName(programRes.getResnam());
+                            boolean isImg = MediaFileUtil.isImageFileType(path);
+                            if (limitTime.size() > 0 && limitTime.size() % 2 == 0) {
+                                for (int i = 0; i < limitTime.size(); i = i + 2) {
+                                    if (limitTime.get(i).getTime() < date.getTime()
+                                            && date.getTime() < limitTime.get(i + 1).getTime()) {
+                                        isOverTime = true;
                                     }
-                                })
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Subscriber<ProgramRes>() {
-                                    @Override
-                                    public void onCompleted() {
-
-                                    }
-
-                                    @Override
-                                    public void onError(Throwable e) {
-                                        e.printStackTrace();
-                                    }
-
-                                    @Override
-                                    public void onNext(ProgramRes programRes) {
-                                        Date date = new Date(System.currentTimeMillis());
-                                        String path = Constant.LOCAL_PROGRAM_PATH + "/" + DownFileUtils.getResourceName(programRes.getResnam());
-                                        boolean isImg = MediaFileUtil.isImageFileType(path);
-                                        if (limitTime.size() > 0 && limitTime.size() % 2 == 0) {
-                                            for (int i = 0; i < limitTime.size(); i = i + 2) {
-                                                if (limitTime.get(i).getTime() < date.getTime()
-                                                        && date.getTime() < limitTime.get(i + 1).getTime()) {
-                                                    isOverTime = true;
-                                                }
-
-                                            }
+                                }
+                            } else if (limitTime.size() == 0) {
+                                isOverTime = true;
+                            }
+                            String area = programRes.getArea();
+                            boolean picPlayIsover = false;
+                            boolean indexIsMore=false;
+                            switch (area) {
+                                case "area1":
+                                    picPlayIsover = mApplication.isPicPlayArea1IsOver();
+                                    indexIsMore=n>mApplication.getProresIndex1();
+                                    break;
+                                case "area2":
+                                    picPlayIsover = mApplication.isPicPlayArea2IsOver();
+                                    indexIsMore=n>mApplication.getProresIndex2();
+                                    break;
+                                case "area3":
+                                    picPlayIsover = mApplication.isPicPlayArea3IsOver();
+                                    indexIsMore=n>mApplication.getProresIndex3();
+                                    break;
+                            }
+                            Log.e(TAG, "循环到的图片是否在播放" + picPlayIsover);
+                            if (isOverTime && !picPlayIsover&&indexIsMore) {
+                                setAreaView(date, programRes, isOverTime);
+                                switch (area) {
+                                    case "area1":
+                                        if (n==programResList.size()-1){
+                                            mApplication.setProresIndex1(-1);
+                                        }else {
+                                            mApplication.setProresIndex1(n);
                                         }
 
-                                        setAreaView(date, programRes, isOverTime);
-                                    }
-                                });
+                                        break;
+                                    case "area2":
+                                        if (n==programResList.size()-1){
+                                            mApplication.setProresIndex2(-1);
+                                        }else {
+                                            mApplication.setProresIndex2(n);
+                                        }
+                                        break;
+                                    case "area3":
+                                        if (n==programResList.size()-1){
+                                            mApplication.setProresIndex3(-1);
+                                        }else {
+                                            mApplication.setProresIndex3(n);
+                                        }
+                                        break;
+                                }
+                            }
+                        }
                     }
                 });
     }
-
     //设置播放节目单中的资源播放位置接口
+
     protected abstract void setAreaView(Date date, ProgramRes programRes, boolean isovertime);
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     protected void setVideoView(RelativeLayout layout, PLVideoView view, ProgramRes bean, Date date, boolean isovertime) {
         ProgramRes appRes = new ProgramRes();
-        String path = Constant.LOCAL_PROGRAM_PATH + "/" + DownFileUtils.getResourceName(bean.getResnam());
         String area = bean.getArea();
-        boolean picPlayIsover = false;
-        int playtimes = (bean.getPlaycnt() == null) ? 0 : Integer.parseInt(bean.getPlaycnt());
         switch (area) {
             case "area1":
-                picPlayIsover = mApplication.isPicPlayArea1IsOver();
-                appRes = ProApplication.getInstance().getArea1ProgramRes();
+                appRes = mApplication.getArea1ProgramRes();
                 break;
             case "area2":
-                picPlayIsover = mApplication.isPicPlayArea2IsOver();
-                appRes = ProApplication.getInstance().getArea2ProgramRes();
+                appRes = mApplication.getArea2ProgramRes();
                 break;
             case "area3":
-                picPlayIsover = mApplication.isPicPlayArea3IsOver();
-                appRes = ProApplication.getInstance().getArea3ProgramRes();
+                appRes = mApplication.getArea3ProgramRes();
                 break;
         }
-
+        String path = Constant.LOCAL_PROGRAM_PATH + "/" + DownFileUtils.getResourceName(bean.getResnam());
+        int playtimes = (bean.getPlaycnt() == null) ? 0 : Integer.parseInt(bean.getPlaycnt());
         File file = new File(path);
         if (!file.exists()) return;
         if (bean.getResnam() == null || bean.getResnam().equals("")) return;
-        int playcnt=mApplication.getPlaycntMap().get(bean.getResnam());
+        int playcnt = 0;
+        if (bean.getPlaycnt() != null && mApplication.getPlaycntMap() != null && mApplication.getPlaycntMap().size() != 0) {
+            playcnt = mApplication.getPlaycntMap().get(bean.getResnam());
+        }
         if (bean.getStdtime() == null && bean.getEdtime() == null && !isOverTime) {
             int priority = (bean.getPriority() == null) ? 0 : Integer.parseInt(bean.getPriority());
             int appPriority = (appRes.getPriority() == null) ? 0 : Integer.parseInt(appRes.getPriority());
 
-            if (playcnt>=0&&!view.isPlaying() && !bean.equals(appRes) && priority >= appPriority && !picPlayIsover) {
+            if (playcnt >= 0 && !view.isPlaying() && !bean.equals(appRes) && priority >= appPriority) {
                 switch (area) {
                     case "area1":
                         mApplication.setArea1ProgramRes(bean);
                         break;
                     case "area2":
-                        mApplication.setArea1ProgramRes(bean);
+                        mApplication.setArea2ProgramRes(bean);
                         break;
                     case "area3":
-                        mApplication.setArea1ProgramRes(bean);
+                        mApplication.setArea3ProgramRes(bean);
                         break;
                 }
-                mApplication.getPlaycntMap().put(bean.getResnam(),--playcnt);
-                nomalResPlay(layout, view, path,bean);
-//                view.setVideoPath(path);
-//                view.start();
+                mApplication.getPlaycntMap().put(bean.getResnam(), --playcnt);
+                nomalResPlay(layout, view, path, bean);
             }
         } else if (isovertime) {
             String sysTime = DateFormatUtils.date2String(date, "yyyyMMdd ");
-            Date startPlayTime = DateFormatUtils.string2Date(sysTime + bean.getStdtime(), "yyyyMMdd HH:mm");
-            Date endPlayTime = DateFormatUtils.string2Date(sysTime + bean.getEdtime(), "yyyyMMdd HH:mm");
+            Date startPlayTime = null;
+            Date endPlayTime = null;
+
+            boolean programResIsIntime = false;
+            if (bean.getStdtime() == null || bean.getEdtime() == null || bean.getStdtime().equals("") || bean.getEdtime().equals("")) {
+                programResIsIntime = true;
+                Log.e(TAG, bean.getResnam() + "节目在指定播放时间内");
+            } else {
+                startPlayTime = DateFormatUtils.string2Date(sysTime + bean.getStdtime(), "yyyyMMdd HH:mm");
+                endPlayTime = DateFormatUtils.string2Date(sysTime + bean.getEdtime(), "yyyyMMdd HH:mm");
+                if (startPlayTime.getTime() < date.getTime() && date.getTime() < endPlayTime.getTime()) {
+                    programResIsIntime = true;
+                    Log.e(TAG, bean.getResnam() + "节目在指定播放时间内");
+                }
+            }
             int priority = (bean.getPriority() == null) ? 0 : Integer.parseInt(bean.getPriority());
             int appPriority = (appRes.getPriority() == null) ? 0 : Integer.parseInt(appRes.getPriority());
-            boolean a=playcnt>=0;
-            boolean b=view.isPlaying();
-            boolean c= !picPlayIsover;
-            boolean d=priority >= appPriority;
-            boolean e=playcnt>=0&&!view.isPlaying()&&startPlayTime.getTime() < date.getTime() && date.getTime() < endPlayTime.getTime() && !picPlayIsover && priority >= appPriority;
-            LogUtils.e("播放次数",playcnt+bean.getResnam());
-            if (playcnt>=0&&!view.isPlaying()&&startPlayTime.getTime() < date.getTime() && date.getTime() < endPlayTime.getTime() && !picPlayIsover && priority >= appPriority ) {
-                mApplication.getPlaycntMap().put(bean.getResnam(),--playcnt);
-                nomalResPlay(layout, view, path,bean);
+            LogUtils.e("播放次数", playcnt + bean.getResnam());
+            if (playcnt >= 0 && !view.isPlaying() &&programResIsIntime&&priority >= appPriority) {
+                mApplication.getPlaycntMap().put(bean.getResnam(), --playcnt);
+                nomalResPlay(layout, view, path, bean);
                 if (!appRes.equals(bean)) {
                     switch (area) {
                         case "area1":
@@ -406,8 +444,6 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
                             mApplication.setArea3ProgramRes(bean);
                             break;
                     }
-//                    mApplication.getPlaycntMap().put(bean.getResnam(),playcnt--);
-//                    nomalResPlay(layout, view, path,bean);
                 }
             }
         }
@@ -422,29 +458,42 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
      *         资源路径
      */
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-    protected void nomalResPlay(RelativeLayout layout, PLVideoView view, String path,ProgramRes bean) {
-        int playTimes = (bean.getPlaycnt() == null) ? 0 : Integer.parseInt(bean.getPlaycnt());
-        String area=bean.getArea();
-//        final int[] tempTimes = {0};
+    protected void nomalResPlay(RelativeLayout layout, PLVideoView view, String path, ProgramRes bean) {
+        String area = bean.getArea();
         boolean isImg = MediaFileUtil.isImageFileType(path);
         if (isImg) {
 //            if (tempTimes[0] < playTimes || playTimes == 0) {
-                LogUtils.e("nomalResPlay", mRecArea1 + "播放图片" + path);
-                view.setVisibility(View.GONE);
-                Drawable drawable = Drawable.createFromPath(path);
-                layout.setBackground(drawable);
+            LogUtils.e("nomalResPlay", mRecArea1 + "播放图片" + path);
+            view.setVisibility(View.GONE);
+            Drawable drawable = Drawable.createFromPath(path);
+            layout.setBackground(drawable);
 //                tempTimes[0]++;
-                switch (area) {
-                    case "area1":
-                        setPicCountdown("area1");
-                        break;
-                    case "area2":
-                        setPicCountdown("area2");
-                        break;
-                    case "area3":
-                        setPicCountdown("area3");
-                        break;
-                }
+            switch (area) {
+                case "area1":
+                    Log.e(TAG, "控件1播放图片");
+                    if (mSubscriptionTimerArea1 != null && !mSubscriptionTimerArea1.isUnsubscribed()) {
+                        mSubscriptionTimerArea1.unsubscribe();
+                    }
+                    setPicCountdown("area1");
+                    mApplication.setPicPlayArea1IsOver(true);
+                    break;
+                case "area2":
+                    Log.e(TAG, "控件2播放图片");
+                    if (mSubscriptionTimerArea2 != null && !mSubscriptionTimerArea2.isUnsubscribed()) {
+                        mSubscriptionTimerArea2.unsubscribe();
+                    }
+                    setPicCountdown("area2");
+                    mApplication.setPicPlayArea2IsOver(true);
+                    break;
+                case "area3":
+                    Log.e(TAG, "控件3播放图片");
+                    if (mSubscriptionTimerArea3 != null && !mSubscriptionTimerArea3.isUnsubscribed()) {
+                        mSubscriptionTimerArea3.unsubscribe();
+                    }
+                    setPicCountdown("area3");
+                    mApplication.setPicPlayArea3IsOver(true);
+                    break;
+            }
 //            }
         } else {
             LogUtils.e("nomalResPlay", "播放视频");
@@ -479,81 +528,38 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
 
     }
 
-    void setPicCountdown(String area){
-        switch (area){
+    void setPicCountdown(String area) {
+        switch (area) {
             case "area1":
-                RxCountDown.countdown(40)
-                        .doOnSubscribe(new Action0() {
+                mSubscriptionTimerArea1 = Observable
+                        .timer(40, TimeUnit.SECONDS)
+                        .subscribe(new Action1<Long>() {
                             @Override
-                            public void call() {
-                                mApplication.setPicPlayArea1IsOver(true);
-                            }
-                        })
-                        .subscribe(new Subscriber<Integer>() {
-                            @Override
-                            public void onCompleted() {
+                            public void call(Long aLong) {
                                 mApplication.setPicPlayArea1IsOver(false);
-                            }
-
-                            @Override
-                            public void onError(Throwable e) {
-
-                            }
-
-                            @Override
-                            public void onNext(Integer integer) {
-                                mApplication.setPicPlayArea1IsOver(true);
-                                LogUtils.e("taskArea1", mApplication.isPicPlayArea1IsOver() + "秒数" + integer);
+                                LogUtils.e("倒数结束", "图片1是否在播放" + mApplication.isPicPlayArea1IsOver());
                             }
                         });
                 break;
             case "area2":
-                RxCountDown.countdown(40)
-                        .doOnSubscribe(new Action0() {
+                mSubscriptionTimerArea2 = Observable
+                        .timer(40, TimeUnit.SECONDS)
+                        .subscribe(new Action1<Long>() {
                             @Override
-                            public void call() {
-                                mApplication.setPicPlayArea2IsOver(true);
-                            }
-                        })
-                        .subscribe(new Subscriber<Integer>() {
-                            @Override
-                            public void onCompleted() {
+                            public void call(Long aLong) {
                                 mApplication.setPicPlayArea2IsOver(false);
-                            }
-
-                            @Override
-                            public void onError(Throwable e) {
-
-                            }
-
-                            @Override
-                            public void onNext(Integer integer) {
-                                LogUtils.e("taskArea2", mApplication.isPicPlayArea2IsOver() + "秒数" + integer);
+                                LogUtils.e("倒数结束", "图片1是否在播放" + mApplication.isPicPlayArea2IsOver());
                             }
                         });
                 break;
             case "area3":
-                RxCountDown.countdown(40)
-                        .doOnSubscribe(new Action0() {
+                mSubscriptionTimerArea3 = Observable
+                        .timer(40, TimeUnit.SECONDS)
+                        .subscribe(new Action1<Long>() {
                             @Override
-                            public void call() {
-                                mApplication.setPicPlayArea3IsOver(true);
-                            }
-                        })
-                        .subscribe(new Subscriber<Integer>() {
-                            @Override
-                            public void onCompleted() {
+                            public void call(Long aLong) {
                                 mApplication.setPicPlayArea3IsOver(false);
-                            }
-
-                            @Override
-                            public void onError(Throwable e) {
-
-                            }
-
-                            @Override
-                            public void onNext(Integer integer) {
-                                LogUtils.e("taskArea3", mApplication.isPicPlayArea3IsOver() + "秒数" + integer);
+                                LogUtils.e("倒数结束", "图片1是否在播放" + mApplication.isPicPlayArea3IsOver());
                             }
                         });
                 break;

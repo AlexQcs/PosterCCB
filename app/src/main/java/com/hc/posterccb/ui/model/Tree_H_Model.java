@@ -11,10 +11,10 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 /**
- * Created by HC on 2017/9/21.
+ * Created by HC on 2017/10/20.
  */
 
-public class Full_V_Model extends BaseModel {
+public class Tree_H_Model extends BaseModel {
     public void getProgram(@NonNull Program program, final InfoHint infoHint) {
         Observable.just(program)
                 .subscribeOn(Schedulers.io())

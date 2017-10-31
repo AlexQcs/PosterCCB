@@ -404,7 +404,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
                 }
                 break;
             case "model_second_h":
-                LogE("模板为：竖直双版");
+                LogE("模板为：横向双版");
 
                 if (model == null || !modelStr.equals(model)) {
 //                    mFragmentTransaction = mFragmentManager.beginTransaction();
@@ -423,7 +423,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
                 }
                 break;
             case "model_second_v":
-                LogE("模板为：横向双版");
+                LogE("模板为：竖直双版");
                 if (model == null || !modelStr.equals(model)) {
 //                    mFragmentTransaction = mFragmentManager.beginTransaction();
 //                    mFragmentTransaction.replace(R.id.frame_fragment, mSecond_V_fragment, modelStr);
@@ -620,6 +620,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     public void pollingFail(String failStr) {
         toast(failStr);
     }
+
 
 
 }

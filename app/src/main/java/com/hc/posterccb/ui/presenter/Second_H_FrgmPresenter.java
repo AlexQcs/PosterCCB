@@ -3,23 +3,23 @@ package com.hc.posterccb.ui.presenter;
 import com.hc.posterccb.base.BasePresenter;
 import com.hc.posterccb.bean.program.Program;
 import com.hc.posterccb.mvp.IModel;
-import com.hc.posterccb.ui.contract.Full_V_Constract;
-import com.hc.posterccb.ui.fragment.Full_V_Fragment;
-import com.hc.posterccb.ui.model.Full_V_Model;
+import com.hc.posterccb.ui.contract.Second_H_Constract;
+import com.hc.posterccb.ui.fragment.Second_H_Fragment;
+import com.hc.posterccb.ui.model.Second_H_Model;
 
 import java.util.HashMap;
 
 /**
- * Created by HC on 2017/9/21.
+ * Created by HC on 2017/10/20.
  */
 
-public class Full_V_FrgmPresenter extends BasePresenter<Full_V_Fragment> implements Full_V_Constract.FrgmPresenter {
+public class Second_H_FrgmPresenter extends BasePresenter<Second_H_Fragment> implements Second_H_Constract.FrgmPresenter {
 
     @Override
     public void getProgramList(Program program) {
-        if (program==null)return;
+        if (program == null) return;
         if (!getIView().checkPostParamNull()) {
-            ((Full_V_Model) getiModelMap().get("postplaylog")).getProgram(program, new Full_V_Model.InfoHint() {
+            ((Second_H_Model) getiModelMap().get("postplaylog")).getProgram(program, new Second_H_Model.InfoHint() {
                 @Override
                 public void playVideo(Program program) {
                     getIView().playProgram(program);
@@ -40,7 +40,7 @@ public class Full_V_FrgmPresenter extends BasePresenter<Full_V_Fragment> impleme
 
     @Override
     public HashMap<String, IModel> getiModelMap() {
-        return loadModelMap(new Full_V_Model());
+        return loadModelMap(new Second_H_Model());
     }
 
     @Override

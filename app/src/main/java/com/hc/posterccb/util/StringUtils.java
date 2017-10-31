@@ -2,6 +2,8 @@ package com.hc.posterccb.util;
 
 import android.support.annotation.Nullable;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -23,5 +25,15 @@ public class StringUtils {
             return true;
         else
             return  false;
+    }
+
+    public static String getExceptionInfo(Throwable e) {
+
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw, true);
+        e.printStackTrace(pw);
+        pw.flush();
+        sw.flush();
+        return sw.toString();
     }
 }

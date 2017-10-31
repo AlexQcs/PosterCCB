@@ -20,8 +20,12 @@ public class Constant {
 
     //    public static final String BASE_URL="http://128.160.97.6:16300/zhyh/";
 //    public static final String BASE_URL="http://128.160.97.6:16300/zhyh/PlayDev.do";
+    //默认服务器地址
     public static final String BASE_URL = "http://54.0.161.68:16300/zhyh/";
     public static final String BASE_PORT="PlayDev";
+
+    //请求同步资源列表
+    public static final String  RESOURCESYNC="resourcesync";
 
     public static final String TASKTYPE = "tasktype";
     public static final String TASKREPORT = "taskreport";

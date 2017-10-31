@@ -113,8 +113,26 @@ public abstract class BaseActivity<P extends BasePresenter> extends FragmentActi
         if (mPresenter != null)
             mPresenter.detachView();
         mUnbinder.unbind();
-
+        finish();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.e("onPause","我被调用了");
+        if (mPresenter != null)
+            mPresenter.detachView();
+        mUnbinder.unbind();
+        finish();
+    }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.e("onStop","我被调用了");
+        if (mPresenter != null)
+            mPresenter.detachView();
+        mUnbinder.unbind();
+        finish();
+    }
 }

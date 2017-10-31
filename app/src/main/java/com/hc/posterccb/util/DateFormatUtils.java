@@ -65,8 +65,8 @@ public class DateFormatUtils {
         try {
             Process process = Runtime.getRuntime().exec("su");
             Date resDate = DateFormatUtils.string2Date(date, "yyyy-MM-dd HH:mm:ss");
-//            String formatStr = DateFormatUtils.date2String(resDate, "yyyyMMdd.HHmmss");
-            String formatStr = "20170926.103020"; //测试的设置的时间【时间格式 yyyyMMdd.HHmmss】
+            String formatStr = DateFormatUtils.date2String(resDate, "yyyyMMdd.HHmmss");
+//            String formatStr = "20170926.103020"; //测试的设置的时间【时间格式 yyyyMMdd.HHmmss】
             DataOutputStream os = new DataOutputStream(process.getOutputStream());
             os.writeBytes("setprop persist.sys.timezone GMT\n");
             os.writeBytes("/system/bin/date -s " + formatStr + "\n");

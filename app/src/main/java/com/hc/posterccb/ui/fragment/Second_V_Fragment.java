@@ -2,6 +2,7 @@ package com.hc.posterccb.ui.fragment;
 
 import android.os.Build;
 import android.support.annotation.RequiresApi;
+import android.util.Log;
 import android.widget.RelativeLayout;
 
 import com.hc.posterccb.Constant;
@@ -12,6 +13,7 @@ import com.hc.posterccb.bean.program.ProgramRes;
 import com.hc.posterccb.ui.contract.Second_V_Constract;
 import com.hc.posterccb.ui.presenter.Second_V_FrgmPresenter;
 import com.hc.posterccb.util.DateFormatUtils;
+import com.hc.posterccb.util.LogUtils;
 import com.pili.pldroid.player.widget.PLVideoView;
 
 import java.util.Date;
@@ -21,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import butterknife.BindView;
 import rx.Observable;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 
@@ -44,20 +47,29 @@ public class Second_V_Fragment extends BaseFragment<Second_V_FrgmPresenter> impl
 
     private String mProgramsPath = Constant.VIDEO1_PATH;
 
+
+    private Subscription mSubscriptionPlayProgram;
+
     @Override
     public void playProgram(Program program) {
+        LogUtils.e("竖直双版","播放被调用");
         final List<ProgramRes> programResList = program.getList();
         if (programResList == null || programResList.size() == 0) {
             playError("播放列表为空");
             return;
         }
-        mApplication.setPlaycntMap(new HashMap<String,Integer>());
+        mApplication.setPlaycntMap(new HashMap<String, Integer>());
         for (ProgramRes res : programResList) {
-            mApplication.getPlaycntMap().put(res.getResnam(),Integer.parseInt(res.playcnt));
+            mApplication.getPlaycntMap().put(res.getResnam(), Integer.parseInt(res.playcnt));
         }
+
+        if (mSubscriptionPlayProgram != null && !mSubscriptionPlayProgram.isUnsubscribed()) {
+            mSubscriptionPlayProgram.unsubscribe();
+        }
+
         //正常播放
         if (program.getMode().equals(Constant.PROGRAM_MODE_NORMAL)) {
-            Observable.interval(1, TimeUnit.SECONDS)
+            mSubscriptionPlayProgram = Observable.interval(1, TimeUnit.SECONDS)
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(new Action1<Long>() {
                         @Override
@@ -65,12 +77,27 @@ public class Second_V_Fragment extends BaseFragment<Second_V_FrgmPresenter> impl
                             Date date = new Date(System.currentTimeMillis());
                             String currentTime = DateFormatUtils.date2String(date, "HH:mm");
 //                            Log.e("现在时间", currentTime + "---");
-                            Date startPlayTime = DateFormatUtils.string2Date(program.getStdtime(), "HH:mm");
-                            Date endPlayTime = DateFormatUtils.string2Date(program.getEdtime(), "HH:mm");
+                            boolean isInTime = false;
+                            Date startPlayTime = null;
+                            Date endPlayTime = null;
+                            if (program.getStdtime().length() < 5 || program.getEdtime().length() < 5) {
+                                isInTime=true;
+                            } else {
+                                startPlayTime = DateFormatUtils.string2Date(program.getStdtime(), "HH:mm");
+                                endPlayTime = DateFormatUtils.string2Date(program.getEdtime(), "HH:mm");
+                                if (startPlayTime.getTime() < date.getTime() && date.getTime() < endPlayTime.getTime()){
+                                    isInTime = true;
+                                }
+                            }
+
                             try {
                                 //定时播放
-                                if (startPlayTime.getTime() < date.getTime() && date.getTime() < endPlayTime.getTime()) {
+                                if (isInTime&&!mApplication.isAreaIsPlay()) {
+                                    if (mSubscriptionAreaPlay != null && !mSubscriptionAreaPlay.isUnsubscribed()) {
+                                        mSubscriptionAreaPlay.unsubscribe();
+                                    }
                                     areaPlay(programResList);
+                                    mApplication.setAreaIsPlay(true);
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -78,13 +105,22 @@ public class Second_V_Fragment extends BaseFragment<Second_V_FrgmPresenter> impl
                         }
                     });
         } else if (program.getMode().equals(Constant.PROGRAM_MODE_DEF)) {
+            if (mSubscriptionAreaPlay != null && !mSubscriptionAreaPlay.isUnsubscribed()) {
+                mSubscriptionAreaPlay.unsubscribe();
+            }
             areaPlay(programResList);
         } else {
+            if (mSubscriptionAreaPlay != null && !mSubscriptionAreaPlay.isUnsubscribed()) {
+                mSubscriptionAreaPlay.unsubscribe();
+            }
             //插播播放
             areaPlay(programResList);
+            mApplication.setAreaIsPlay(true);
         }
 
     }
+
+
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
@@ -140,12 +176,14 @@ public class Second_V_Fragment extends BaseFragment<Second_V_FrgmPresenter> impl
 
     @Override
     public void pause() {
-
+        mPLVideoViewOne.pause();
+        mPLVideoViewTwo.pause();
     }
 
     @Override
     public void replay() {
-
+        mPLVideoViewOne.start();
+        mPLVideoViewTwo.start();
     }
 
     @Override
@@ -160,11 +198,20 @@ public class Second_V_Fragment extends BaseFragment<Second_V_FrgmPresenter> impl
 
     @Override
     public void playNormalProgram(Program program) {
+        if (mPresenter == null) {
+            return;
+        }
+        mApplication.setProgram(program);
         mPresenter.getProgramList(program);
     }
 
     @Override
     public void playInterProgram(Program program) {
+        if (mPresenter == null) {
+            return;
+        }
+        mApplication.setProgram(program);
+        Log.e("InterProgram", "我被调用了");
         mPresenter.getProgramList(program);
     }
 }
