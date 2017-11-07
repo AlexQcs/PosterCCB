@@ -215,6 +215,13 @@ public class MainModel extends BaseModel {
     public void init(@NonNull final InfoPlay infoPlay) {
 //        configSystem();
         logicNormalProgram(infoPlay);
+        interval(30, TimeUnit.SECONDS)
+                .subscribe(new Action1<Long>() {
+                    @Override
+                    public void call(Long aLong) {
+                        Log.e("init","我被执行了");
+                    }
+                });
 //        logicInterProgram(infoPlay);
 //        logicInterProgram
     }
@@ -455,6 +462,7 @@ public class MainModel extends BaseModel {
         String postStr = xStream.toXML(postBean);
         StringUtils.setEncoding(postStr, "UTF-8");
         RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
+        if ( Constant.MAC==null||Constant.MAC.length()<=0)return;
         httpService.report((String) SpUtils.get(mApplication.getString(R.string.serverip), Constant.BASE_URL), Constant.REPORT_CONFIG, Constant.MAC, requestBody)
                 .subscribeOn(Schedulers.io())
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
@@ -509,6 +517,7 @@ public class MainModel extends BaseModel {
             String postStr = xStream.toXML(postBean);
             StringUtils.setEncoding(postStr, "UTF-8");
             RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
+            if ( Constant.MAC==null||Constant.MAC.length()<=0)return;
             httpService.report((String) SpUtils
                     .get(mApplication.getString(R.string.serverip),Constant.BASE_URL+Constant.BASE_PORT), Constant.REPORT_CONFIG, Constant.MAC, requestBody)
                     .subscribeOn(Schedulers.io())
@@ -707,58 +716,58 @@ public class MainModel extends BaseModel {
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        Observable.just(resourceList)
-                                .flatMap(new Func1<ArrayList<ResourceBean>, Observable<ResourceBean>>() {
-                                    @Override
-                                    public Observable<ResourceBean> call(ArrayList<ResourceBean> been) {
-                                        return Observable.from(resourceList);
-                                    }
-                                })
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Subscriber<ResourceBean>() {
-                                    @Override
-                                    public void onCompleted() {
-                                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + mApplication.getResourceBean().getResname());//测试
-                                        boolean md5 = MD5.decode(file, mApplication.getResourceBean().getMd5());
-                                        if (md5) {
-//                                            setDownloadStatus("0001");//设置状态下载成功
-                                        } else {
-//                                            setDownloadStatus("0104");
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onError(Throwable e) {
-//                                        setDownloadStatus("0");//设置状态下载出错
-                                    }
-
-                                    @Override
-                                    public void onNext(ResourceBean bean) {
-                                        mApplication.setResourceBean(bean);
-//                                        setDownloadStatus("0002");//设置状态下载中
-//                                        String localPath = Constant.UDP_TESTPATH;//测试
-                                        String localPath = Constant.LOCAL_PROGRAM_PATH;//
-                                        File file = null;
-                                        if (bean.getResname() == null && "model".equals(bean.getType())) {
+                        for (int i = 0; i < resourceList.size(); i++) {
+                            ResourceBean bean=resourceList.get(i);
+                            mApplication.setResourceBean(bean);
+                            String localPath = Constant.LOCAL_PROGRAM_PATH;//
+                            File file = null;
+                            if (bean.getResname() == null && "model".equals(bean.getType())) {
 //                                            postModel(bean);
-                                        } else {
-                                            file = new File(localPath + "/" + bean.getResname());//测试
-                                            boolean md5 = MD5.decode(file, bean.getMd5());
-                                            if (file.exists() && md5) {
-                                                return;
-                                            }
-                                            Date date = new Date(System.currentTimeMillis());
-                                            String dateStr = DateFormatUtils.date2String(date, "HH:mm");
-                                            Set<String> tempSet = new HashSet<>();
-                                            if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
-                                                downLoadRes(bean);
-                                            }
-                                        }
-//                        double fileSize=FileUtils.getFileOrFilesSize(file.getPath(),SIZETYPE_KB);
-
-                                    }
-                                });
+                            } else {
+                                file = new File(localPath + "/" + bean.getResname());//测试
+                                boolean md5 = MD5.decode(file, bean.getMd5());
+                                if (file.exists() && md5) {
+                                    return;
+                                }
+                                Date date = new Date(System.currentTimeMillis());
+                                String dateStr = DateFormatUtils.date2String(date, "HH:mm");
+                                Set<String> tempSet = new HashSet<>();
+                                if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
+                                    downLoadRes(bean);
+                                }
+                            }
+                        }
+//                        Observable.just(resourceList)
+//                                .flatMap(new Func1<ArrayList<ResourceBean>, Observable<ResourceBean>>() {
+//                                    @Override
+//                                    public Observable<ResourceBean> call(ArrayList<ResourceBean> been) {
+//                                        return Observable.from(resourceList);
+//                                    }
+//                                })
+//                                .subscribeOn(Schedulers.io())
+//                                .observeOn(AndroidSchedulers.mainThread())
+//                                .subscribe(new Subscriber<ResourceBean>() {
+//                                    @Override
+//                                    public void onCompleted() {
+//                                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + mApplication.getResourceBean().getResname());//测试
+//                                        boolean md5 = MD5.decode(file, mApplication.getResourceBean().getMd5());
+//                                        if (md5) {
+////                                            setDownloadStatus("0001");//设置状态下载成功
+//                                        } else {
+////                                            setDownloadStatus("0104");
+//                                        }
+//                                    }
+//
+//                                    @Override
+//                                    public void onError(Throwable e) {
+////                                        setDownloadStatus("0");//设置状态下载出错
+//                                    }
+//
+//                                    @Override
+//                                    public void onNext(ResourceBean bean) {
+//
+//                                    }
+//                                });
                     }
                 });
     }
@@ -786,7 +795,6 @@ public class MainModel extends BaseModel {
     }
 
     //下载单个资源文件
-
     private void downLoadRes(ResourceBean bean) {
         String url = (String) SpUtils.get("baseurl", Constant.BASE_URL) + bean.getHref();
         File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResname());
@@ -1061,11 +1069,11 @@ public class MainModel extends BaseModel {
                             Program curProgram = mApplication.getProgram();
                             //
                             if (isInTime) {
-                                Log.e(TAG, "正常播放节目单在播放时间内");
+//                                Log.e(TAG, "正常播放节目单在播放时间内");
                                 if (mApplication.isInterIsPlay() || curProgram.equals(program)||mApplication.isNormalPlay()) {
-                                    if (mApplication.isInterIsPlay()) Log.e(TAG, "插播播放节目单播放中");
-                                    if (mApplication.isNormalPlay()) Log.e(TAG, "正常播放节目单播放中");
-                                    if (curProgram.equals(program)) Log.e(TAG, "相同播放节目单播放中");
+//                                    if (mApplication.isInterIsPlay()) Log.e(TAG, "插播播放节目单播放中");
+//                                    if (mApplication.isNormalPlay()) Log.e(TAG, "正常播放节目单播放中");
+//                                    if (curProgram.equals(program)) Log.e(TAG, "相同播放节目单播放中");
                                     return;
                                 } else {
                                     mApplication.setInterIsPlay(false);
@@ -1301,6 +1309,7 @@ public class MainModel extends BaseModel {
         Log.e("返回任务id", postStr);
         StringUtils.setEncoding(postStr, "UTF-8");
         RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
+        if ( Constant.MAC==null||Constant.MAC.length()<=0)return;
         httpService.report((String) SpUtils.get("logurl", Constant.BASE_PORT), Constant.TASKREPORT, Constant.MAC, requestBody)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
@@ -1388,6 +1397,7 @@ public class MainModel extends BaseModel {
 
     private void resourcesync() {
         RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), "");
+        if ( Constant.MAC==null||Constant.MAC.length()<=0)return;
         httpService.report(Constant.BASE_PORT, Constant.RESOURCESYNC, Constant.MAC, requestBody)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override

@@ -133,19 +133,19 @@ public class Three_H_Fragment extends BaseFragment<Three_H_FrgmPresenter> implem
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
-    protected void setAreaView(Date date, ProgramRes programRes, boolean isovertime) {
+    protected void setAreaView(Date date, ProgramRes programRes) {
         switch (programRes.getArea()) {
             case "area1":
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
                 break;
             case "area2":
-                setVideoView(mRelTwo, mPLVideoViewTwo, programRes, date, isovertime);
+                setVideoView(mRelTwo, mPLVideoViewTwo, programRes, date);
                 break;
             case "area3":
-                setVideoView(mRelThree, mPLVideoViewTwo, programRes, date, isovertime);
+                setVideoView(mRelThree, mPLVideoViewTwo, programRes, date);
                 break;
             default:
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
                 break;
         }
 

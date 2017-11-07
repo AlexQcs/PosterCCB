@@ -119,13 +119,13 @@ public class Full_H_Fragment extends BaseFragment<Full_H_FrgmPresenter> implemen
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
-    protected void setAreaView(Date date, ProgramRes programRes, boolean isovertime) {
+    protected void setAreaView(Date date, ProgramRes programRes) {
         switch (programRes.getArea()) {
             case "area1":
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
                 break;
             default:
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
                 break;
         }
 

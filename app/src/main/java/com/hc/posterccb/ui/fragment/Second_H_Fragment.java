@@ -121,16 +121,16 @@ public class Second_H_Fragment extends BaseFragment<Second_H_FrgmPresenter> impl
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
-    protected void setAreaView(Date date, ProgramRes programRes, boolean isovertime) {
+    protected void setAreaView(Date date, ProgramRes programRes) {
         switch (programRes.getArea()) {
             case "area1":
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
                 break;
             case "area2":
-                setVideoView(mRelTwo, mPLVideoViewTwo, programRes, date, isovertime);
+                setVideoView(mRelTwo, mPLVideoViewTwo, programRes, date);
                 break;
             default:
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date, isovertime);
+                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
                 break;
         }
 

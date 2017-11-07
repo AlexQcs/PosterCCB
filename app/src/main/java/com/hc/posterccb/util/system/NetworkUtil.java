@@ -190,11 +190,13 @@ public class NetworkUtil {
             NetworkInterface ne=NetworkInterface.getByInetAddress(InetAddress.getByName(getLocalIpAddress()));
             mac = ne.getHardwareAddress();
             mac_s = byte2hex(mac);
+            mac_s=mac_s.toUpperCase();
+            mac_s=mac_s.replaceAll(":", "-");
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return mac_s.toUpperCase();
+        return mac_s;
     }
 
     public static  String byte2hex(byte[] b) {

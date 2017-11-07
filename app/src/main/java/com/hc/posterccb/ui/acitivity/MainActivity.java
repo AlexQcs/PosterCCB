@@ -94,11 +94,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mMac = mMac.toUpperCase();
         mMac = mMac.replaceAll(":", "-");
         LogUtils.e(TAG, "mac地址" + mMac);
-
-        mPresenter.pollingGetTask(mTaskName, mMac);
+        boolean isNull = (mMac == null || mMac.length() <= 0);
+        if (!isNull) mPresenter.pollingGetTask(mTaskName, mMac);
 //        mPresenter.checkLicense();
         mPresenter.initConfig();
-
     }
 
     @Override
@@ -137,7 +136,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     //播放模板替换
     private ActivityInteraction replaceModel(Program program) {
-        FragmentManager fragmentManager=getSupportFragmentManager();
+        FragmentManager fragmentManager = getSupportFragmentManager();
         String model = mApplication.getDisplayModel();
         String modelStr = program.areatype;
         switch (modelStr) {
@@ -367,7 +366,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @Override
     public void logicNormalProgram(Program program) {
 //        mInteraction = replaceModel(program.areatype);
-        FragmentManager fragmentManager=getSupportFragmentManager();
+        FragmentManager fragmentManager = getSupportFragmentManager();
         String model = mApplication.getDisplayModel();
         String modelStr = program.areatype;
         switch (modelStr) {
@@ -469,7 +468,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
 
     @Override
     public void logicInterProgram(Program program) {
-        FragmentManager fragmentManager=getSupportFragmentManager();
+        FragmentManager fragmentManager = getSupportFragmentManager();
         String model = mApplication.getDisplayModel();
         String modelStr = program.areatype;
         switch (modelStr) {
@@ -570,7 +569,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     }
 
 
-
     //设置滚动textview样式
     void setMarqueeTextView(MarqueeTextView view, RealTimeMsgBean bean) {
         //字体大小
@@ -620,7 +618,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     public void pollingFail(String failStr) {
         toast(failStr);
     }
-
 
 
 }

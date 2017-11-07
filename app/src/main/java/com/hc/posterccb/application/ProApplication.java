@@ -19,7 +19,9 @@ import com.squareup.leakcanary.LeakCanary;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * Created by alex on 2017/7/8.
@@ -42,9 +44,17 @@ public class ProApplication extends Application {
     private List<DetailBean> mDetailBeanList;
     private HashMap<String,Integer> mPlaycntMap;
 
-    private volatile boolean mPicPlayArea1IsOver;
-    private volatile boolean mPicPlayArea2IsOver;
-    private volatile boolean mPicPlayArea3IsOver;
+    private Queue<ProgramRes> mResQueueArea1;
+    private Queue<ProgramRes> mResQueueArea2;
+    private Queue<ProgramRes> mResQueueArea3;
+
+    private volatile boolean mArea1IsPlay;
+    private volatile boolean mArea2IsPlay;
+    private volatile boolean mArea3IsPlay;
+
+    private volatile boolean mArea1ResIsPlay;
+    private volatile boolean mArea2ResIsPlay;
+    private volatile boolean mArea3ResIsPlay;
 
     private volatile int mProresIndex1;
     private volatile int mProresIndex2;
@@ -77,6 +87,10 @@ public class ProApplication extends Application {
                 mArea2ProgramRes = new ProgramRes();
                 mArea3ProgramRes = new ProgramRes();
                 mPlaycntMap=new HashMap<>();
+
+                mResQueueArea1=new LinkedList<>();
+                mResQueueArea2=new LinkedList<>();
+                mResQueueArea3=new LinkedList<>();
             }
         }
         Thread.setDefaultUncaughtExceptionHandler(restartHandler); // 程序崩溃时触发线程  以下用来捕获程序崩溃异常
@@ -159,30 +173,53 @@ public class ProApplication extends Application {
         mProPath = proPath;
     }
 
-    public boolean isPicPlayArea1IsOver() {
-        return mPicPlayArea1IsOver;
+    public boolean isArea1IsPlay() {
+        return mArea1IsPlay;
     }
 
-    public void setPicPlayArea1IsOver(boolean picPlayArea1IsOver) {
-        mPicPlayArea1IsOver = picPlayArea1IsOver;
+    public void setArea1IsPlay(boolean area1IsPlay) {
+        mArea1IsPlay = area1IsPlay;
     }
 
-    public boolean isPicPlayArea2IsOver() {
-        return mPicPlayArea2IsOver;
+    public boolean isArea2IsPlay() {
+        return mArea2IsPlay;
     }
 
-    public void setPicPlayArea2IsOver(boolean picPlayArea2IsOver) {
-        mPicPlayArea2IsOver = picPlayArea2IsOver;
+    public void setArea2IsPlay(boolean area2IsPlay) {
+        mArea2IsPlay = area2IsPlay;
     }
 
-    public boolean isPicPlayArea3IsOver() {
-        return mPicPlayArea3IsOver;
+    public boolean isArea3IsPlay() {
+        return mArea3IsPlay;
     }
 
-    public void setPicPlayArea3IsOver(boolean picPlayArea3IsOver) {
-        mPicPlayArea3IsOver = picPlayArea3IsOver;
+    public void setArea3IsPlay(boolean area3IsPlay) {
+        mArea3IsPlay = area3IsPlay;
     }
 
+    public boolean isArea1ResIsPlay() {
+        return mArea1ResIsPlay;
+    }
+
+    public void setArea1ResIsPlay(boolean area1ResIsPlay) {
+        mArea1ResIsPlay = area1ResIsPlay;
+    }
+
+    public boolean isArea2ResIsPlay() {
+        return mArea2ResIsPlay;
+    }
+
+    public void setArea2ResIsPlay(boolean area2ResIsPlay) {
+        mArea2ResIsPlay = area2ResIsPlay;
+    }
+
+    public boolean isArea3ResIsPlay() {
+        return mArea3ResIsPlay;
+    }
+
+    public void setArea3ResIsPlay(boolean area3ResIsPlay) {
+        mArea3ResIsPlay = area3ResIsPlay;
+    }
 
     public String getDisplayModel() {
         return mDisplayModel;
@@ -212,8 +249,6 @@ public class ProApplication extends Application {
     public static Context getmContext() {
         return mContext;
     }
-
-
 
     public static ProApplication getInstance() {
         return instance;
@@ -313,6 +348,30 @@ public class ProApplication extends Application {
 
     public void setPlaycntMap(HashMap<String, Integer> playcntMap) {
         mPlaycntMap = playcntMap;
+    }
+
+    public Queue<ProgramRes> getResQueueArea1() {
+        return mResQueueArea1;
+    }
+
+    public void setResQueueArea1(Queue<ProgramRes> resQueueArea1) {
+        mResQueueArea1 = resQueueArea1;
+    }
+
+    public Queue<ProgramRes> getResQueueArea2() {
+        return mResQueueArea2;
+    }
+
+    public void setResQueueArea2(Queue<ProgramRes> resQueueArea2) {
+        mResQueueArea2 = resQueueArea2;
+    }
+
+    public Queue<ProgramRes> getResQueueArea3() {
+        return mResQueueArea3;
+    }
+
+    public void setResQueueArea3(Queue<ProgramRes> resQueueArea3) {
+        mResQueueArea3 = resQueueArea3;
     }
 
     public void initDetailBeanList(List<ResourceBean> resourceBeanList) {

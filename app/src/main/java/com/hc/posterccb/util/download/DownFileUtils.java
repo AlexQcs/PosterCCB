@@ -20,88 +20,69 @@ import okhttp3.ResponseBody;
 public class DownFileUtils {
 
 
-    public static File createFile(Context context){
+    public static File createFile(Context context) {
 
 
-        File file=null;
+        File file = null;
         String state = Environment.getExternalStorageState();
 
-        if(state.equals(Environment.MEDIA_MOUNTED)){
+        if (state.equals(Environment.MEDIA_MOUNTED)) {
 
-            file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/test.apk");
-        }else {
-            file = new File(context.getCacheDir().getAbsolutePath()+"/test.apk");
+            file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/test.apk");
+        } else {
+            file = new File(context.getCacheDir().getAbsolutePath() + "/test.apk");
         }
 
-        Log.e("vivi","file "+file.getAbsolutePath());
-
+        Log.e("vivi", "file " + file.getAbsolutePath());
         return file;
-
     }
 
 
-
-
-    public static void writeFile2Disk(ResponseBody body, File file){
-
-
+    public static void writeFile2Disk(ResponseBody body, File file) {
         long currentLength = 0;
-        OutputStream os =null;
-
+        OutputStream os = null;
         InputStream is = body.byteStream();
 //        long totalLength =response.body().contentLength();
-
         try {
-
             os = new FileOutputStream(file);
+            int len;
+            byte[] buff = new byte[1024];
 
-
-            int len ;
-
-            byte [] buff = new byte[1024];
-
-            while((len=is.read(buff))!=-1){
-
-                os.write(buff,0,len);
-                currentLength+=len;
-                Log.e("vivi","当前进度:"+currentLength);
-
+            while ((len = is.read(buff)) != -1) {
+                os.write(buff, 0, len);
+                currentLength += len;
+                Log.e("vivi", "当前进度:" + currentLength);
             }
-           // httpCallBack.onLoading(currentLength,totalLength,true);
-
-
-        } catch(FileNotFoundException e) {
+            // httpCallBack.onLoading(currentLength,totalLength,true);
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
-        } catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if(os!=null){
+            if (os != null) {
                 try {
                     os.close();
-                } catch(IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-            if(is!=null){
+            if (is != null) {
                 try {
                     is.close();
-                } catch(IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
 
 
-
     }
 
 
-    public static String getResourceName(String path){
-        String[] array=path.split("/");
-        return array[array.length-1];
+    public static String getResourceName(String path) {
+        String[] array = path.split("/");
+        return array[array.length - 1];
     }
-
-
 
 
 }

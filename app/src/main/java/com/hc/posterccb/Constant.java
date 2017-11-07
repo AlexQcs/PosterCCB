@@ -2,7 +2,7 @@ package com.hc.posterccb;
 
 import android.os.Environment;
 
-import com.hc.posterccb.util.system.NetworkUtil;
+import com.hc.posterccb.util.system.GetMac;
 
 import java.lang.reflect.Method;
 
@@ -135,7 +135,7 @@ public class Constant {
     //序列号
     public static final String SERIAL_NUMBER = getSerialNumber();
 
-    public static final String MAC = NetworkUtil.getLocalMacAddressFromIp();
+    public static final String MAC = GetMac.mac();
 
     //播放模式
     public static final String PROGRAM_MODE_NORMAL = "normal";
