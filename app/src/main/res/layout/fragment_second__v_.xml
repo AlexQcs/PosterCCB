@@ -6,27 +6,28 @@
               tools:context="com.hc.posterccb.ui.fragment.Second_V_Fragment">
 
     <RelativeLayout
-        android:id="@+id/rel_one"
+        android:id="@+id/rel_one4"
         android:layout_width="1080dp"
         android:layout_height="610dp">
         <!-- TODO: Update blank fragment layout -->
         <com.pili.pldroid.player.widget.PLVideoView
-            android:id="@+id/videoview_one"
+            android:id="@+id/videoview_one4"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
         </com.pili.pldroid.player.widget.PLVideoView>
     </RelativeLayout>
 
     <RelativeLayout
-        android:id="@+id/rel_two"
+        android:id="@+id/rel_two4"
         android:layout_width="1080dp"
         android:layout_height="1310dp">
         <com.pili.pldroid.player.widget.PLVideoView
-            android:id="@+id/videoview_two"
+            android:id="@+id/videoview_two4"
             android:layout_width="1080dp"
             android:layout_height="1310dp">
         </com.pili.pldroid.player.widget.PLVideoView>
     </RelativeLayout>
+
 
 
 </LinearLayout>

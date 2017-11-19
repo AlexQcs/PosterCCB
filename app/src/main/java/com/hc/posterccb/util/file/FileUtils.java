@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.security.MessageDigest;
 import java.text.DecimalFormat;
@@ -489,5 +490,24 @@ public class FileUtils {
             }
         }
         return flag;
+    }
+
+    public static void fileChaseFOS(String content,File  file) {
+        RandomAccessFile mm=null;
+        boolean flag=false;
+        FileOutputStream o=null;
+        if (!file.exists()){
+            fileCreate(file.getPath());
+        }
+        try {
+            //构造函数中的第二个参数true表示以追加形式写文件
+            FileOutputStream fos = new FileOutputStream(file, true);
+            OutputStreamWriter osw = new OutputStreamWriter(fos, "utf-8");
+            osw.write(content);
+            osw.close();
+            fos.close();
+        } catch (IOException e) {
+            System.out.println("文件写入失败！" + e);
+        }
     }
 }

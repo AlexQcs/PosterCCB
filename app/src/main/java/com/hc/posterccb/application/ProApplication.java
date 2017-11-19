@@ -60,6 +60,8 @@ public class ProApplication extends Application {
     private volatile int mProresIndex2;
     private volatile int mProresIndex3;
 
+    private volatile List<Program> mProgramList;
+
 
     private String mProPath;
 
@@ -91,12 +93,14 @@ public class ProApplication extends Application {
                 mResQueueArea1=new LinkedList<>();
                 mResQueueArea2=new LinkedList<>();
                 mResQueueArea3=new LinkedList<>();
+
+                mProgramList=new ArrayList<>();
             }
         }
         Thread.setDefaultUncaughtExceptionHandler(restartHandler); // 程序崩溃时触发线程  以下用来捕获程序崩溃异常
     }
 
-    // 创建服务用于捕获崩溃异常
+//     创建服务用于捕获崩溃异常
     private Thread.UncaughtExceptionHandler restartHandler = new Thread.UncaughtExceptionHandler() {
         public void uncaughtException(Thread thread, Throwable ex) {
             ex.getMessage();
@@ -104,11 +108,11 @@ public class ProApplication extends Application {
             Log.e("程序异常",string);
             File errorLog=   new File(Constant.LOCAL_FILE_PATH+"/错误日志.txt");
             try {
-                FileUtils.writeTxtFile(string,errorLog);
+                FileUtils.fileChaseFOS(string,errorLog);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            restartApp();//发生崩溃异常时,重启应用
+//            restartApp();//发生崩溃异常时,重启应用
         }
     };
     public void restartApp(){
@@ -140,6 +144,13 @@ public class ProApplication extends Application {
         startService(intent);
     }
 
+    public List<Program> getProgramList() {
+        return mProgramList;
+    }
+
+    public void setProgramList(List<Program> programList) {
+        mProgramList = programList;
+    }
 
     public int getProresIndex1() {
         return mProresIndex1;

@@ -30,6 +30,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -105,7 +106,6 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
     }
 
     @Override
@@ -269,7 +269,6 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
         return isNull;
     }
 
-
     //按照位置播放
     protected void areaPlay(List<ProgramRes> programResList) {
         Collections.sort(programResList);
@@ -291,6 +290,18 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
                         List<Date> limitTime = new ArrayList<>();
                         //ProgramRes是否在播放时间范围内
                         boolean resIsInTime = false;
+                        if (mApplication.getPlaycntMap() != null) {
+                            HashMap<String, Integer> map = mApplication.getPlaycntMap();
+                            boolean needToPlay = false;
+                            for (String key : map.keySet()) {
+                                int cnt = map.get(key);
+                                if (cnt >= 0) {
+                                    needToPlay = true;
+                                }
+                            }
+                            mApplication.setNormalPlay(needToPlay);
+//                            mApplication.setAreaIsPlay(needToPlay);
+                        }
                         //1.设置模板中三个控件模块控件各自的节目队列
                         for (ProgramRes res : programResList) {
                             //如果ProgramRes有播放时间限制则添加到数组中
@@ -325,13 +336,13 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
                             }
                         }
                         if (!mApplication.isArea1IsPlay() && resQueueArea1.size() > 0) {
-                            queueArea1Play(resQueueArea1,date);
+                            queueArea1Play(resQueueArea1, date);
                         }
                         if (!mApplication.isArea2IsPlay() && resQueueArea2.size() > 0) {
-                            queueArea2Play(resQueueArea2,date);
+                            queueArea2Play(resQueueArea2, date);
                         }
                         if (!mApplication.isArea3IsPlay() && resQueueArea3.size() > 0) {
-                            queueArea3Play(resQueueArea3,date);
+                            queueArea3Play(resQueueArea3, date);
                         }
                     }
                 });
@@ -441,45 +452,45 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
     }
     //设置播放节目单中的资源播放位置接口
 
-    private void queueArea1Play(Queue<ProgramRes> queue,Date date) {
-        while (queue.size() >= 0 &&!mApplication.isArea1ResIsPlay()) {
-            if (queue.size()==0){
+    private void queueArea1Play(Queue<ProgramRes> queue, Date date) {
+        while (queue.size() >= 0 && !mApplication.isArea1ResIsPlay()) {
+            if (queue.size() == 0) {
                 mApplication.setArea1IsPlay(false);
                 mApplication.setArea1ResIsPlay(false);
-            }else {
+            } else {
                 mApplication.setArea1IsPlay(false);
                 mApplication.setArea1ResIsPlay(true);
             }
-            ProgramRes temp=queue.remove();
-            setAreaView(date,temp);
+            ProgramRes temp = queue.remove();
+            setAreaView(date, temp);
         }
     }
 
-    private void queueArea2Play(Queue<ProgramRes> queue,Date date) {
-        while (queue.size() >= 0 &&!mApplication.isArea2ResIsPlay()) {
-            if (queue.size()==0){
+    private void queueArea2Play(Queue<ProgramRes> queue, Date date) {
+        while (queue.size() >= 0 && !mApplication.isArea2ResIsPlay()) {
+            if (queue.size() == 0) {
                 mApplication.setArea2IsPlay(false);
                 mApplication.setArea2ResIsPlay(false);
-            }else {
+            } else {
                 mApplication.setArea2IsPlay(false);
                 mApplication.setArea2ResIsPlay(true);
             }
-            ProgramRes temp=queue.remove();
-            setAreaView(date,temp);
+            ProgramRes temp = queue.remove();
+            setAreaView(date, temp);
         }
     }
 
-    private void queueArea3Play(Queue<ProgramRes> queue,Date date) {
-        while (queue.size() >= 0 &&!mApplication.isArea3ResIsPlay()) {
-            if (queue.size()==0){
+    private void queueArea3Play(Queue<ProgramRes> queue, Date date) {
+        while (queue.size() >= 0 && !mApplication.isArea3ResIsPlay()) {
+            if (queue.size() == 0) {
                 mApplication.setArea3IsPlay(false);
                 mApplication.setArea3ResIsPlay(false);
-            }else {
+            } else {
                 mApplication.setArea3IsPlay(false);
-                mApplication.setArea3ResIsPlay(false);
+                mApplication.setArea3ResIsPlay(true);
             }
-            ProgramRes temp=queue.remove();
-            setAreaView(date,temp);
+            ProgramRes temp = queue.remove();
+            setAreaView(date, temp);
         }
     }
 
@@ -507,7 +518,10 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
         if (!file.exists()) return;
         if (bean.getResnam() == null || bean.getResnam().equals("")) return;
         int playcnt = 0;
-        if (bean.getPlaycnt() != null && mApplication.getPlaycntMap() != null && mApplication.getPlaycntMap().size() != 0) {
+        if (bean.getPlaycnt() != null && mApplication.getPlaycntMap() != null && mApplication.getPlaycntMap().size() != 0&&bean.getResnam()!=null) {
+            if (bean.getPlaycnt()==null)Log.e("setVideoView","getPlaycnt为空");
+            if (mApplication==null)Log.e("setVideoView","mApplication为空");
+            if (mApplication.getPlaycntMap()==null)Log.e("setVideoView","mApplication.getPlaycntMap()为空");
             playcnt = mApplication.getPlaycntMap().get(bean.getResnam());
         }
         if (bean.getStdtime() == null && bean.getEdtime() == null) {
@@ -549,6 +563,7 @@ public abstract class BaseFragment<P extends BasePresenter> extends Fragment imp
             int appPriority = (appRes.getPriority() == null) ? 0 : Integer.parseInt(appRes.getPriority());
             LogUtils.e("播放次数", playcnt + bean.getResnam());
             if (playcnt >= 0 && programResIsIntime && priority >= appPriority) {
+//                playcnt=playcnt-10;
                 mApplication.getPlaycntMap().put(bean.getResnam(), --playcnt);
                 nomalResPlay(layout, view, path, bean);
                 if (!appRes.equals(bean)) {

@@ -112,13 +112,12 @@ public class MainModel extends BaseModel {
     private XmlPullParser mParser;
     private RequestManager requestManager = RequestManager.getInstance();
     private ProApplication mApplication = ProApplication.getInstance();
-//    private List<Program> mProgramList;
+    //    private List<Program> mProgramList;
     private ArrayList<ResourceBean> resourceList;
 
     private Subscription mSubscriptionNormal;
     private Subscription mSubscriptionInsert;
     private Subscription mSubscriptionPolling;
-
 
     //轮询任务
     public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint, @NonNull final InfoPlay infoPlay) {
@@ -154,17 +153,17 @@ public class MainModel extends BaseModel {
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        polling(command,mac,infoHint,infoPlay);
+                        polling(command, mac, infoHint, infoPlay);
                     }
                 });
 
     }
 
-    public void polling(String command,String mac,InfoHint infoHint,InfoPlay infoPlay){
-        if (mSubscriptionPolling!=null&&!mSubscriptionPolling.isUnsubscribed()){
+    public void polling(String command, String mac, InfoHint infoHint, InfoPlay infoPlay) {
+        if (mSubscriptionPolling != null && !mSubscriptionPolling.isUnsubscribed()) {
             mSubscriptionPolling.unsubscribe();
         }
-        mSubscriptionPolling=httpService.polling(Constant.BASE_PORT, command, "", mac)
+        mSubscriptionPolling = httpService.polling(Constant.BASE_PORT, command, "", mac)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody response) {
@@ -215,13 +214,8 @@ public class MainModel extends BaseModel {
     public void init(@NonNull final InfoPlay infoPlay) {
 //        configSystem();
         logicNormalProgram(infoPlay);
-        interval(30, TimeUnit.SECONDS)
-                .subscribe(new Action1<Long>() {
-                    @Override
-                    public void call(Long aLong) {
-                        Log.e("init","我被执行了");
-                    }
-                });
+//        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/resource.xml");
+//        downLoadResource(file.getPath());
 //        logicInterProgram(infoPlay);
 //        logicInterProgram
     }
@@ -273,6 +267,7 @@ public class MainModel extends BaseModel {
             SpUtils.put(mApplication.getString(R.string.keeplogTime), keeplogTime);
 
             Observable.interval(1, TimeUnit.SECONDS)
+                    .onBackpressureDrop()
                     .subscribe(new Action1<Long>() {
                         @Override
                         public void call(Long aLong) {
@@ -462,8 +457,11 @@ public class MainModel extends BaseModel {
         String postStr = xStream.toXML(postBean);
         StringUtils.setEncoding(postStr, "UTF-8");
         RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
-        if ( Constant.MAC==null||Constant.MAC.length()<=0)return;
-        httpService.report((String) SpUtils.get(mApplication.getString(R.string.serverip), Constant.BASE_URL), Constant.REPORT_CONFIG, Constant.MAC, requestBody)
+        String mMac = Constant.MAC;
+        mMac = mMac.toUpperCase();
+        mMac = mMac.replaceAll(":", "-");
+        if (Constant.MAC == null || Constant.MAC.length() <= 0) return;
+        httpService.report((String) SpUtils.get(mApplication.getString(R.string.serverip), Constant.BASE_URL), Constant.REPORT_CONFIG, mMac, requestBody)
                 .subscribeOn(Schedulers.io())
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
@@ -517,9 +515,12 @@ public class MainModel extends BaseModel {
             String postStr = xStream.toXML(postBean);
             StringUtils.setEncoding(postStr, "UTF-8");
             RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
-            if ( Constant.MAC==null||Constant.MAC.length()<=0)return;
+            String mMac = Constant.MAC;
+            mMac = mMac.toUpperCase();
+            mMac = mMac.replaceAll(":", "-");
+            if (Constant.MAC == null || Constant.MAC.length() <= 0) return;
             httpService.report((String) SpUtils
-                    .get(mApplication.getString(R.string.serverip),Constant.BASE_URL+Constant.BASE_PORT), Constant.REPORT_CONFIG, Constant.MAC, requestBody)
+                    .get(mApplication.getString(R.string.serverip), Constant.BASE_URL + Constant.BASE_PORT), Constant.REPORT_CONFIG, mMac, requestBody)
                     .subscribeOn(Schedulers.io())
                     .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                         @Override
@@ -712,64 +713,86 @@ public class MainModel extends BaseModel {
         mApplication.setResourceBeanList(resourceList);
         mApplication.initDetailBeanList(resourceList);
         SFTPUtils sFTPUtils = new SFTPUtils();
-        interval(1, TimeUnit.SECONDS)
-                .subscribe(new Action1<Long>() {
-                    @Override
-                    public void call(Long aLong) {
-                        for (int i = 0; i < resourceList.size(); i++) {
-                            ResourceBean bean=resourceList.get(i);
-                            mApplication.setResourceBean(bean);
-                            String localPath = Constant.LOCAL_PROGRAM_PATH;//
-                            File file = null;
-                            if (bean.getResname() == null && "model".equals(bean.getType())) {
+        for (int i = 0; i < resourceList.size(); i++) {
+            ResourceBean bean = resourceList.get(i);
+            mApplication.setResourceBean(bean);
+            String localPath = Constant.LOCAL_PROGRAM_PATH;//
+            File file = null;
+            if (bean.getResname() == null && "model".equals(bean.getType())) {
 //                                            postModel(bean);
-                            } else {
-                                file = new File(localPath + "/" + bean.getResname());//测试
-                                boolean md5 = MD5.decode(file, bean.getMd5());
-                                if (file.exists() && md5) {
-                                    return;
-                                }
-                                Date date = new Date(System.currentTimeMillis());
-                                String dateStr = DateFormatUtils.date2String(date, "HH:mm");
-                                Set<String> tempSet = new HashSet<>();
-                                if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
-                                    downLoadRes(bean);
-                                }
-                            }
-                        }
-//                        Observable.just(resourceList)
-//                                .flatMap(new Func1<ArrayList<ResourceBean>, Observable<ResourceBean>>() {
-//                                    @Override
-//                                    public Observable<ResourceBean> call(ArrayList<ResourceBean> been) {
-//                                        return Observable.from(resourceList);
-//                                    }
-//                                })
-//                                .subscribeOn(Schedulers.io())
-//                                .observeOn(AndroidSchedulers.mainThread())
-//                                .subscribe(new Subscriber<ResourceBean>() {
-//                                    @Override
-//                                    public void onCompleted() {
-//                                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + mApplication.getResourceBean().getResname());//测试
-//                                        boolean md5 = MD5.decode(file, mApplication.getResourceBean().getMd5());
-//                                        if (md5) {
-////                                            setDownloadStatus("0001");//设置状态下载成功
-//                                        } else {
-////                                            setDownloadStatus("0104");
-//                                        }
-//                                    }
-//
-//                                    @Override
-//                                    public void onError(Throwable e) {
-////                                        setDownloadStatus("0");//设置状态下载出错
-//                                    }
-//
-//                                    @Override
-//                                    public void onNext(ResourceBean bean) {
-//
-//                                    }
-//                                });
-                    }
-                });
+            } else {
+                file = new File(localPath + "/" + bean.getResname());//测试
+                boolean md5 = MD5.decode(file, bean.getMd5());
+                if (file.exists() && md5) {
+                    continue;
+                }
+                Date date = new Date(System.currentTimeMillis());
+                String dateStr = DateFormatUtils.date2String(date, "HH:mm");
+                Set<String> tempSet = new HashSet<>();
+//                                if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
+                downLoadRes(bean);
+//                                }
+            }
+        }
+//        Observable.interval(1, TimeUnit.SECONDS)
+//                .subscribeOn(Schedulers.io())
+//                .subscribe(new Action1<Long>() {
+//                    @Override
+//                    public void call(Long aLong) {
+//                        for (int i = 0; i < resourceList.size(); i++) {
+//                            ResourceBean bean = resourceList.get(i);
+//                            mApplication.setResourceBean(bean);
+//                            String localPath = Constant.LOCAL_PROGRAM_PATH;//
+//                            File file = null;
+//                            if (bean.getResname() == null && "model".equals(bean.getType())) {
+////                                            postModel(bean);
+//                            } else {
+//                                file = new File(localPath + "/" + bean.getResname());//测试
+//                                boolean md5 = MD5.decode(file, bean.getMd5());
+//                                if (file.exists() && md5) {
+//                                    continue;
+//                                }
+//                                Date date = new Date(System.currentTimeMillis());
+//                                String dateStr = DateFormatUtils.date2String(date, "HH:mm");
+//                                Set<String> tempSet = new HashSet<>();
+////                                if (DateFormatUtils.checkTimer(dateStr, SpUtils.get("downloadtime", tempSet))) {
+//                                downLoadRes(bean);
+////                                }
+//                            }
+//                        }
+////                        Observable.just(resourceList)
+////                                .flatMap(new Func1<ArrayList<ResourceBean>, Observable<ResourceBean>>() {
+////                                    @Override
+////                                    public Observable<ResourceBean> call(ArrayList<ResourceBean> been) {
+////                                        return Observable.from(resourceList);
+////                                    }
+////                                })
+////                                .subscribeOn(Schedulers.io())
+////                                .observeOn(AndroidSchedulers.mainThread())
+////                                .subscribe(new Subscriber<ResourceBean>() {
+////                                    @Override
+////                                    public void onCompleted() {
+////                                        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + mApplication.getResourceBean().getResname());//测试
+////                                        boolean md5 = MD5.decode(file, mApplication.getResourceBean().getMd5());
+////                                        if (md5) {
+//////                                            setDownloadStatus("0001");//设置状态下载成功
+////                                        } else {
+//////                                            setDownloadStatus("0104");
+////                                        }
+////                                    }
+////
+////                                    @Override
+////                                    public void onError(Throwable e) {
+//////                                        setDownloadStatus("0");//设置状态下载出错
+////                                    }
+////
+////                                    @Override
+////                                    public void onNext(ResourceBean bean) {
+////
+////                                    }
+////                                });
+//                    }
+//                });
     }
 
     //请求模板列表
@@ -796,10 +819,11 @@ public class MainModel extends BaseModel {
 
     //下载单个资源文件
     private void downLoadRes(ResourceBean bean) {
+        Log.e(TAG, "开始下载资源文件" + bean.getResname());
         String url = (String) SpUtils.get("baseurl", Constant.BASE_URL) + bean.getHref();
         File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResname());
         httpService.downLoad(url)
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(Schedulers.newThread())
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
 
                     @Override
@@ -893,6 +917,7 @@ public class MainModel extends BaseModel {
         }
 
         Observable.just(list)
+                .onBackpressureDrop()
                 .flatMap(new Func1<ArrayList<ItemBeanProgram>, Observable<ItemBeanProgram>>() {
                     @Override
                     public Observable<ItemBeanProgram> call(ArrayList<ItemBeanProgram> list) {
@@ -944,10 +969,10 @@ public class MainModel extends BaseModel {
                         super.onCompleted();
                         if (MD5.decode(programlfile, bean.md5)) {
                             LogUtils.e("下载播放列表", finalFilename + "下载成功");
-                            if (mSubscriptionNormal!=null&&!mSubscriptionNormal.isUnsubscribed()){
+                            if (mSubscriptionNormal != null && !mSubscriptionNormal.isUnsubscribed()) {
                                 mSubscriptionNormal.unsubscribe();
                             }
-                            if (mSubscriptionInsert!=null&&!mSubscriptionInsert.isUnsubscribed()){
+                            if (mSubscriptionInsert != null && !mSubscriptionInsert.isUnsubscribed()) {
                                 mSubscriptionInsert.unsubscribe();
                             }
                             if (playmode == 1) {
@@ -1004,11 +1029,11 @@ public class MainModel extends BaseModel {
             }
         }
         mApplication.setNormalPlay(false);
-        normalProgram(infoPlay,mProgramList);
+        normalProgram(infoPlay, mProgramList);
     }
 
     //正常播放任务
-    private void normalProgram(InfoPlay infoPlay,List<Program> mProgramList) {
+    private void normalProgram(InfoPlay infoPlay, List<Program> mProgramList) {
         if (mProgramList == null || mProgramList.size() == 0) return;
         for (Program program : mProgramList) {
             if (program.getType().equals("defaultpls")) continue;
@@ -1024,13 +1049,15 @@ public class MainModel extends BaseModel {
                         Log.e("默认播放节目单", program.toString() + "---");
                     }
                 }
-
             }
         }
 
-        mSubscriptionNormal= Observable.interval(1,TimeUnit.SECONDS)
+        if (mSubscriptionNormal != null && !mSubscriptionNormal.isUnsubscribed()) {
+            mSubscriptionNormal.unsubscribe();
+        }
+
+        mSubscriptionNormal = Observable.interval(1, TimeUnit.SECONDS)
                 .onBackpressureDrop()
-                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Long>() {
                     @Override
@@ -1045,49 +1072,55 @@ public class MainModel extends BaseModel {
 
                     @Override
                     public void onNext(Long aLong) {
-                        for (int i = 0; i < mProgramList.size(); i++) {
-                            Program program=mProgramList.get(i);
-
+                        if (mProgramList.size() == 0) {
+                            normalProgram(infoPlay,mApplication.getProgramList());
                         }
-                        for (Program program : mProgramList) {
-                            if (program.getType().equals("defaultpls")) continue;
-                            Date date = new Date(System.currentTimeMillis());
-                            String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
-                            String stdtimeStr = nowdate + program.getStdtime();
-                            String edtimeStr = nowdate + program.getEdtime();
-                            Date stdtime = null;
-                            Date edtime = null;
-                            boolean isInTime = false;
-                            if (stdtimeStr.length() < 16 || edtimeStr.length() < 16) {
-                                isInTime = true;
-                            } else {
-                                stdtime = DateFormatUtils.string2Date(stdtimeStr, "yyyy-MM-dd HH:mm");
-                                edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
-                                if (date.after(stdtime) && date.before(edtime)) isInTime = true;
-                            }
-
-                            Program curProgram = mApplication.getProgram();
-                            //
-                            if (isInTime) {
-//                                Log.e(TAG, "正常播放节目单在播放时间内");
-                                if (mApplication.isInterIsPlay() || curProgram.equals(program)||mApplication.isNormalPlay()) {
-//                                    if (mApplication.isInterIsPlay()) Log.e(TAG, "插播播放节目单播放中");
-//                                    if (mApplication.isNormalPlay()) Log.e(TAG, "正常播放节目单播放中");
-//                                    if (curProgram.equals(program)) Log.e(TAG, "相同播放节目单播放中");
-                                    return;
+                        for (int i = 0; i < mProgramList.size(); i++) {
+                            Program program = mProgramList.get(i);
+                            if (!program.getType().equals("defaultpls")) {
+                                Date date = new Date(System.currentTimeMillis());
+                                String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
+                                String stdtimeStr = nowdate + program.getStdtime();
+                                String edtimeStr = nowdate + program.getEdtime();
+                                Date stdtime = null;
+                                Date edtime = null;
+                                boolean isInTime = false;
+                                if (stdtimeStr.length() < 16 || edtimeStr.length() < 16) {
+                                    isInTime = true;
                                 } else {
-                                    mApplication.setInterIsPlay(false);
-                                    mApplication.setNormalPlay(true);
-                                    program.setMode(Constant.PROGRAM_MODE_NORMAL);
-                                    infoPlay.logicNormalProgram(program);
-                                    Log.e("正常播放节目单", program.toString() + "---");
+                                    stdtime = DateFormatUtils.string2Date(stdtimeStr, "yyyy-MM-dd HH:mm");
+                                    edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
+                                    if (date.after(stdtime) && date.before(edtime)) isInTime = true;
                                 }
-                            } else {
-                                Log.e(TAG, "正常播放节目单不在播放时间内");
-                                mApplication.setInterIsPlay(false);
-                                program.setMode(Constant.PROGRAM_MODE_DEF);
-                                infoPlay.logicNormalProgram(mApplication.getDefProgram());
-                                Log.e("默认播放节目单", program.toString() + "---");
+                                Program curProgram = mApplication.getProgram();
+                                //
+                                if (isInTime) {
+//                                Log.e(TAG, "正常播放节目单在播放时间内");
+//                                    if (mApplication.isInterIsPlay() || mApplication.isNormalPlay()) {
+                                    if (mApplication.isInterIsPlay() || mApplication.isNormalPlay()) {
+                                        if (mApplication.isInterIsPlay()) Log.e(TAG, "插播播放节目单播放中");
+                                        if (mApplication.isNormalPlay()) Log.e(TAG, "正常播放节目单播放中");
+                                        if (curProgram.equals(program)) Log.e(TAG, "相同播放节目单播放中");
+                                        return;
+                                    } else {
+                                        mProgramList.remove(i);
+                                        mApplication.setInterIsPlay(false);
+                                        mApplication.setNormalPlay(true);
+                                        mApplication.setAreaIsPlay(false);
+                                        mApplication.setArea1ResIsPlay(false);
+                                        mApplication.setArea2ResIsPlay(false);
+                                        mApplication.setArea3ResIsPlay(false);
+                                        program.setMode(Constant.PROGRAM_MODE_NORMAL);
+                                        infoPlay.logicNormalProgram(program);
+                                        Log.e("正常播放节目单", program.toString() + "---");
+                                    }
+                                } else {
+                                    Log.e(TAG, "正常播放节目单不在播放时间内");
+                                    mApplication.setInterIsPlay(false);
+                                    program.setMode(Constant.PROGRAM_MODE_DEF);
+                                    infoPlay.logicNormalProgram(mApplication.getDefProgram());
+                                    Log.e("默认播放节目单", program.toString() + "---");
+                                }
                             }
                         }
                     }
@@ -1105,12 +1138,12 @@ public class MainModel extends BaseModel {
         }
         List<Program> mProgramList = new ArrayList<>();
         mProgramList = XmlUtils.parseNormalProgramXml(xmlInterStr);
-        interProgram(infoPlay,mProgramList);
+        interProgram(infoPlay, mProgramList);
     }
 
     //插播播放
-    private void interProgram(InfoPlay infoPlay,List<Program> mProgramList) {
-        mSubscriptionInsert=Observable.interval(1,TimeUnit.SECONDS)
+    private void interProgram(InfoPlay infoPlay, List<Program> mProgramList) {
+        mSubscriptionInsert = Observable.interval(1, TimeUnit.SECONDS)
                 .onBackpressureDrop()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -1265,6 +1298,7 @@ public class MainModel extends BaseModel {
 
         Log.e("即时消息", bean.toString() + "---");
         interval(1, TimeUnit.SECONDS)
+                .onBackpressureDrop()
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
@@ -1309,8 +1343,11 @@ public class MainModel extends BaseModel {
         Log.e("返回任务id", postStr);
         StringUtils.setEncoding(postStr, "UTF-8");
         RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), postStr);
-        if ( Constant.MAC==null||Constant.MAC.length()<=0)return;
-        httpService.report((String) SpUtils.get("logurl", Constant.BASE_PORT), Constant.TASKREPORT, Constant.MAC, requestBody)
+        String mMac = Constant.MAC;
+        mMac = mMac.toUpperCase();
+        mMac = mMac.replaceAll(":", "-");
+        if (Constant.MAC == null || Constant.MAC.length() <= 0) return;
+        httpService.report((String) SpUtils.get("logurl", Constant.BASE_PORT), Constant.TASKREPORT, mMac, requestBody)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody body) {
@@ -1339,6 +1376,7 @@ public class MainModel extends BaseModel {
             }
         }
         interval(1000, TimeUnit.SECONDS)
+                .onBackpressureDrop()
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
@@ -1397,8 +1435,11 @@ public class MainModel extends BaseModel {
 
     private void resourcesync() {
         RequestBody requestBody = RequestBody.create(MediaType.parse("Content-Type, application/text/html"), "");
-        if ( Constant.MAC==null||Constant.MAC.length()<=0)return;
-        httpService.report(Constant.BASE_PORT, Constant.RESOURCESYNC, Constant.MAC, requestBody)
+        String mMac = Constant.MAC;
+        mMac = mMac.toUpperCase();
+        mMac = mMac.replaceAll(":", "-");
+        if (Constant.MAC == null || Constant.MAC.length() <= 0) return;
+        httpService.report(Constant.BASE_PORT, Constant.RESOURCESYNC, mMac, requestBody)
                 .subscribe(new CommonSubscriber<ResponseBody>(ProApplication.getmContext()) {
                     @Override
                     public void onNext(ResponseBody body) {
