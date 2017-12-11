@@ -2,6 +2,7 @@ package com.hc.posterccb.ui.fragment;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -11,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
+import android.widget.VideoView;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
@@ -24,8 +26,6 @@ import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.download.DownFileUtils;
 import com.hc.posterccb.util.file.MediaFileUtil;
 import com.pili.pldroid.player.AVOptions;
-import com.pili.pldroid.player.PLMediaPlayer;
-import com.pili.pldroid.player.widget.PLVideoView;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -37,8 +37,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import rx.Observable;
 import rx.Subscription;
@@ -56,10 +54,10 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
     private Context mContext;
     private Unbinder mUnbinder;
 
-    @BindView(R.id.videoview_one1)
-    PLVideoView mPLVideoViewOne;
-    @BindView(R.id.rel_one1)
-    RelativeLayout mRelOne;
+    //    @BindView(R.id.videoview_one1)
+    VideoView mPLVideoViewOne1;
+    //    @BindView(R.id.rel_one1)
+    RelativeLayout mRelOne1;
 
     private ProApplication mApplication = ProApplication.getInstance();
 
@@ -77,8 +75,8 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_full__h_, container, false);
-        mUnbinder = ButterKnife.bind(this, view);
-        initView();
+//        mUnbinder = ButterKnife.bind(this, view);
+        initView(view);
         initListener();
         initData();
         setOptions();
@@ -226,10 +224,10 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
     private void setAreaView(Date date, ProgramRes programRes) {
         switch (programRes.getArea()) {
             case "area1":
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
+                setVideoView(mRelOne1, mPLVideoViewOne1, programRes, date);
                 break;
             default:
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
+                setVideoView(mRelOne1, mPLVideoViewOne1, programRes, date);
                 break;
         }
     }
@@ -265,6 +263,7 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
                                 }
                             }
                             mApplication.setNormalPlay(needToPlay);
+                            mApplication.setInterIsPlay(needToPlay);
 //                            if (!needToPlay) mPLVideoViewOne.stopPlayback();
 //                            mApplication.setAreaIsPlay(needToPlay);
                         }
@@ -334,17 +333,19 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
     }
 
 
-    private void initView() {
+    private void initView(View view) {
+        mRelOne1 = (RelativeLayout) view.findViewById(R.id.rel_one1);
+        mPLVideoViewOne1 = (VideoView) view.findViewById(R.id.videoview_one1);
     }
 
     @Override
     public void pause() {
-        mPLVideoViewOne.pause();
+        mPLVideoViewOne1.pause();
     }
 
     @Override
     public void replay() {
-        mPLVideoViewOne.start();
+        mPLVideoViewOne1.start();
     }
 
     @Override
@@ -370,7 +371,7 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-    protected void setVideoView(RelativeLayout layout, PLVideoView view, ProgramRes bean, Date date) {
+    protected void setVideoView(RelativeLayout layout, VideoView view, ProgramRes bean, Date date) {
         ProgramRes appRes = new ProgramRes();
         String area = bean.getArea();
         switch (area) {
@@ -458,12 +459,23 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext = context;
+//        mPLVideoViewOne.setVisibility(View.VISIBLE);
+//        mRelOne.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+//        mPLVideoViewOne.setVisibility(View.GONE);
+//        mRelOne.setVisibility(View.GONE);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        mPLVideoViewOne.stopPlayback();
+        mPLVideoViewOne1.stopPlayback();
+//        mPLVideoViewOne.setVisibility(View.GONE);
+//        mRelOne.setVisibility(View.GONE);
     }
 
     /**
@@ -475,7 +487,7 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
      *         资源路径
      */
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-    protected void nomalResPlay(RelativeLayout layout, PLVideoView view, String path, ProgramRes bean) {
+    protected void nomalResPlay(RelativeLayout layout, VideoView view, String path, ProgramRes bean) {
         String area = bean.getArea();
         boolean isImg = MediaFileUtil.isImageFileType(path);
         if (isImg) {
@@ -502,45 +514,43 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
             view.setVisibility(View.VISIBLE);
             view.setVideoPath(path);
             layout.setBackground(null);
-            view.setOnPreparedListener(new PLMediaPlayer.OnPreparedListener() {
+            view.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+
                 @Override
-                public void onPrepared(PLMediaPlayer player, int i) {
+                public void onPrepared(MediaPlayer mp) {
                     view.seekTo(0);
                     view.start();
                 }
             });
-            view.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
-                @Override
-                public boolean onError(PLMediaPlayer player, int i) {
-                    return false;
-                }
-            });
-            view.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(PLMediaPlayer player) {
-                    view.stopPlayback();
-                    switch (area) {
-                        case "area1":
-                            Log.e(TAG, "控件1播放视频完毕");
-                            mApplication.setArea1ResIsPlay(false);
-                            break;
-                        case "area2":
-                            Log.e(TAG, "控件2播放视频完毕");
-                            mApplication.setArea2ResIsPlay(false);
-                            break;
-                        case "area3":
-                            Log.e(TAG, "控件3播放视频完毕");
-                            mApplication.setArea3ResIsPlay(false);
-                            break;
-                    }
-//                    tempTimes[0]++;
-//                    if (tempTimes[0] < playTimes || playTimes == 0) {
-//                        view.setVideoPath(path);
-//                        view.seekTo(0);
-//                        view.start();
-//                    }
-                }
-            });
+            view.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                                        @Override
+                                        public boolean onError(MediaPlayer mp, int what, int extra) {
+                                            return true;
+                                        }
+                                    }
+            );
+            view.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                                             @Override
+                                             public void onCompletion(MediaPlayer mp) {
+                                                 view.stopPlayback();
+                                                 switch (area) {
+                                                     case "area1":
+                                                         Log.e(TAG, "控件1播放视频完毕");
+                                                         mApplication.setArea1ResIsPlay(false);
+                                                         break;
+                                                     case "area2":
+                                                         Log.e(TAG, "控件2播放视频完毕");
+                                                         mApplication.setArea2ResIsPlay(false);
+                                                         break;
+                                                     case "area3":
+                                                         Log.e(TAG, "控件3播放视频完毕");
+                                                         mApplication.setArea3ResIsPlay(false);
+                                                         break;
+                                                 }
+                                             }
+                                         }
+
+            );
         }
 
     }
@@ -550,6 +560,7 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
             case "area1":
                 mSubscriptionTimerArea1 = Observable
                         .timer(40, TimeUnit.SECONDS)
+                        .onTerminateDetach()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(new Action1<Long>() {
                             @Override
@@ -565,25 +576,27 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
     @Override
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
-        if (mSubscriptionPlayProgram!=null&&!mSubscriptionAreaPlay.isUnsubscribed()){
-            mSubscriptionPlayProgram.unsubscribe();
-        }
-        if (mSubscriptionAreaPlay!=null&&!mSubscriptionAreaPlay.isUnsubscribed()){
-            mSubscriptionAreaPlay.unsubscribe();
-        }
-        if (mSubscriptionTimerArea1!=null&&!mSubscriptionTimerArea1.isUnsubscribed()){
-            mSubscriptionTimerArea1.unsubscribe();
-        }
+
         if (hidden) {
-            if (mPLVideoViewOne.isPlaying()) {
-                mPLVideoViewOne.stopPlayback();
+            if (mSubscriptionPlayProgram != null && !mSubscriptionAreaPlay.isUnsubscribed()) {
+                mSubscriptionPlayProgram.unsubscribe();
             }
-            mPLVideoViewOne.setVisibility(View.GONE);
-            if (mRelOne.getBackground() != null) {
-                mRelOne.getBackground().setCallback(null);
+            if (mSubscriptionAreaPlay != null && !mSubscriptionAreaPlay.isUnsubscribed()) {
+                mSubscriptionAreaPlay.unsubscribe();
+            }
+            if (mSubscriptionTimerArea1 != null && !mSubscriptionTimerArea1.isUnsubscribed()) {
+                mSubscriptionTimerArea1.unsubscribe();
+            }
+            Log.e(TAG, "我被隐藏了");
+            if (mPLVideoViewOne1.isPlaying()) {
+                mPLVideoViewOne1.stopPlayback();
+            }
+            mPLVideoViewOne1.setVisibility(View.GONE);
+            if (mRelOne1.getBackground() != null) {
+                mRelOne1.getBackground().setCallback(null);
             }
         } else {
-            mPLVideoViewOne.setVisibility(View.VISIBLE);
+            mPLVideoViewOne1.setVisibility(View.VISIBLE);
         }
     }
 
@@ -592,4 +605,6 @@ public class Full_H_Fragment extends BaseHiddenFragment implements
         super.onDestroy();
         mUnbinder.unbind();
     }
+
+
 }

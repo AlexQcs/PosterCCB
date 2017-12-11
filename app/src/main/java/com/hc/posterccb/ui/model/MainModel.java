@@ -34,7 +34,6 @@ import com.hc.posterccb.bean.polling.RealTimeMsgBean;
 import com.hc.posterccb.bean.polling.SyncTimeBean;
 import com.hc.posterccb.bean.polling.TempBean;
 import com.hc.posterccb.bean.program.Program;
-import com.hc.posterccb.bean.program.ProgramRes;
 import com.hc.posterccb.bean.report.CfgReportBean;
 import com.hc.posterccb.bean.report.ReportDownloadStatus;
 import com.hc.posterccb.bean.report.ReportIdReqBean;
@@ -118,6 +117,8 @@ public class MainModel extends BaseModel {
     private Subscription mSubscriptionNormal;
     private Subscription mSubscriptionInsert;
     private Subscription mSubscriptionPolling;
+
+    private int mProgramIndex = 0;
 
     //轮询任务
     public void pollingTask(@NonNull final String command, @NonNull final String mac, @NonNull final InfoHint infoHint, @NonNull final InfoPlay infoPlay) {
@@ -214,6 +215,7 @@ public class MainModel extends BaseModel {
     public void init(@NonNull final InfoPlay infoPlay) {
 //        configSystem();
         logicNormalProgram(infoPlay);
+//        logicInterProgram(infoPlay);
 //        File file = new File(Constant.LOCAL_PROGRAM_PATH + "/resource.xml");
 //        downLoadResource(file.getPath());
 //        logicInterProgram(infoPlay);
@@ -1028,34 +1030,38 @@ public class MainModel extends BaseModel {
                 SpUtils.put(Constant.SP_PROGRAM_DEF, program);
             }
         }
+
         mApplication.setNormalPlay(false);
         normalProgram(infoPlay, mProgramList);
     }
 
     //正常播放任务
     private void normalProgram(InfoPlay infoPlay, List<Program> mProgramList) {
+        mProgramIndex = 0;
         if (mProgramList == null || mProgramList.size() == 0) return;
-        for (Program program : mProgramList) {
-            if (program.getType().equals("defaultpls")) continue;
-            ArrayList<ProgramRes> resList = program.getList();
-            for (ProgramRes res : resList) {
-                File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + res.getResnam());
-                List<ResourceBean> resFileList = mApplication.getResourceBeanList();
-                for (ResourceBean bean : resFileList) {
-                    File resFile = new File(Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResname());
-                    if (!MD5.decode(resFile, bean.getMd5())) {
-                        program.setMode(Constant.PROGRAM_MODE_DEF);
-                        infoPlay.logicNormalProgram(mApplication.getDefProgram());
-                        Log.e("默认播放节目单", program.toString() + "---");
-                    }
-                }
-            }
-        }
+//        for (Program program : mProgramList) {
+//            if (program.getType().equals("defaultpls")) continue;
+//            ArrayList<ProgramRes> resList = program.getList();
+//            for (ProgramRes res : resList) {
+//                File file = new File(Constant.LOCAL_PROGRAM_PATH + "/" + res.getResnam());
+//                List<ResourceBean> resFileList = mApplication.getResourceBeanList();
+//                for (ResourceBean bean : resFileList) {
+//                    File resFile = new File(Constant.LOCAL_PROGRAM_PATH + "/" + bean.getResname());
+//                    if (!MD5.decode(resFile, bean.getMd5())) {
+//                        program.setMode(Constant.PROGRAM_MODE_DEF);
+//                        infoPlay.logicNormalProgram(mApplication.getDefProgram());
+//                        Log.e("默认播放节目单", program.toString() + "---");
+//                    }
+//                }
+//            }
+//        }
 
         if (mSubscriptionNormal != null && !mSubscriptionNormal.isUnsubscribed()) {
             mSubscriptionNormal.unsubscribe();
         }
-
+        if (mSubscriptionInsert != null && !mSubscriptionInsert.isUnsubscribed()) {
+            mSubscriptionInsert.unsubscribe();
+        }
         mSubscriptionNormal = Observable.interval(1, TimeUnit.SECONDS)
                 .onBackpressureDrop()
                 .observeOn(AndroidSchedulers.mainThread())
@@ -1073,10 +1079,13 @@ public class MainModel extends BaseModel {
                     @Override
                     public void onNext(Long aLong) {
                         if (mProgramList.size() == 0) {
-                            normalProgram(infoPlay,mApplication.getProgramList());
+                            Log.e("normalProgram", "重新循环");
+                            return;
                         }
+                        Program program = new Program();
+                        boolean isInTime = false;
                         for (int i = 0; i < mProgramList.size(); i++) {
-                            Program program = mProgramList.get(i);
+                            program = mProgramList.get(i);
                             if (!program.getType().equals("defaultpls")) {
                                 Date date = new Date(System.currentTimeMillis());
                                 String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
@@ -1084,7 +1093,6 @@ public class MainModel extends BaseModel {
                                 String edtimeStr = nowdate + program.getEdtime();
                                 Date stdtime = null;
                                 Date edtime = null;
-                                boolean isInTime = false;
                                 if (stdtimeStr.length() < 16 || edtimeStr.length() < 16) {
                                     isInTime = true;
                                 } else {
@@ -1092,36 +1100,47 @@ public class MainModel extends BaseModel {
                                     edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
                                     if (date.after(stdtime) && date.before(edtime)) isInTime = true;
                                 }
-                                Program curProgram = mApplication.getProgram();
-                                //
                                 if (isInTime) {
+                                    mProgramIndex = i;
+                                    break;
+                                }
+                                //
+                            }
+                        }
+                        Program curProgram = mApplication.getProgram();
+                        if (isInTime) {
 //                                Log.e(TAG, "正常播放节目单在播放时间内");
 //                                    if (mApplication.isInterIsPlay() || mApplication.isNormalPlay()) {
-                                    if (mApplication.isInterIsPlay() || mApplication.isNormalPlay()) {
-                                        if (mApplication.isInterIsPlay()) Log.e(TAG, "插播播放节目单播放中");
-                                        if (mApplication.isNormalPlay()) Log.e(TAG, "正常播放节目单播放中");
-                                        if (curProgram.equals(program)) Log.e(TAG, "相同播放节目单播放中");
-                                        return;
-                                    } else {
-                                        mProgramList.remove(i);
-                                        mApplication.setInterIsPlay(false);
-                                        mApplication.setNormalPlay(true);
-                                        mApplication.setAreaIsPlay(false);
-                                        mApplication.setArea1ResIsPlay(false);
-                                        mApplication.setArea2ResIsPlay(false);
-                                        mApplication.setArea3ResIsPlay(false);
-                                        program.setMode(Constant.PROGRAM_MODE_NORMAL);
-                                        infoPlay.logicNormalProgram(program);
-                                        Log.e("正常播放节目单", program.toString() + "---");
-                                    }
-                                } else {
-                                    Log.e(TAG, "正常播放节目单不在播放时间内");
+                            if (mApplication.isInterIsPlay() || mApplication.isNormalPlay()) {
+                                if (mApplication.isInterIsPlay()) Log.e(TAG, "插播播放节目单播放中");
+                                if (mApplication.isNormalPlay()) Log.e(TAG, "正常播放节目单播放中");
+                                if (curProgram.equals(program)) Log.e(TAG, "相同播放节目单播放中");
+                                return;
+                            } else {
+                                mProgramList.remove(mProgramIndex);
+                                Log.e("interProgram", mProgramList.toString());
+                                if ("model_second_v".equals(program.areatype)) {
                                     mApplication.setInterIsPlay(false);
-                                    program.setMode(Constant.PROGRAM_MODE_DEF);
-                                    infoPlay.logicNormalProgram(mApplication.getDefProgram());
-                                    Log.e("默认播放节目单", program.toString() + "---");
+                                    mApplication.setNormalPlay(true);
+                                    mApplication.setAreaIsPlay(false);
+                                    mApplication.setArea1ResIsPlay(false);
+                                    mApplication.setArea2ResIsPlay(false);
+                                    mApplication.setArea3ResIsPlay(false);
+                                    program.setMode(Constant.PROGRAM_MODE_NORMAL);
+                                    infoPlay.logicNormalProgram(program);
+                                    Log.e("正常播放节目单", program.toString() + "---");
                                 }
+
                             }
+                        } else if (!mApplication.isNormalPlay()) {
+                            Log.e(TAG, "正常播放节目单不在播放时间内");
+                            mApplication.setInterIsPlay(false);
+                            mApplication.setNormalPlay(false);
+//                            program.setMode(Constant.PROGRAM_MODE_DEF);
+//                            infoPlay.logicNormalProgram(mApplication.getDefProgram());
+                            Log.e("默认播放节目单", program.toString() + "---");
+                            logicNormalProgram(infoPlay);
+                            return;
                         }
                     }
                 });
@@ -1143,59 +1162,92 @@ public class MainModel extends BaseModel {
 
     //插播播放
     private void interProgram(InfoPlay infoPlay, List<Program> mProgramList) {
+        mProgramIndex = 0;
+        if (mSubscriptionInsert != null && !mSubscriptionInsert.isUnsubscribed()) {
+            mSubscriptionInsert.unsubscribe();
+        }
+        if (mSubscriptionNormal != null && !mSubscriptionNormal.isUnsubscribed()) {
+            mSubscriptionNormal.unsubscribe();
+        }
         mSubscriptionInsert = Observable.interval(1, TimeUnit.SECONDS)
                 .onBackpressureDrop()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Long>() {
-                    @Override
-                    public void onCompleted() {
+                               @Override
+                               public void onCompleted() {
 
-                    }
+                               }
 
-                    @Override
-                    public void onError(Throwable e) {
+                               @Override
+                               public void onError(Throwable e) {
 
-                    }
+                               }
 
-                    @Override
-                    public void onNext(Long aLong) {
-                        for (Program program : mProgramList) {
-                            Date date = new Date(System.currentTimeMillis());
-                            String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
-                            String stdtimeStr = nowdate + program.getStdtime();
-                            String edtimeStr = nowdate + program.getEdtime();
-                            Date stdtime = null;
-                            Date edtime = null;
-                            Program curProgram = mApplication.getProgram();
+                               @Override
+                               public void onNext(Long aLong) {
+                                   Program program = new Program();
+                                   boolean isInTime = false;
+                                   for (int i = 0; i < mProgramList.size(); i++) {
+                                       program = mProgramList.get(i);
+                                       if (!program.getType().equals("defaultpls")) {
+                                           Date date = new Date(System.currentTimeMillis());
+                                           String nowdate = DateFormatUtils.date2String(date, "yyyy-MM-dd ");
+                                           String stdtimeStr = nowdate + program.getStdtime();
+                                           String edtimeStr = nowdate + program.getEdtime();
+                                           Date stdtime = null;
+                                           Date edtime = null;
+                                           if (stdtimeStr.length() < 16 || edtimeStr.length() < 16) {
+                                               isInTime = true;
+                                           } else {
+                                               stdtime = DateFormatUtils.string2Date(stdtimeStr, "yyyy-MM-dd HH:mm");
+                                               edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
+                                               if (date.after(stdtime) && date.before(edtime)) isInTime = true;
+                                           }
+                                           if (isInTime) {
+                                               mProgramIndex = i;
+                                               break;
+                                           }
+                                           //
+                                       }
+                                   }
 
-                            boolean isInTime = false;
-                            if (stdtimeStr.length() < 16 || edtimeStr.length() < 16) {
-                                isInTime = true;
-                            } else {
-                                stdtime = DateFormatUtils.string2Date(stdtimeStr, "yyyy-MM-dd HH:mm");
-                                edtime = DateFormatUtils.string2Date(edtimeStr, "yyyy-MM-dd HH:mm");
-                                if (date.after(stdtime) && date.before(edtime)) isInTime = true;
-                            }
-
-                            //
-                            if (isInTime) {
-                                if (mApplication.isInterIsPlay() && curProgram.equals(program)) {
-                                    if (mApplication.isInterIsPlay())
-                                        Log.e("interProgram", "相同插播播放节目播放中");
-                                    return;
-                                } else {
-                                    mApplication.setInterIsPlay(true);
-                                    mApplication.setNormalPlay(false);
-                                    mApplication.setProgram(program);
-                                    program.setMode(Constant.PROGRAM_MODE_INTER);
-                                    infoPlay.logicInterProgram(program);
-                                    Log.e("插播播放节目单", program.toString() + "---");
-                                }
-                            }
-                        }
-                    }
-                });
+                                   //
+                                   Program curProgram = mApplication.getProgram();
+                                   if (isInTime) {
+                                       if (mApplication.isInterIsPlay()) {
+                                           if (mApplication.isInterIsPlay())
+                                               Log.e("interProgram", "插播播放节目播放中");
+                                           if (curProgram.equals(program))
+                                               Log.e("interProgram", "相同插播播放节目播放中");
+                                           return;
+                                       } else {
+                                           mProgramList.remove(mProgramIndex);
+                                           Log.e("interProgram", mProgramList.toString());
+                                           if ("model_second_v".equals(program.areatype)) {
+                                               mApplication.setAreaIsPlay(false);
+                                               mApplication.setArea1ResIsPlay(false);
+                                               mApplication.setArea2ResIsPlay(false);
+                                               mApplication.setArea3ResIsPlay(false);
+                                               mApplication.setInterIsPlay(true);
+                                               mApplication.setNormalPlay(false);
+                                               mApplication.setProgram(program);
+                                               program.setMode(Constant.PROGRAM_MODE_INTER);
+                                               infoPlay.logicInterProgram(program);
+                                               Log.e("插播播放节目单", program.toString() + "---");
+                                           }
+                                       }
+                                   } else {
+                                       Log.e(TAG, "正常播放节目单不在播放时间内");
+                                       mApplication.setInterIsPlay(false);
+                                       mApplication.setNormalPlay(false);
+                                       Log.e("默认播放节目单", program.toString() + "---");
+                                       logicInterProgram(infoPlay);
+                                       return;
+                                   }
+                               }
+                           }
+                );
     }
 
     //升级任务

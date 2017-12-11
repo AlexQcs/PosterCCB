@@ -10,22 +10,22 @@
         android:layout_width="1080dp"
         android:layout_height="610dp">
         <!-- TODO: Update blank fragment layout -->
-        <com.pili.pldroid.player.widget.PLVideoView
+        <VideoView
             android:id="@+id/videoview_one4"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-        </com.pili.pldroid.player.widget.PLVideoView>
+        </VideoView>
     </RelativeLayout>
 
     <RelativeLayout
         android:id="@+id/rel_two4"
         android:layout_width="1080dp"
         android:layout_height="1310dp">
-        <com.pili.pldroid.player.widget.PLVideoView
+        <VideoView
             android:id="@+id/videoview_two4"
             android:layout_width="1080dp"
             android:layout_height="1310dp">
-        </com.pili.pldroid.player.widget.PLVideoView>
+        </VideoView>
     </RelativeLayout>
 
 

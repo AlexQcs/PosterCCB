@@ -9,12 +9,12 @@
         android:id="@+id/rel_one3"
         android:layout_width="960dp"
         android:layout_height="match_parent">
-        <com.pili.pldroid.player.widget.PLVideoView
+        <VideoView
             android:id="@+id/videoview_one3"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-        </com.pili.pldroid.player.widget.PLVideoView>
+        </VideoView>
     </RelativeLayout>
     <!-- TODO: Update blank fragment layout -->
 
@@ -22,12 +22,12 @@
         android:id="@+id/rel_two3"
         android:layout_width="960dp"
         android:layout_height="match_parent">
-        <com.pili.pldroid.player.widget.PLVideoView
+        <VideoView
             android:id="@+id/videoview_two3"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-        </com.pili.pldroid.player.widget.PLVideoView>
+        </VideoView>
     </RelativeLayout>
 
 

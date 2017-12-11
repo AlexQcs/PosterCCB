@@ -2,6 +2,7 @@ package com.hc.posterccb.ui.fragment;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -12,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
+import android.widget.VideoView;
 
 import com.hc.posterccb.Constant;
 import com.hc.posterccb.R;
@@ -24,8 +26,6 @@ import com.hc.posterccb.util.LogUtils;
 import com.hc.posterccb.util.download.DownFileUtils;
 import com.hc.posterccb.util.file.MediaFileUtil;
 import com.pili.pldroid.player.AVOptions;
-import com.pili.pldroid.player.PLMediaPlayer;
-import com.pili.pldroid.player.widget.PLVideoView;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -57,16 +57,16 @@ public class Second_H_Fragment extends Fragment implements
     private Unbinder mUnbinder;
 
     @BindView(R.id.videoview_one3)
-    PLVideoView mPLVideoViewOne;
+    VideoView mPLVideoViewOne3;
 
     @BindView(R.id.videoview_two3)
-    PLVideoView mPLVideoViewTwo;
+    VideoView mPLVideoViewTwo3;
 
     @BindView(R.id.rel_one3)
-    RelativeLayout mRelOne;
+    RelativeLayout mRelOne3;
 
     @BindView(R.id.rel_two3)
-    RelativeLayout mRelTwo;
+    RelativeLayout mRelTwo3;
     private ProApplication mApplication = ProApplication.getInstance();
 
     private String mProgramsPath = Constant.VIDEO1_PATH;
@@ -221,13 +221,13 @@ public class Second_H_Fragment extends Fragment implements
     private void setAreaView(Date date, ProgramRes programRes) {
         switch (programRes.getArea()) {
             case "area1":
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
+                setVideoView(mRelOne3, mPLVideoViewOne3, programRes, date);
                 break;
             case "area2":
-                setVideoView(mRelTwo, mPLVideoViewTwo, programRes, date);
+                setVideoView(mRelTwo3, mPLVideoViewTwo3, programRes, date);
                 break;
             default:
-                setVideoView(mRelOne, mPLVideoViewOne, programRes, date);
+                setVideoView(mRelOne3, mPLVideoViewOne3, programRes, date);
                 break;
         }
 
@@ -266,7 +266,7 @@ public class Second_H_Fragment extends Fragment implements
                                 }
                             }
                             mApplication.setNormalPlay(needToPlay);
-//                            mApplication.setAreaIsPlay(needToPlay);
+                            mApplication.setInterIsPlay(needToPlay);
                         }
                         //1.设置模板中三个控件模块控件各自的节目队列
                         for (ProgramRes res : programResList) {
@@ -362,12 +362,12 @@ public class Second_H_Fragment extends Fragment implements
 
     @Override
     public void pause() {
-        mPLVideoViewOne.pause();
+        mPLVideoViewOne3.pause();
     }
 
     @Override
     public void replay() {
-        mPLVideoViewOne.start();
+        mPLVideoViewOne3.start();
     }
 
     @Override
@@ -394,7 +394,7 @@ public class Second_H_Fragment extends Fragment implements
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-    protected void setVideoView(RelativeLayout layout, PLVideoView view, ProgramRes bean, Date date) {
+    protected void setVideoView(RelativeLayout layout, VideoView view, ProgramRes bean, Date date) {
         ProgramRes appRes = new ProgramRes();
         String area = bean.getArea();
         switch (area) {
@@ -481,7 +481,8 @@ public class Second_H_Fragment extends Fragment implements
     @Override
     public void onStop() {
         super.onStop();
-        mPLVideoViewOne.stopPlayback();
+        mPLVideoViewOne3.stopPlayback();
+        mUnbinder.unbind();
     }
 
     /**
@@ -493,7 +494,7 @@ public class Second_H_Fragment extends Fragment implements
      *         资源路径
      */
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-    protected void nomalResPlay(RelativeLayout layout, PLVideoView view, String path, ProgramRes bean) {
+    protected void nomalResPlay(RelativeLayout layout, VideoView view, String path, ProgramRes bean) {
         String area = bean.getArea();
         boolean isImg = MediaFileUtil.isImageFileType(path);
         if (isImg) {
@@ -528,35 +529,40 @@ public class Second_H_Fragment extends Fragment implements
             view.setVisibility(View.VISIBLE);
             layout.setBackground(null);
             view.setVideoPath(path);
-            view.setOnPreparedListener(new PLMediaPlayer.OnPreparedListener() {
+
+            view.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+
                 @Override
-                public void onPrepared(PLMediaPlayer player, int i) {
+                public void onPrepared(MediaPlayer mp) {
                     view.seekTo(0);
                     view.start();
                 }
             });
-            view.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
-                @Override
-                public boolean onError(PLMediaPlayer player, int i) {
-                    return false;
-                }
-            });
-            view.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(PLMediaPlayer player) {
-                    view.stopPlayback();
-                    switch (area) {
-                        case "area1":
-                            Log.e(TAG, "控件1播放视频完毕");
-                            mApplication.setArea1ResIsPlay(false);
-                            break;
-                        case "area2":
-                            Log.e(TAG, "控件2播放视频完毕");
-                            mApplication.setArea2ResIsPlay(false);
-                            break;
-                    }
-                }
-            });
+            view.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                                        @Override
+                                        public boolean onError(MediaPlayer mp, int what, int extra) {
+                                            return true;
+                                        }
+                                    }
+            );
+            view.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                                             @Override
+                                             public void onCompletion(MediaPlayer mp) {
+                                                 view.stopPlayback();
+                                                 switch (area) {
+                                                     case "area1":
+                                                         Log.e(TAG, "控件1播放视频完毕");
+                                                         mApplication.setArea1ResIsPlay(false);
+                                                         break;
+                                                     case "area2":
+                                                         Log.e(TAG, "控件2播放视频完毕");
+                                                         mApplication.setArea2ResIsPlay(false);
+                                                         break;
+                                                 }
+                                             }
+                                         }
+
+            );
         }
 
     }
@@ -597,6 +603,7 @@ public class Second_H_Fragment extends Fragment implements
         super.onHiddenChanged(hidden);
 
         if (hidden) {
+            Log.e(TAG,"我被隐藏了");
             if (mSubscriptionPlayProgram != null && !mSubscriptionAreaPlay.isUnsubscribed()) {
                 mSubscriptionPlayProgram.unsubscribe();
             }
@@ -609,23 +616,23 @@ public class Second_H_Fragment extends Fragment implements
             if (mSubscriptionTimerArea2 != null && !mSubscriptionTimerArea2.isUnsubscribed()) {
                 mSubscriptionTimerArea2.unsubscribe();
             }
-            if (mPLVideoViewOne.isPlaying()) {
-                mPLVideoViewOne.stopPlayback();
+            if (mPLVideoViewOne3.isPlaying()) {
+                mPLVideoViewOne3.stopPlayback();
             }
-            if (mPLVideoViewTwo.isPlaying()) {
-                mPLVideoViewTwo.stopPlayback();
+            if (mPLVideoViewTwo3.isPlaying()) {
+                mPLVideoViewTwo3.stopPlayback();
             }
-            mPLVideoViewOne.setVisibility(View.GONE);
-            mPLVideoViewTwo.setVisibility(View.GONE);
-            if (mRelOne.getBackground() != null) {
-                mRelOne.getBackground().setCallback(null);
+            mPLVideoViewOne3.setVisibility(View.GONE);
+            mPLVideoViewTwo3.setVisibility(View.GONE);
+            if (mRelOne3.getBackground() != null) {
+                mRelOne3.getBackground().setCallback(null);
             }
-            if (mRelTwo.getBackground() != null) {
-                mRelTwo.getBackground().setCallback(null);
+            if (mRelTwo3.getBackground() != null) {
+                mRelTwo3.getBackground().setCallback(null);
             }
         } else {
-            mPLVideoViewOne.setVisibility(View.VISIBLE);
-            mPLVideoViewTwo.setVisibility(View.VISIBLE);
+            mPLVideoViewOne3.setVisibility(View.VISIBLE);
+            mPLVideoViewTwo3.setVisibility(View.VISIBLE);
         }
     }
 
